@@ -1,0 +1,17 @@
+name: SurfBase
+version: 1.0-SNAPSHOT
+api: "1.19"
+api-version: "1.19"
+authors:
+    - SLNE Dev Team
+    - Author
+
+softdepend:
+    - ProtocolLib
+    - ProtocolSupport
+    - ViaVersion
+    - ViaBackwards
+    - ViaRewind
+    - Geyser-Spigot
+
+main: dev.slne.base.bukkit.BukkitMain

@@ -1,0 +1,8 @@
+{
+	"id": "surf-base",
+	"name": "Surf Base",
+	"version": "1.0-SNAPSHOT",
+	"description": "Base for Surf applications",
+	"main": "dev.slne.base.velocity.VelocityMain",
+	"authors": ["SLNE Dev Team", "Author"]
+}

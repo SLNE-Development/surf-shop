@@ -1,0 +1,28 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+target/
+eclipse
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+/run*
+logs
+/.apt_generated/
+/.apt_generated_tests/
+.vscode
+dependency-reduced-pom.xml
