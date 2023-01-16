@@ -12,6 +12,7 @@ public class BukkitListenerManager {
     /**
      * Registers all plugin {@link org.bukkit.event.Listener}s
      */
+    @SuppressWarnings("unused")
     public void registerListeners() {
         PluginManager pluginManager = Bukkit.getPluginManager();
         JavaPlugin plugin = BukkitMain.getInstance();
