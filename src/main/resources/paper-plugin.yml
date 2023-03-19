@@ -1,0 +1,29 @@
+name: SurfBase
+version: 1.0-SNAPSHOT
+description: SurfBase
+api-version: "1.19"
+
+bootstrapper: dev.slne.base.bukkit.BukkitBootstapper
+loader: dev.slne.base.bukkit.BukkitLoader
+
+main: dev.slne.base.bukkit.BukkitMain
+
+dependencies:
+    - name: ProtocolLib
+      required: false
+      bootstrap: false
+    - name: ProtocolSupport
+      required: false
+      bootstrap: false
+    - name: ViaVersion
+      required: false
+      bootstrap: false
+    - name: ViaBackwards
+      required: false
+      bootstrap: false
+    - name: ViaRewind
+      required: false
+      bootstrap: false
+    - name: Geyser-Spigot
+      required: false
+      bootstrap: false

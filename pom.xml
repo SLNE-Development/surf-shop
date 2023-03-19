@@ -38,6 +38,10 @@
       <url>https://repo.codemc.io/repository/maven-snapshots/</url>
     </repository>
     <repository>
+      <id>codemc-public</id>
+      <url>https://repo.codemc.io/repository/maven-public/</url>
+    </repository>
+    <repository>
       <id>snapshots1</id>
       <name>Sonatype Snapshots</name>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
@@ -83,7 +87,7 @@
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
-      <version>1.19.3-R0.1-SNAPSHOT</version>
+      <version>1.19.4-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -105,6 +109,12 @@
       <groupId>com.velocitypowered</groupId>
       <artifactId>velocity-api</artifactId>
       <version>3.1.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>dev.jorel</groupId>
+      <artifactId>commandapi-core</artifactId>
+      <version>8.8.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -139,14 +149,10 @@
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
-        <!-- clean lifecycle, see
-        https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
-        <!-- default lifecycle, jar packaging: see
-        https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.0.2</version>
@@ -240,6 +246,16 @@
                     io.github.retrooper</pattern>
                   <shadedPattern>${package.name}.lib.packetevents.impl</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>
+                    net.kyori</pattern>
+                  <shadedPattern>${package.name}.lib.kyori</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>
+                    com.google.gson</pattern>
+                  <shadedPattern>${package.name}.lib.gson</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
@@ -289,5 +305,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>
