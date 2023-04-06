@@ -1,6 +1,5 @@
 package dev.slne.base.velocity.instance;
 
-import com.github.retrooper.packetevents.PacketEvents;
 import com.velocitypowered.api.plugin.PluginContainer;
 
 import dev.slne.base.core.instance.CoreInstance;
@@ -8,7 +7,6 @@ import dev.slne.base.velocity.VelocityMain;
 import dev.slne.base.velocity.command.VelocityCommandManager;
 import dev.slne.base.velocity.listener.VelocityListenerManager;
 import dev.slne.data.velocity.VelocityDataSource;
-import io.github.retrooper.packetevents.velocity.factory.VelocityPacketEventsBuilder;
 
 public class VelocityInstance extends CoreInstance {
 
@@ -44,12 +42,6 @@ public class VelocityInstance extends CoreInstance {
                     "PluginContainer should not be null as this message is send by the same plugin. What is happening?");
         }
 
-        PacketEvents.setAPI(
-                VelocityPacketEventsBuilder.build(VelocityMain.getInstance().getProxyServer(), pluginContainer));
-        PacketEvents.getAPI().load();
-        PacketEvents.getAPI().getSettings().checkForUpdates(true).bStats(false).debug(true).readOnlyListeners(false);
-        PacketEvents.getAPI().init();
-
         velocityDataSource.onEnable();
     }
 
@@ -59,7 +51,6 @@ public class VelocityInstance extends CoreInstance {
 
         listenerManager.unregisterListeners();
 
-        PacketEvents.getAPI().terminate();
         velocityDataSource.onDisable();
     }
 

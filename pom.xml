@@ -79,12 +79,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
       <version>1.19.4-R0.1-SNAPSHOT</version>
@@ -94,16 +88,6 @@
       <groupId>dev.slne</groupId>
       <artifactId>surf-data</artifactId>
       <version>1.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.retrooper.packetevents</groupId>
-      <artifactId>spigot</artifactId>
-      <version>2.0.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.retrooper.packetevents</groupId>
-      <artifactId>velocity</artifactId>
-      <version>2.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.velocitypowered</groupId>
@@ -132,13 +116,11 @@
               <pluginExecutions>
                 <pluginExecution>
                   <pluginExecutionFilter>
-                    <groupId>
-                      org.javalite</groupId>
+                    <groupId>org.javalite</groupId>
                     <artifactId>activejdbc-instrumentation</artifactId>
                     <versionRange>[1.4.11,)</versionRange>
                     <goals>
-                      <goal>
-                        instrument</goal>
+                      <goal>instrument</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
@@ -217,44 +199,19 @@
               <transformers>
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>
-                    activejdbc_models.properties</resource>
+                  <resource>activejdbc_models.properties</resource>
                 </transformer>
               </transformers>
-              <createDependencyReducedPom>
-                false</createDependencyReducedPom>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
               <artifactSet>
                 <includes>
                   <include>dev.slne*</include>
-                  <include>
-                    com.github.retrooper.packetevents*</include>
                 </includes>
               </artifactSet>
               <relocations>
                 <relocation>
-                  <pattern>
-                    dev.slne.data</pattern>
+                  <pattern>dev.slne.data</pattern>
                   <shadedPattern>${package.name}.lib.data</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>
-                    com.github.retrooper</pattern>
-                  <shadedPattern>${package.name}.lib.packetevents.api</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>
-                    io.github.retrooper</pattern>
-                  <shadedPattern>${package.name}.lib.packetevents.impl</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>
-                    net.kyori</pattern>
-                  <shadedPattern>${package.name}.lib.kyori</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>
-                    com.google.gson</pattern>
-                  <shadedPattern>${package.name}.lib.gson</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -275,28 +232,22 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>
-                    ${project.groupId}</groupId>
+                  <groupId>${project.groupId}</groupId>
                   <artifactId>${project.artifactId}</artifactId>
                   <version>${project.version}</version>
-                  <type>
-                    jar</type>
+                  <type>jar</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>${output}</outputDirectory>
-                  <destFileName>
-                    ${project.name}-${project.version}.jar</destFileName>
+                  <destFileName>${project.name}-${project.version}.jar</destFileName>
                 </artifactItem>
                 <artifactItem>
-                  <groupId>
-                    ${project.groupId}</groupId>
+                  <groupId>${project.groupId}</groupId>
                   <artifactId>${project.artifactId}</artifactId>
                   <version>${project.version}</version>
-                  <type>
-                    jar</type>
+                  <type>jar</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>${poutput}</outputDirectory>
-                  <destFileName>
-                    ${project.name}-${project.version}.jar</destFileName>
+                  <destFileName>${project.name}-${project.version}.jar</destFileName>
                 </artifactItem>
               </artifactItems>
             </configuration>
