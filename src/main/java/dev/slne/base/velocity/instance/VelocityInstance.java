@@ -23,7 +23,7 @@ public class VelocityInstance extends CoreInstance {
         listenerManager = new VelocityListenerManager();
 
         velocityDataSource = new VelocityDataSource(VelocityMain.getInstance().getProxyServer(),
-                VelocityMain.getInstance().getLogger(), VelocityMain.getInstance().getDataDirectory());
+                VelocityMain.getInstance().getLogger(), VelocityMain.getInstance().getDataDirectory(), this);
         velocityDataSource.onLoad();
     }
 
