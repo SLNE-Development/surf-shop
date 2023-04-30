@@ -1,12 +1,16 @@
 package dev.slne.base.bukkit.instance;
 
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import dev.slne.base.bukkit.BukkitMain;
+import dev.slne.base.bukkit.command.BukkitCommandManager;
 import dev.slne.base.bukkit.listener.BukkitListenerManager;
 import dev.slne.base.core.instance.CoreInstance;
 import dev.slne.data.bukkit.BukkitDataSource;
 
 public class BukkitInstance extends CoreInstance {
 
+    private BukkitCommandManager commandManager;
     private BukkitListenerManager listenerManager;
 
     private BukkitDataSource dataSource;
@@ -14,6 +18,9 @@ public class BukkitInstance extends CoreInstance {
     @Override
     public void onLoad() {
         super.onLoad();
+
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(BukkitMain.getInstance()));
+        commandManager = new BukkitCommandManager();
 
         listenerManager = new BukkitListenerManager();
 
@@ -24,6 +31,9 @@ public class BukkitInstance extends CoreInstance {
     @Override
     public void onEnable() {
         super.onEnable();
+
+        CommandAPI.onEnable();
+        commandManager.registerCommands();
 
         listenerManager.registerListeners();
 
@@ -36,6 +46,7 @@ public class BukkitInstance extends CoreInstance {
 
         listenerManager.unregisterListeners();
         dataSource.onDisable();
+        CommandAPI.onDisable();
     }
 
     /**
