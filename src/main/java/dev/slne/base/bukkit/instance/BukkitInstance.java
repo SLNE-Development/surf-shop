@@ -6,14 +6,11 @@ import dev.slne.base.bukkit.BukkitMain;
 import dev.slne.base.bukkit.command.BukkitCommandManager;
 import dev.slne.base.bukkit.listener.BukkitListenerManager;
 import dev.slne.base.core.instance.CoreInstance;
-import dev.slne.data.bukkit.BukkitDataSource;
 
 public class BukkitInstance extends CoreInstance {
 
     private BukkitCommandManager commandManager;
     private BukkitListenerManager listenerManager;
-
-    private BukkitDataSource dataSource;
 
     @Override
     public void onLoad() {
@@ -23,9 +20,6 @@ public class BukkitInstance extends CoreInstance {
         commandManager = new BukkitCommandManager();
 
         listenerManager = new BukkitListenerManager();
-
-        dataSource = new BukkitDataSource(BukkitMain.getInstance());
-        dataSource.onLoad();
     }
 
     @Override
@@ -36,8 +30,6 @@ public class BukkitInstance extends CoreInstance {
         commandManager.registerCommands();
 
         listenerManager.registerListeners();
-
-        dataSource.onEnable();
     }
 
     @Override
@@ -45,26 +37,16 @@ public class BukkitInstance extends CoreInstance {
         super.onDisable();
 
         listenerManager.unregisterListeners();
-        dataSource.onDisable();
         CommandAPI.onDisable();
     }
 
     /**
      * Returns the {@link BukkitListenerManager}
-     * 
+     *
      * @return the {@link BukkitListenerManager}
      */
     public BukkitListenerManager getListenerManager() {
         return listenerManager;
-    }
-
-    /**
-     * Returns the {@link BukkitDataSource}
-     * 
-     * @return the {@link BukkitDataSource}
-     */
-    public BukkitDataSource getDataSource() {
-        return dataSource;
     }
 
 }

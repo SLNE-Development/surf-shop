@@ -6,14 +6,11 @@ import dev.slne.base.core.instance.CoreInstance;
 import dev.slne.base.velocity.VelocityMain;
 import dev.slne.base.velocity.command.VelocityCommandManager;
 import dev.slne.base.velocity.listener.VelocityListenerManager;
-import dev.slne.data.velocity.VelocityDataSource;
 
 public class VelocityInstance extends CoreInstance {
 
     private VelocityCommandManager commandManager;
     private VelocityListenerManager listenerManager;
-
-    private VelocityDataSource velocityDataSource;
 
     @Override
     public void onLoad() {
@@ -21,10 +18,6 @@ public class VelocityInstance extends CoreInstance {
 
         commandManager = new VelocityCommandManager();
         listenerManager = new VelocityListenerManager();
-
-        velocityDataSource = new VelocityDataSource(VelocityMain.getInstance().getProxyServer(),
-                VelocityMain.getInstance().getLogger(), VelocityMain.getInstance().getDataDirectory(), this);
-        velocityDataSource.onLoad();
     }
 
     @Override
@@ -41,8 +34,6 @@ public class VelocityInstance extends CoreInstance {
             throw new IllegalStateException(
                     "PluginContainer should not be null as this message is send by the same plugin. What is happening?");
         }
-
-        velocityDataSource.onEnable();
     }
 
     @Override
@@ -50,13 +41,11 @@ public class VelocityInstance extends CoreInstance {
         super.onDisable();
 
         listenerManager.unregisterListeners();
-
-        velocityDataSource.onDisable();
     }
 
     /**
      * Returns the {@link VelocityCommandManager}
-     * 
+     *
      * @return the {@link VelocityCommandManager}
      */
     public VelocityCommandManager getCommandManager() {
@@ -65,7 +54,7 @@ public class VelocityInstance extends CoreInstance {
 
     /**
      * Returns the {@link VelocityListenerManager}
-     * 
+     *
      * @return the {@link VelocityListenerManager}
      */
     public VelocityListenerManager getListenerManager() {
