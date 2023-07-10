@@ -10,7 +10,7 @@ public class VelocityCommandManager {
 
     /**
      * Register a command
-     * 
+     *
      * @param command     the command to register
      * @param commandName the command name
      * @param aliases     the command aliases
@@ -26,6 +26,7 @@ public class VelocityCommandManager {
      * Register all commands
      */
     public void registerCommands() {
+        // Currently not used
     }
 
 }

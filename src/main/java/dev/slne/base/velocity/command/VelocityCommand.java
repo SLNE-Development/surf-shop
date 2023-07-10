@@ -13,7 +13,10 @@ public abstract class VelocityCommand implements SimpleCommand {
 
     private List<VelocitySubCommand> subCommands;
 
-    public VelocityCommand() {
+    /**
+     * A new {@link VelocityCommand} instance
+     */
+    protected VelocityCommand() {
         this.subCommands = new ArrayList<>();
     }
 
@@ -54,7 +57,7 @@ public abstract class VelocityCommand implements SimpleCommand {
 
     /**
      * Supplies help to the command source
-     * 
+     *
      * @param invocation the {@link Invocation}
      * @param source     the {@link CommandSource}
      * @param args       the arguments
@@ -63,7 +66,7 @@ public abstract class VelocityCommand implements SimpleCommand {
 
     /**
      * Returns the {@link List} of {@link VelocitySubCommand}s
-     * 
+     *
      * @return the {@link List} of {@link VelocitySubCommand}s
      */
     public List<VelocitySubCommand> getSubCommands() {

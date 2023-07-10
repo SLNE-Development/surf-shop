@@ -10,7 +10,7 @@ public class VelocityListenerManager {
      * Registers all listeners
      */
     public void registerListeners() {
-
+        // Currently not used
     }
 
     /**
@@ -25,7 +25,7 @@ public class VelocityListenerManager {
 
     /**
      * Registers one listener to the {@link EventManager}
-     * 
+     *
      * @param listener the listener to register
      */
     public void registerListener(Object listener) {

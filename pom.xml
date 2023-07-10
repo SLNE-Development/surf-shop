@@ -7,7 +7,7 @@
 
   <groupId>dev.slne</groupId>
   <artifactId>surf-base</artifactId>
-  <version>1.3-SNAPSHOT</version>
+  <version>1.4-SNAPSHOT</version>
 
   <name>surf-base</name>
 
@@ -33,36 +33,7 @@
       <name>SLNE Repository</name>
       <url>https://repo.slne.dev:2053/releases</url>
     </repository>
-    <repository>
-      <id>codemc-snapshots</id>
-      <url>https://repo.codemc.io/repository/maven-snapshots/</url>
-    </repository>
-    <repository>
-      <id>codemc-public</id>
-      <url>https://repo.codemc.io/repository/maven-public/</url>
-    </repository>
-    <repository>
-      <id>snapshots1</id>
-      <name>Sonatype Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </snapshots>
-    </repository>
   </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>sonatype_plugin_snapshots</id>
-      <name>Sonatype Plugin Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-  </pluginRepositories>
 
   <distributionManagement>
     <repository>
@@ -81,13 +52,14 @@
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
-      <version>1.19.4-R0.1-SNAPSHOT</version>
+      <version>1.20.1-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>dev.slne</groupId>
       <artifactId>surf-data</artifactId>
       <version>2.0-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.velocitypowered</groupId>
@@ -98,7 +70,7 @@
     <dependency>
       <groupId>dev.jorel</groupId>
       <artifactId>commandapi-bukkit-core</artifactId>
-      <version>9.0.1</version>
+      <version>9.0.3</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

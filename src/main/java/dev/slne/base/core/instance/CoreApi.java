@@ -5,8 +5,15 @@ public class CoreApi {
     private static CoreInstance instance;
 
     /**
+     * Private constructor to prevent instantiation
+     */
+    protected CoreApi() {
+
+    }
+
+    /**
      * Sets the instance of the plugin
-     * 
+     *
      * @param instance The instance of the plugin
      */
     public static void setInstance(CoreInstance instance) {
@@ -15,7 +22,7 @@ public class CoreApi {
 
     /**
      * Returns the instance of the plugin
-     * 
+     *
      * @return The instance of the plugin
      */
     public static CoreInstance getInstance() {

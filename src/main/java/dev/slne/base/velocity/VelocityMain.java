@@ -8,12 +8,18 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
+import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 
 import dev.slne.base.velocity.instance.VelocityApi;
 import dev.slne.base.velocity.instance.VelocityInstance;
 
+@Plugin(id = "surf-base", name = "Surf Base", version = "1.0.0", authors = { "SLNE Dev Team",
+        "..." }, description = "The base plugin for Surf plugins", dependencies = {
+                @Dependency(id = "surf-data", optional = false)
+        })
 public class VelocityMain {
 
     private static VelocityMain instance;
@@ -24,6 +30,7 @@ public class VelocityMain {
     private Path dataDirectory;
 
     @Inject
+    @SuppressWarnings({ "java:S3252", "java:S2696", "java:S3010" })
     public VelocityMain(ProxyServer proxyServer, Logger logger, @DataDirectory Path dataDirectory) {
         VelocityMain.instance = this;
 
@@ -47,20 +54,8 @@ public class VelocityMain {
     }
 
     /**
-     * Returns the plugin id which has to be the same as the one in
-     * velocity-plugin.json
-     * 
-     * Used by packet events
-     * 
-     * @return the plugin id
-     */
-    public String getPluginId() {
-        return "surf-base";
-    }
-
-    /**
      * Returns the instance of the plugin
-     * 
+     *
      * @return the instance of the plugin
      */
     public static VelocityMain getInstance() {
@@ -69,7 +64,7 @@ public class VelocityMain {
 
     /**
      * Returns the core instance
-     * 
+     *
      * @return the core instance
      */
     public static VelocityInstance getVelocityInstance() {
@@ -78,7 +73,7 @@ public class VelocityMain {
 
     /**
      * Returns the data directory
-     * 
+     *
      * @return the data directory
      */
     public Path getDataDirectory() {
@@ -87,7 +82,7 @@ public class VelocityMain {
 
     /**
      * Returns the logger
-     * 
+     *
      * @return the logger
      */
     public Logger getLogger() {
@@ -96,7 +91,7 @@ public class VelocityMain {
 
     /**
      * Returns the proxy server
-     * 
+     *
      * @return the proxy server
      */
     public ProxyServer getProxyServer() {

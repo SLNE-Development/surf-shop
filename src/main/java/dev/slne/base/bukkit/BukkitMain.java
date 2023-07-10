@@ -11,6 +11,7 @@ public class BukkitMain extends JavaPlugin {
     private static BukkitInstance bukkitInstance;
 
     @Override
+    @SuppressWarnings({ "java:S3252", "java:S2696" })
     public void onLoad() {
         instance = this;
         bukkitInstance = new BukkitInstance();
@@ -31,7 +32,7 @@ public class BukkitMain extends JavaPlugin {
 
     /**
      * Returns the instance of the plugin
-     * 
+     *
      * @return The instance of the plugin
      */
     public static BukkitMain getInstance() {
@@ -40,7 +41,7 @@ public class BukkitMain extends JavaPlugin {
 
     /**
      * Returns the core instance of the plugin
-     * 
+     *
      * @return The core instance of the plugin
      */
     public static BukkitInstance getBukkitInstance() {

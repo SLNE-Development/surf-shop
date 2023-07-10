@@ -9,7 +9,7 @@ public interface VelocitySubCommand {
 
     /**
      * Executes the subcommand
-     * 
+     *
      * @param invocation The invocation of the command
      * @param source     The source of the command
      * @param args       The arguments of the command
@@ -19,7 +19,7 @@ public interface VelocitySubCommand {
 
     /**
      * Suggestions on command
-     * 
+     *
      * @param invocation The invocation of the command
      * @param source     The source of the command
      * @param args       The arguments of the command

@@ -6,8 +6,14 @@ import java.util.List;
 public class Suggestions {
 
     /**
+     * Private constructor to hide the implicit public one
+     */
+    private Suggestions() {
+    }
+
+    /**
      * Returns the actual list of suggestions given the current arguments
-     * 
+     *
      * @param suggestions the list of suggestions
      * @param args        the current arguments
      * @return the actual list of suggestions
