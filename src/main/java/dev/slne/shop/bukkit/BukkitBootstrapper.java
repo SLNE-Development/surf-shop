@@ -1,4 +1,4 @@
-package dev.slne.base.bukkit;
+package dev.slne.shop.bukkit;
 
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;

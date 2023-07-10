@@ -1,13 +1,13 @@
-name: SurfBase
+name: SurfShop
 version: 1.0-SNAPSHOT
-description: SurfBase
+description: SurfShop
 api-version: "1.20"
 api: ["1.20", "1.20.1"]
 
-bootstrapper: dev.slne.base.bukkit.BukkitBootstapper
-loader: dev.slne.base.bukkit.BukkitLoader
+bootstrapper: dev.slne.shop.bukkit.BukkitBootstapper
+loader: dev.slne.shop.bukkit.BukkitLoader
 
-main: dev.slne.base.bukkit.BukkitMain
+main: dev.slne.shop.bukkit.BukkitMain
 
 dependencies:
     server:

@@ -1,37 +1,34 @@
-package dev.slne.base.bukkit.instance;
+package dev.slne.shop.bukkit.instance;
 
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
-import dev.slne.base.bukkit.BukkitMain;
-import dev.slne.base.bukkit.command.BukkitCommandManager;
-import dev.slne.base.bukkit.listener.BukkitListenerManager;
-import dev.slne.base.core.instance.CoreInstance;
+import dev.slne.shop.bukkit.command.BukkitCommandManager;
+import dev.slne.shop.bukkit.listener.BukkitListenerManager;
 
-public class BukkitInstance implements CoreInstance {
+public class BukkitInstance {
 
     private BukkitCommandManager commandManager;
     private BukkitListenerManager listenerManager;
 
-    @Override
+    /**
+     * Called when the plugin is loaded
+     */
     public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(BukkitMain.getInstance()));
         commandManager = new BukkitCommandManager();
-
         listenerManager = new BukkitListenerManager();
     }
 
-    @Override
+    /**
+     * Called when the plugin is enabled
+     */
     public void onEnable() {
-        CommandAPI.onEnable();
         commandManager.registerCommands();
-
         listenerManager.registerListeners();
     }
 
-    @Override
+    /**
+     * Called when the plugin is disabled
+     */
     public void onDisable() {
         listenerManager.unregisterListeners();
-        CommandAPI.onDisable();
     }
 
     /**

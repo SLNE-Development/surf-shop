@@ -1,11 +1,11 @@
-package dev.slne.base.bukkit.listener;
+package dev.slne.shop.bukkit.listener;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.slne.base.bukkit.BukkitMain;
+import dev.slne.shop.bukkit.BukkitMain;
 
 public class BukkitListenerManager {
 

@@ -1,9 +1,9 @@
-package dev.slne.base.bukkit;
+package dev.slne.shop.bukkit;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.slne.base.bukkit.instance.BukkitApi;
-import dev.slne.base.bukkit.instance.BukkitInstance;
+import dev.slne.shop.bukkit.instance.BukkitApi;
+import dev.slne.shop.bukkit.instance.BukkitInstance;
 
 public class BukkitMain extends JavaPlugin {
 

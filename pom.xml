@@ -6,16 +6,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>dev.slne</groupId>
-  <artifactId>surf-base</artifactId>
-  <version>1.4-SNAPSHOT</version>
+  <artifactId>surf-shop</artifactId>
+  <version>1.0-SNAPSHOT</version>
 
-  <name>surf-base</name>
+  <name>surf-shop</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <package.name>dev.slne.base</package.name>
+    <package.name>dev.slne.shop</package.name>
   </properties>
 
   <repositories>
