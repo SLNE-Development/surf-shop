@@ -14,7 +14,7 @@ dependencies:
             join-classpath: true
             load: BEFORE
             required: true
-        CommanAPI:
+        CommandAPI:
             join-classpath: true
             load: BEFORE
             required: true

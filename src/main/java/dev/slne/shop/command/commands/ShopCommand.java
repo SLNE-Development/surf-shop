@@ -6,12 +6,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import dev.jorel.commandapi.CommandTree;
+import dev.jorel.commandapi.CommandAPICommand;
 import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.Shop;
 import net.kyori.adventure.text.Component;
 
-public class ShopCommand extends CommandTree {
+public class ShopCommand extends CommandAPICommand {
 
     /**
      * A new {@link ShopCommand} instance
