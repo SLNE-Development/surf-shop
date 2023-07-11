@@ -58,7 +58,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
      */
     public void start() {
         try {
-            this.runTaskTimerAsynchronously(BukkitMain.getInstance(), 0, 1 * 20L);
+            this.runTaskTimer(BukkitMain.getInstance(), 0, 1 * 20L);
         } catch (Exception exception) {
             // IGNORE
         }
