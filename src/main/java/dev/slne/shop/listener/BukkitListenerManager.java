@@ -9,6 +9,7 @@ import dev.slne.shop.BukkitMain;
 import dev.slne.shop.listener.listeners.ShopBreakListener;
 import dev.slne.shop.listener.listeners.ShopExplodeListener;
 import dev.slne.shop.listener.listeners.ShopHopperListener;
+import dev.slne.shop.listener.listeners.ShopInteractListener;
 import dev.slne.shop.listener.listeners.ShopPistonListener;
 import dev.slne.shop.listener.listeners.ShopPlaceListener;
 import dev.slne.shop.listener.listeners.ShopWaterlogListener;
@@ -28,6 +29,7 @@ public class BukkitListenerManager {
         pluginManager.registerEvents(new ShopPistonListener(), plugin);
         pluginManager.registerEvents(new ShopWaterlogListener(), plugin);
         pluginManager.registerEvents(new ShopHopperListener(), plugin);
+        pluginManager.registerEvents(new ShopInteractListener(), plugin);
     }
 
     /**

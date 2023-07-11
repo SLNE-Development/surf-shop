@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -13,7 +14,7 @@ import dev.slne.shop.shop.Shop;
 
 public class ShopWaterlogListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onWaterlog(PlayerBucketEmptyEvent event) {
         Block block = event.getBlock();
 

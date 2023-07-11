@@ -71,6 +71,9 @@ public class Shop {
     @SerializedName("members")
     private List<ShopMember> members;
 
+    private boolean locked;
+    private Player lockedByPlayer;
+
     /**
      * A new {@link Shop} instance
      *
@@ -94,6 +97,8 @@ public class Shop {
 
         this.uuid = UUID.randomUUID();
         this.members = new ArrayList<>();
+
+        this.locked = false;
     }
 
     /**
@@ -459,6 +464,15 @@ public class Shop {
     }
 
     /**
+     * Sets the amount
+     *
+     * @param amount the amount
+     */
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
+
+    /**
      * Returns if the shop is empty
      *
      * @return if the shop is empty
@@ -481,4 +495,95 @@ public class Shop {
         return SHOP_KEY;
     }
 
+    /**
+     * @return the lockedByPlayer
+     */
+    public Player getLockedByPlayer() {
+        return lockedByPlayer;
+    }
+
+    /**
+     * @return the locked
+     */
+    public boolean isLocked() {
+        return locked;
+    }
+
+    /**
+     * @param locked the locked to set
+     */
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    /**
+     * @param itemStack the itemStack to set
+     */
+    public void setItemStack(ItemStack itemStack) {
+        this.itemStack = itemStack;
+    }
+
+    /**
+     * @param lockedByPlayer the lockedByPlayer to set
+     */
+    public void setLockedByPlayer(Player lockedByPlayer) {
+        this.lockedByPlayer = lockedByPlayer;
+    }
+
+    /**
+     * @param sellAmount the sellAmount to set
+     */
+    public void setSellAmount(int sellAmount) {
+        this.sellAmount = sellAmount;
+    }
+
+    /**
+     * @param sellPrice the sellPrice to set
+     */
+    public void setSellPrice(double sellPrice) {
+        this.sellPrice = sellPrice;
+    }
+
+    /**
+     * Locks the shop
+     *
+     * @param player the player
+     */
+    public void lock(Player player) {
+        this.locked = true;
+        this.lockedByPlayer = player;
+
+        System.out.println("Locked shop: " + uuid.toString());
+    }
+
+    /**
+     * Unlocks the shop
+     */
+    public void unlock() {
+        this.locked = false;
+        this.lockedByPlayer = null;
+
+        System.out.println("Unlocked shop: " + uuid.toString());
+    }
+
+    /**
+     * Returns if the player is the owner
+     *
+     * @param player the player
+     * @return if the player is the owner
+     */
+    public boolean isOwner(Player player) {
+        return ownerUuid != null && ownerUuid.equals(player.getUniqueId());
+    }
+
+    /**
+     * Returns if the player is a member
+     *
+     * @param player the player
+     * @return if the player is a member
+     */
+    public boolean isMember(Player player) {
+        return members != null
+                && members.stream().anyMatch(member -> member.getMemberUuid().equals(player.getUniqueId()));
+    }
 }

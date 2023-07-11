@@ -10,6 +10,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
@@ -17,6 +18,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -24,7 +26,7 @@ import dev.slne.shop.shop.Shop;
 
 public class ShopHopperListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onHopperItemMove(InventoryMoveItemEvent event) {
         Inventory source = event.getSource();
         Inventory destination = event.getDestination();
@@ -41,7 +43,7 @@ public class ShopHopperListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("java:S2583")
     public void onHopperPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
@@ -55,14 +57,44 @@ public class ShopHopperListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onChestNextToHopperPlace(BlockPlaceEvent event) {
+        Block block = event.getBlock();
+
+        if (!block.getType().equals(Material.CHEST)) {
+            return;
+        }
+
+        if (!itemIsShopItem(event.getItemInHand())) {
+            return;
+        }
+
+        if (!aroundIsHopper(block)) {
+            return;
+        }
+
+        event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onHopperPistonRetract(BlockPistonRetractEvent event) {
         event.setCancelled(handlePiston(event.getBlocks(), event.getDirection()));
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onHopperPistonExtend(BlockPistonExtendEvent event) {
         event.setCancelled(handlePiston(event.getBlocks(), event.getDirection()));
+    }
+
+    /**
+     * Checks if the item is a shop item
+     *
+     * @param itemStack the item stack
+     * @return true if the item is a shop item
+     */
+    private boolean itemIsShopItem(ItemStack itemStack) {
+        return itemStack != null && itemStack.hasItemMeta()
+                && itemStack.getItemMeta().getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
     }
 
     /**
@@ -139,6 +171,27 @@ public class ShopHopperListener implements Listener {
                 if (handleChest(chest)) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a block next to the block is a hopper
+     *
+     * @param block the block
+     * @return true if the block is a hopper
+     */
+    private boolean aroundIsHopper(Block block) {
+        BlockFace[] faces = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST,
+                BlockFace.UP, BlockFace.DOWN };
+
+        for (BlockFace face : faces) {
+            Block relative = block.getRelative(face);
+
+            if (relative.getType().equals(Material.HOPPER)) {
+                return true;
             }
         }
 

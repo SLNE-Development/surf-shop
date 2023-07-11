@@ -1,5 +1,7 @@
 package dev.slne.shop.message;
 
+import org.bukkit.entity.Player;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -121,5 +123,50 @@ public class MessageManager {
      */
     public static Component getShopNotEmptiedComponent() {
         return prefix().append(Component.text("Das Inventar des Shops ist nicht leer.", ERROR));
+    }
+
+    /**
+     * Returns a component which tells the user that the owner or a member has
+     * requested the shop gui
+     *
+     * @param isOwner  whether the player is the owner
+     * @param isMember whether the player is a member
+     * @param closer   the player who closed the shop
+     * @return the component
+     */
+    public static Component getClosedDueToEditorRequest(boolean isOwner, boolean isMember, Player closer) {
+        Component message = null;
+
+        if (isOwner) {
+            message = Component.text("Der Shop wurde durch den Besitzer ", INFO)
+                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(Component.text(" geschlossen.", INFO));
+        } else if (isMember) {
+            message = Component.text("Der Shop wurde durch ein Mitglied ", INFO)
+                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(Component.text(" geschlossen.", INFO));
+        } else {
+            message = Component.text("Der Shop wurde durch ", INFO)
+                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(Component.text(" geschlossen.", INFO));
+        }
+
+        return prefix().append(message);
+    }
+
+    /**
+     * Returns a component which tells the user that the shop is locked
+     *
+     * @param lockedBy the player who locked the shop
+     * @return the component
+     */
+    public static Component getShopIsLockedComponent(Player lockedBy) {
+        if (lockedBy != null) {
+            return prefix().append(Component.text("Der Shop wird aktuell durch ", INFO))
+                    .append(lockedBy.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(Component.text(" verwendet.", INFO));
+        }
+
+        return prefix().append(Component.text("Der Shop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
     }
 }
