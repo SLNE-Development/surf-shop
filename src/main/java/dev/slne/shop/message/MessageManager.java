@@ -32,7 +32,8 @@ public class MessageManager {
      * @return the prefix
      */
     public static Component prefix() {
-        return Component.text("Shop", NamedTextColor.GOLD);
+        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("Shop", PRIMARY))
+                .append(Component.text(" | ", NamedTextColor.DARK_GRAY));
     }
 
     /**
