@@ -45,13 +45,11 @@ public class ShopHopperListener implements Listener {
     public void onHopperPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
 
-        if (!block.getType().equals(Material.CHEST)) {
+        if (!block.getType().equals(Material.HOPPER)) {
             return;
         }
 
-        Chest chest = (Chest) block.getState();
-
-        if (handleChest(chest)) {
+        if (aroundIsShop(block)) {
             event.setCancelled(true);
         }
     }
