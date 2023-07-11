@@ -34,7 +34,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 public class ShopVisualizer {
 
-    private static final double ABOVE_SHOP_HEIGHT = 1;
+    private static final double ABOVE_SHOP_HEIGHT = 1.25;
     private static final double LINE_HEIGHT = 0.35;
     private static final double MATERIAL_LINES_SPACING = 0.35;
 
@@ -301,6 +301,11 @@ public class ShopVisualizer {
         }
 
         List<Integer> entityIds = playerEntry.getValue();
+
+        if (entityIds == null) {
+            return;
+        }
+
         int[] entityIdArray = entityIds.stream().mapToInt(i -> i).toArray();
         WrapperPlayServerDestroyEntities destroyEntities = new WrapperPlayServerDestroyEntities(entityIdArray);
 
