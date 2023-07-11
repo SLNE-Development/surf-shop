@@ -1,4 +1,4 @@
-package dev.slne.shop.bukkit.command;
+package dev.slne.shop.command;
 
 public class BukkitCommandManager {
 

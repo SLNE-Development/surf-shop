@@ -1,14 +1,21 @@
-package dev.slne.shop.bukkit;
+package dev.slne.shop;
+
+import java.util.Random;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.slne.shop.bukkit.instance.BukkitApi;
-import dev.slne.shop.bukkit.instance.BukkitInstance;
+import com.github.retrooper.packetevents.PacketEvents;
+
+import dev.slne.shop.instance.BukkitApi;
+import dev.slne.shop.instance.BukkitInstance;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 
 public class BukkitMain extends JavaPlugin {
 
     private static BukkitMain instance;
     private static BukkitInstance bukkitInstance;
+
+    private Random random;
 
     @Override
     @SuppressWarnings({ "java:S3252", "java:S2696" })
@@ -17,17 +24,27 @@ public class BukkitMain extends JavaPlugin {
         bukkitInstance = new BukkitInstance();
         BukkitApi.setInstance(bukkitInstance);
 
+        random = new Random();
+
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        PacketEvents.getAPI().getSettings().checkForUpdates(true).bStats(true);
+        PacketEvents.getAPI().load();
+
         bukkitInstance.onLoad();
     }
 
     @Override
     public void onEnable() {
+        PacketEvents.getAPI().init();
+
         bukkitInstance.onEnable();
     }
 
     @Override
     public void onDisable() {
         bukkitInstance.onDisable();
+
+        PacketEvents.getAPI().terminate();
     }
 
     /**
@@ -46,6 +63,13 @@ public class BukkitMain extends JavaPlugin {
      */
     public static BukkitInstance getBukkitInstance() {
         return bukkitInstance;
+    }
+
+    /**
+     * @return the random
+     */
+    public Random getRandom() {
+        return random;
     }
 
 }

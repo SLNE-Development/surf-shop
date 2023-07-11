@@ -4,10 +4,9 @@ description: SurfShop
 api-version: "1.20"
 api: ["1.20", "1.20.1"]
 
-bootstrapper: dev.slne.shop.bukkit.BukkitBootstapper
-loader: dev.slne.shop.bukkit.BukkitLoader
+loader: dev.slne.shop.BukkitLoader
 
-main: dev.slne.shop.bukkit.BukkitMain
+main: dev.slne.shop.BukkitMain
 
 dependencies:
     server:

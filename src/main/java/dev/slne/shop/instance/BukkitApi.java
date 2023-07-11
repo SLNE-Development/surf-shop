@@ -1,4 +1,4 @@
-package dev.slne.shop.bukkit.instance;
+package dev.slne.shop.instance;
 
 public class BukkitApi {
 

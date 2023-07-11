@@ -1,12 +1,15 @@
-package dev.slne.shop.bukkit.instance;
+package dev.slne.shop.instance;
 
-import dev.slne.shop.bukkit.command.BukkitCommandManager;
-import dev.slne.shop.bukkit.listener.BukkitListenerManager;
+import dev.slne.shop.command.BukkitCommandManager;
+import dev.slne.shop.listener.BukkitListenerManager;
+import dev.slne.shop.shop.ShopManager;
 
 public class BukkitInstance {
 
     private BukkitCommandManager commandManager;
     private BukkitListenerManager listenerManager;
+
+    private ShopManager shopManager;
 
     /**
      * Called when the plugin is loaded
@@ -14,6 +17,9 @@ public class BukkitInstance {
     public void onLoad() {
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
+
+        shopManager = new ShopManager();
+        shopManager.onLoad();
     }
 
     /**
@@ -22,6 +28,8 @@ public class BukkitInstance {
     public void onEnable() {
         commandManager.registerCommands();
         listenerManager.registerListeners();
+
+        shopManager.onEnable();
     }
 
     /**
@@ -29,6 +37,8 @@ public class BukkitInstance {
      */
     public void onDisable() {
         listenerManager.unregisterListeners();
+
+        shopManager.onDisable();
     }
 
     /**
@@ -38,6 +48,13 @@ public class BukkitInstance {
      */
     public BukkitListenerManager getListenerManager() {
         return listenerManager;
+    }
+
+    /**
+     * @return the shopManager
+     */
+    public ShopManager getShopManager() {
+        return shopManager;
     }
 
 }
