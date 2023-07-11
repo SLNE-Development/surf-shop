@@ -38,7 +38,6 @@ public abstract class ShopGui extends ChestGui {
         setOnGlobalClick(event -> event.setCancelled(true));
         setOnGlobalDrag(event -> event.setCancelled(true));
         setOnClose(event -> {
-            System.out.println(event.getReason());
             if (!event.getReason().equals(Reason.OPEN_NEW) && !event.getReason().equals(Reason.UNKNOWN)) {
                 shop.unlock();
             }

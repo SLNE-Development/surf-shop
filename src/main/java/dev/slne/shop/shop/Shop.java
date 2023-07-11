@@ -552,8 +552,6 @@ public class Shop {
     public void lock(Player player) {
         this.locked = true;
         this.lockedByPlayer = player;
-
-        System.out.println("Locked shop: " + uuid.toString());
     }
 
     /**
@@ -562,8 +560,6 @@ public class Shop {
     public void unlock() {
         this.locked = false;
         this.lockedByPlayer = null;
-
-        System.out.println("Unlocked shop: " + uuid.toString());
     }
 
     /**
