@@ -7,7 +7,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import dev.slne.shop.BukkitMain;
 import dev.slne.shop.listener.listeners.ShopBreakListener;
+import dev.slne.shop.listener.listeners.ShopExplodeListener;
+import dev.slne.shop.listener.listeners.ShopHopperListener;
+import dev.slne.shop.listener.listeners.ShopPistonListener;
 import dev.slne.shop.listener.listeners.ShopPlaceListener;
+import dev.slne.shop.listener.listeners.ShopWaterlogListener;
 
 public class BukkitListenerManager {
 
@@ -20,6 +24,10 @@ public class BukkitListenerManager {
 
         pluginManager.registerEvents(new ShopBreakListener(), plugin);
         pluginManager.registerEvents(new ShopPlaceListener(), plugin);
+        pluginManager.registerEvents(new ShopExplodeListener(), plugin);
+        pluginManager.registerEvents(new ShopPistonListener(), plugin);
+        pluginManager.registerEvents(new ShopWaterlogListener(), plugin);
+        pluginManager.registerEvents(new ShopHopperListener(), plugin);
     }
 
     /**

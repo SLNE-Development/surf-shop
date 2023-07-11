@@ -136,4 +136,11 @@ public class ShopManager {
         shops.remove(shop);
     }
 
+    /**
+     * @return the visualizerTask
+     */
+    public ShopVisualizerTask getVisualizerTask() {
+        return visualizerTask;
+    }
+
 }

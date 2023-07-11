@@ -26,6 +26,7 @@ import dev.slne.shop.api.BukkitGsonConverter;
 import dev.slne.shop.api.buffer.ItemBuffer;
 import dev.slne.shop.shop.member.ShopMember;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public class Shop {
 
@@ -340,7 +341,7 @@ public class Shop {
 
         Player owner = getOwner();
         if (owner != null) {
-            lines.add(owner.displayName());
+            lines.add(owner.displayName().colorIfAbsent(NamedTextColor.YELLOW));
         }
 
         if (itemStack != null) {
@@ -350,7 +351,7 @@ public class Shop {
                 if (itemMeta.hasDisplayName()) {
                     lines.add(itemMeta.displayName());
                 } else {
-                    lines.add(Component.text(itemStack.getType().name()));
+                    lines.add(Component.text(itemStack.getType().name(), NamedTextColor.YELLOW));
                 }
             }
         }

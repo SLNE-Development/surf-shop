@@ -403,7 +403,7 @@ public class ShopVisualizer {
      * @return the material
      */
     public Material getMaterial() {
-        return shop.getItemStack() != null ? shop.getItemStack().getType() : null;
+        return shop.getItemStack() != null ? shop.getItemStack().getType() : Material.BARRIER;
     }
 
     /**

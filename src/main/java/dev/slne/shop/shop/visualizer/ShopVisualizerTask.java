@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import dev.slne.shop.BukkitMain;
@@ -88,7 +89,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
      *
      * @param shop the shop
      */
-    private void addVisualizer(Shop shop) {
+    public void addVisualizer(Shop shop) {
         visualizers.put(shop, new ShopVisualizer(shop));
     }
 
@@ -97,12 +98,24 @@ public class ShopVisualizerTask extends BukkitRunnable {
      *
      * @param shop the shop
      */
-    private void removeVisualizer(Shop shop) {
+    public void removeVisualizer(Shop shop) {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).despawnAll();
         }
 
         visualizers.remove(shop);
+    }
+
+    /**
+     * Adds a player to the visualizers now
+     *
+     * @param player the player
+     * @param shop   the shop
+     */
+    public void addPlayer(Player player, Shop shop) {
+        if (visualizers.containsKey(shop)) {
+            visualizers.get(shop).spawn(player);
+        }
     }
 
 }

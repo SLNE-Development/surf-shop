@@ -56,6 +56,8 @@ public class ShopBreakListener implements Listener {
         shop.delete().thenAcceptAsync(deleted -> {
             if (deleted != null) {
                 player.sendMessage("Deleted shop");
+
+                BukkitApi.getInstance().getShopManager().getVisualizerTask().removeVisualizer(shop);
                 BukkitApi.getInstance().getShopManager().removeShop(shop);
             } else {
                 // There was an error in deleting your shop. Please contact an administrator.
