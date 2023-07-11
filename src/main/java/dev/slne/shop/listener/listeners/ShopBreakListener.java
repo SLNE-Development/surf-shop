@@ -54,6 +54,12 @@ public class ShopBreakListener implements Listener {
             return;
         }
 
+        if (!shop.isInventoryEmpty()) {
+            player.sendMessage(MessageManager.getShopNotEmptiedComponent());
+            event.setCancelled(true);
+            return;
+        }
+
         shop.delete().thenAcceptAsync(deleted -> {
             if (deleted != null) {
                 player.sendMessage(MessageManager.getShopRemovedSuccessfullyComponent());

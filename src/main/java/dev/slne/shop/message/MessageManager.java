@@ -113,4 +113,13 @@ public class MessageManager {
     public static Component getPlayerNotOwningShopComponent() {
         return prefix().append(Component.text("Dieser Shop gehört nicht dir.", ERROR));
     }
+
+    /**
+     * Returns a component which tells the user that the shop is not empty
+     *
+     * @return the component
+     */
+    public static Component getShopNotEmptiedComponent() {
+        return prefix().append(Component.text("Das Inventar des Shops ist nicht leer.", ERROR));
+    }
 }

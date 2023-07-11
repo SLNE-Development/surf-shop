@@ -458,4 +458,27 @@ public class Shop {
         return new Location(Bukkit.getWorld(worldName), x, y, z);
     }
 
+    /**
+     * Returns if the shop is empty
+     *
+     * @return if the shop is empty
+     */
+    public boolean isInventoryEmpty() {
+        return getAmount() == 0;
+    }
+
+    /**
+     * @return the members
+     */
+    public List<ShopMember> getMembers() {
+        return members;
+    }
+
+    /**
+     * @return the shopKey
+     */
+    public static NamespacedKey getShopKey() {
+        return SHOP_KEY;
+    }
+
 }
