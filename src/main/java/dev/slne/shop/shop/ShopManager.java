@@ -41,7 +41,6 @@ public class ShopManager {
             this.shops = fetchedShops;
             this.fetched = true;
 
-            System.out.println("Fetched " + fetchedShops.size() + " shops");
             DataApi.getDataInstance().logInfo(getClass(), "Fetched " + fetchedShops.size() + " shops");
 
             return fetchedShops;
