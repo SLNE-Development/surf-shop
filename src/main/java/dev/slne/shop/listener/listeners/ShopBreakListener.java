@@ -13,6 +13,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import dev.slne.shop.instance.BukkitApi;
+import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.Shop;
 
 public class ShopBreakListener implements Listener {
@@ -41,31 +42,31 @@ public class ShopBreakListener implements Listener {
         Shop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
 
         if (shop == null) {
-            // There was an error in deleting your shop. Please contact an administrator.
+            player.sendMessage(MessageManager.getShopRemovedFailureComponent());
             event.setCancelled(true);
             return;
         }
 
         UUID ownerUuid = shop.getOwnerUuid();
         if (ownerUuid != null && !ownerUuid.equals(player.getUniqueId())) {
-            // You do not own this shop
+            player.sendMessage(MessageManager.getPlayerNotOwningShopComponent());
             event.setCancelled(true);
             return;
         }
 
         shop.delete().thenAcceptAsync(deleted -> {
             if (deleted != null) {
-                player.sendMessage("Deleted shop");
+                player.sendMessage(MessageManager.getShopRemovedSuccessfullyComponent());
 
                 BukkitApi.getInstance().getShopManager().getVisualizerTask().removeVisualizer(shop);
                 BukkitApi.getInstance().getShopManager().removeShop(shop);
             } else {
-                // There was an error in deleting your shop. Please contact an administrator.
+                player.sendMessage(MessageManager.getShopRemovedFailureComponent());
                 event.setCancelled(true);
             }
         }).exceptionally(throwable -> {
             throwable.printStackTrace();
-            // There was an error in deleting your shop. Please contact an administrator.
+            player.sendMessage(MessageManager.getShopRemovedFailureComponent());
             event.setCancelled(true);
             return null;
         });

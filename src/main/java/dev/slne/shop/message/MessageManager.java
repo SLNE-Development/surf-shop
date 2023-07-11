@@ -103,4 +103,13 @@ public class MessageManager {
     public static Component getShopRemovedFailureComponent() {
         return prefix().append(Component.text("Dein Shop konnte nicht entfernt werden.", ERROR));
     }
+
+    /**
+     * Returns a component which tells the user that they do not own the shop
+     *
+     * @return the component
+     */
+    public static Component getPlayerNotOwningShopComponent() {
+        return prefix().append(Component.text("Dieser Shop gehört nicht dir.", ERROR));
+    }
 }
