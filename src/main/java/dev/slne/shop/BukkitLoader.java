@@ -22,9 +22,6 @@ public class BukkitLoader implements PluginLoader {
 		// Dependencies
 		mavenResolver.addDependency(
 				new Dependency(new DefaultArtifact(
-						"com.github.stefvanschie.inventoryframework:IF:0.10.11"), null));
-		mavenResolver.addDependency(
-				new Dependency(new DefaultArtifact(
 						"com.github.retrooper.packetevents:spigot:2.0.0-SNAPSHOT"), null));
 
 		// Resolve
