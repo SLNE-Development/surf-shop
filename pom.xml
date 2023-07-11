@@ -33,6 +33,14 @@
       <name>SLNE Repository</name>
       <url>https://repo.slne.dev:2053/releases</url>
     </repository>
+    <repository>
+      <id>codemc-snapshots</id>
+      <url>https://repo.codemc.io/repository/maven-snapshots/</url>
+    </repository>
+    <repository>
+      <id>codemc-public</id>
+      <url>https://repo.codemc.io/repository/maven-public/</url>
+    </repository>
   </repositories>
 
   <distributionManagement>
