@@ -42,6 +42,7 @@ public class ShopHopperListener implements Listener {
     }
 
     @EventHandler
+    @SuppressWarnings("java:S2583")
     public void onHopperPlace(BlockPlaceEvent event) {
         Block block = event.getBlock();
 
