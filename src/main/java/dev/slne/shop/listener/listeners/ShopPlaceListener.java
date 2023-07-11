@@ -18,8 +18,6 @@ import dev.slne.shop.BukkitMain;
 import dev.slne.shop.instance.BukkitApi;
 import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.Shop;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 public class ShopPlaceListener implements Listener {
 
@@ -35,37 +33,9 @@ public class ShopPlaceListener implements Listener {
 
         Chest chest = (Chest) block.getState();
         ItemStack handItem = event.getItemInHand();
-
-        if (!handleBadThings(block, handItem, player)) {
-            return;
-        }
-
-        handleFinalPlace(player, block, chest);
-    }
-
-    /**
-     * Checks if the item in the player's hand is a shop
-     *
-     * @param handItem the hand item
-     * @return true if the item is a shop
-     */
-    private boolean isShopItem(ItemStack handItem) {
         PersistentDataContainer handItemContainer = handItem.getItemMeta().getPersistentDataContainer();
 
-        return handItem.hasItemMeta() && !handItemContainer.has(Shop.SHOP_KEY);
-    }
-
-    /**
-     * Handles the chest being placed next to a chest
-     *
-     * @param block    the block
-     * @param handItem the hand item
-     * @param player   the player
-     * @return true if the chest is next to a chest
-     */
-    @SuppressWarnings("java:S3776")
-    private boolean handleBadThings(Block block, ItemStack handItem, Player player) {
-        boolean handItemIsShop = isShopItem(handItem);
+        boolean handItemIsShop = handItem.hasItemMeta() && handItemContainer.has(Shop.SHOP_KEY);
         boolean nextToChest = false;
         boolean nextToShop = false;
 
@@ -88,26 +58,24 @@ public class ShopPlaceListener implements Listener {
             }
         }
 
-        Component message = null;
-
         if (handItemIsShop) {
             if (nextToShop) {
-                message = MessageManager.getCannotPlaceShopNextToShopComponent();
-                player.sendMessage(message);
+                player.sendMessage(MessageManager.getCannotPlaceShopNextToShopComponent());
+                event.setCancelled(true);
+                return;
             } else if (nextToChest) {
-                message = MessageManager.getCannotPlaceShopNextToChestComponent();
-                player.sendMessage(message);
+                player.sendMessage(MessageManager.getCannotPlaceShopNextToChestComponent());
+                event.setCancelled(true);
+                return;
             }
+
+            handleFinalPlace(player, block, chest);
         } else {
             if (nextToShop) {
-                message = MessageManager.getCannotPlaceChestNextToShopComponent();
-                player.sendMessage(message);
+                player.sendMessage(MessageManager.getCannotPlaceChestNextToShopComponent());
+                event.setCancelled(true);
             }
-
-            return false;
         }
-
-        return nextToChest;
     }
 
     /**
@@ -124,7 +92,7 @@ public class ShopPlaceListener implements Listener {
         Shop shop = new Shop(player.getUniqueId(), null, location);
         shop.create().thenAcceptAsync(created -> {
             if (created == null) {
-                printShopCreationFailed(player);
+                player.sendMessage(MessageManager.getShopCreatedFailureComponent());
                 return;
             }
 
@@ -140,16 +108,12 @@ public class ShopPlaceListener implements Listener {
                 }
             }.runTask(BukkitMain.getInstance());
 
-            player.sendMessage(Component.text("Created shop", NamedTextColor.GREEN));
+            player.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
         }).exceptionally(throwable -> {
             throwable.printStackTrace();
-            printShopCreationFailed(player);
+            player.sendMessage(MessageManager.getShopCreatedFailureComponent());
             return null;
         });
-    }
-
-    private void printShopCreationFailed(Player player) {
-        player.sendMessage(Component.text("Failed to create shop", NamedTextColor.RED));
     }
 
 }
