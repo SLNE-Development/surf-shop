@@ -30,9 +30,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
         List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
 
         for (Shop shop : shops) {
-            if (!visualizers.containsKey(shop)) {
-                addVisualizer(shop);
-            }
+            visualizers.computeIfAbsent(shop, key -> new ShopVisualizer(shop));
         }
 
         for (ShopVisualizer visualizer : new ArrayList<>(visualizers.values())) {
@@ -85,20 +83,11 @@ public class ShopVisualizerTask extends BukkitRunnable {
     }
 
     /**
-     * Adds a visualizer
-     *
-     * @param shop the shop
-     */
-    public void addVisualizer(Shop shop) {
-        visualizers.put(shop, new ShopVisualizer(shop));
-    }
-
-    /**
      * Removes a visualizer
      *
      * @param shop the shop
      */
-    public void removeVisualizer(Shop shop) {
+    private void removeVisualizer(Shop shop) {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).despawnAll();
         }

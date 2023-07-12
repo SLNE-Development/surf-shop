@@ -19,7 +19,7 @@ public class ShopCommand extends CommandAPICommand {
     public ShopCommand() {
         super("shop");
 
-        withPermission("surf.shop");
+        withPermission("surf.shop.give");
 
         executesPlayer((player, args) -> {
             ItemStack chest = new ItemStack(Material.CHEST);

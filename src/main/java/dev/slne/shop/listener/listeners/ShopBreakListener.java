@@ -2,6 +2,7 @@ package dev.slne.shop.listener.listeners;
 
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -14,6 +15,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import dev.slne.shop.instance.BukkitApi;
+import dev.slne.shop.listener.events.state.ShopRemoveEvent;
 import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.Shop;
 
@@ -55,8 +57,17 @@ public class ShopBreakListener implements Listener {
             return;
         }
 
-        if (!shop.isInventoryEmpty()) {
-            player.sendMessage(MessageManager.getShopNotEmptiedComponent());
+        // if (!shop.isInventoryEmpty()) {
+        // player.sendMessage(MessageManager.getShopNotEmptiedComponent());
+        // event.setCancelled(true);
+        // return;
+        // }
+
+        ShopRemoveEvent shopRemoveEvent = new ShopRemoveEvent(shop, player);
+        Bukkit.getPluginManager().callEvent(shopRemoveEvent);
+
+        if (shopRemoveEvent.isCancelled()) {
+            shopRemoveEvent.applyCancelled(event.getPlayer());
             event.setCancelled(true);
             return;
         }
@@ -64,8 +75,6 @@ public class ShopBreakListener implements Listener {
         shop.delete().thenAcceptAsync(deleted -> {
             if (deleted != null) {
                 player.sendMessage(MessageManager.getShopRemovedSuccessfullyComponent());
-
-                BukkitApi.getInstance().getShopManager().getVisualizerTask().removeVisualizer(shop);
                 BukkitApi.getInstance().getShopManager().removeShop(shop);
             } else {
                 player.sendMessage(MessageManager.getShopRemovedFailureComponent());

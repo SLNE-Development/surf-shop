@@ -10,6 +10,9 @@ import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 
 import dev.slne.shop.BukkitMain;
 import dev.slne.shop.shop.gui.ShopGui;
+import net.kyori.adventure.sound.Sound;
+import net.kyori.adventure.sound.Sound.Emitter;
+import net.kyori.adventure.sound.Sound.Source;
 
 public class GuiUtils {
 
@@ -17,6 +20,29 @@ public class GuiUtils {
      * Prevents instantiation.
      */
     private GuiUtils() {
+    }
+
+    /**
+     * Plays a sound to the player.
+     *
+     * @param toPlay The sound to play.
+     * @param player The player to play the sound to.
+     */
+    public static void playSound(org.bukkit.Sound toPlay, Player player) {
+        Sound sound = Sound.sound().type(toPlay.getKey()).volume(.5f).pitch(1f).source(Source.MASTER).build();
+        Emitter emitter = Emitter.self();
+
+        player.playSound(sound, emitter);
+    }
+
+    /**
+     * Plays a gui sound to the player.
+     *
+     * @param sound  The gui sound to play.
+     * @param player The player to play the gui sound to.
+     */
+    public static void playGuiSound(GuiSound sound, Player player) {
+        playSound(sound.getSound(), player);
     }
 
     /**
@@ -48,18 +74,20 @@ public class GuiUtils {
 
         int closeX = gui.hasParent() ? 5 : 4;
 
-        if (gui.hasParent()) {
+        if (gui.hasParent() && gui.getViewingPlayer().hasPermission("surf.shop.item.back-item")) {
             navigation.addItem(
                     new GuiItem(ItemUtils.backItem(gui), event -> gui.showParent((Player) event.getWhoClicked())),
                     3, 0);
         }
 
-        navigation.addItem(new GuiItem(ItemUtils.closeItem(), event -> new BukkitRunnable() {
-            @Override
-            public void run() {
-                event.getWhoClicked().closeInventory();
-            }
-        }.runTaskLater(BukkitMain.getInstance(), 1)), closeX, 0);
+        if (gui.getViewingPlayer().hasPermission("surf.shop.item.close-item")) {
+            navigation.addItem(new GuiItem(ItemUtils.closeItem(), event -> new BukkitRunnable() {
+                @Override
+                public void run() {
+                    event.getWhoClicked().closeInventory();
+                }
+            }.runTaskLater(BukkitMain.getInstance(), 1)), closeX, 0);
+        }
 
         return navigation;
     }

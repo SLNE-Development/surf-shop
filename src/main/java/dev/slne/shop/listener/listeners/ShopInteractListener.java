@@ -78,7 +78,13 @@ public class ShopInteractListener implements Listener {
             return;
         }
 
-        ShopMainMenu mainMenu = new ShopMainMenu(shop);
+        if (shop.getItemStack() == null && !isOwner) {
+            player.sendMessage(MessageManager.getShopIsNotSetupComponent());
+            event.setCancelled(true);
+            return;
+        }
+
+        ShopMainMenu mainMenu = new ShopMainMenu(shop, player);
 
         event.setCancelled(true);
         shop.lock(player);

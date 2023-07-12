@@ -15,16 +15,37 @@ public abstract class ShopGui extends ChestGui {
 
     private Shop shop;
     private ShopGui parent;
+    private Player viewingPlayer;
 
     /**
      * Creates a new shop gui.
      *
-     * @param parent the parent gui
-     * @param rows   the amount of rows this gui should have
-     * @param title  the title of this gui
-     * @param shop   the shop
+     * @param parent        the parent gui
+     * @param rows          the amount of rows this gui should have
+     * @param title         the title of this gui
+     * @param shop          the shop
+     * @param viewingPlayer the player viewing the shop
      */
-    protected ShopGui(ShopGui parent, int rows, String title, Shop shop) {
+    protected ShopGui(ShopGui parent, int rows, String title, Shop shop, Player viewingPlayer) {
+        this(parent, rows, title, shop, viewingPlayer, true, true, true, true);
+    }
+
+    /**
+     * Creates a new shop gui.
+     *
+     * @param parent            the parent gui
+     * @param rows              the amount of rows this gui should have
+     * @param title             the title of this gui
+     * @param shop              the shop
+     * @param viewingPlayer     the player viewing the shop
+     * @param cancelTopClick    if the top inventory click should be cancelled
+     * @param cancelTopDrag     if the top inventory drag should be cancelled
+     * @param cancelBottomClick if the bottom inventory click should be cancelled
+     * @param cancelBottomDrag  if the bottom inventory drag should be cancelled
+     */
+    @SuppressWarnings("java:S107")
+    protected ShopGui(ShopGui parent, int rows, String title, Shop shop, Player viewingPlayer, boolean cancelTopClick,
+            boolean cancelTopDrag, boolean cancelBottomClick, boolean cancelBottomDrag) {
         super(rows, title);
 
         if (rows < 2) {
@@ -34,9 +55,14 @@ public abstract class ShopGui extends ChestGui {
 
         this.parent = parent;
         this.shop = shop;
+        this.viewingPlayer = viewingPlayer;
 
-        setOnGlobalClick(event -> event.setCancelled(true));
-        setOnGlobalDrag(event -> event.setCancelled(true));
+        setOnTopClick(event -> event.setCancelled(cancelTopClick));
+        setOnTopDrag(event -> event.setCancelled(cancelTopDrag));
+        setOnBottomClick(event -> event.setCancelled(cancelBottomClick));
+        setOnBottomDrag(event -> event.setCancelled(cancelBottomDrag));
+        setOnOutsideClick(event -> event.setCancelled(true));
+
         setOnClose(event -> {
             if (!event.getReason().equals(Reason.OPEN_NEW) && !event.getReason().equals(Reason.UNKNOWN)) {
                 shop.unlock();
@@ -46,8 +72,6 @@ public abstract class ShopGui extends ChestGui {
         addPane(GuiUtils.getOutline(0));
         addPane(GuiUtils.getOutline(rows - 1));
         addPane(GuiUtils.getNavigation(this, rows - 1));
-
-        update();
     }
 
     /**
@@ -102,6 +126,13 @@ public abstract class ShopGui extends ChestGui {
      */
     public Shop getShop() {
         return shop;
+    }
+
+    /**
+     * @return the viewingPlayer
+     */
+    public Player getViewingPlayer() {
+        return viewingPlayer;
     }
 
 }

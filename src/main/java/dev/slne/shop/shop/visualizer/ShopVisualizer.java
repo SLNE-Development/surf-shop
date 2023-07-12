@@ -394,6 +394,10 @@ public class ShopVisualizer {
      * @param player the player
      */
     public void removeEntityIds(Player player) {
+        if (player == null) {
+            return;
+        }
+
         this.playerEntityIds.remove(player.getUniqueId());
     }
 

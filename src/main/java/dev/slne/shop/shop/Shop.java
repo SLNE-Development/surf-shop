@@ -21,11 +21,14 @@ import com.google.gson.annotations.SerializedName;
 
 import dev.slne.data.core.instance.DataApi;
 import dev.slne.data.core.web.WebRequest;
+import dev.slne.shop.BukkitMain;
 import dev.slne.shop.api.API;
 import dev.slne.shop.api.BukkitGsonConverter;
 import dev.slne.shop.api.buffer.ItemBuffer;
+import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.member.ShopMember;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 public class Shop {
@@ -175,8 +178,8 @@ public class Shop {
             int statusCode = response.getStatusCode();
 
             if (!(statusCode >= 200 || statusCode < 300)) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to create shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
@@ -188,8 +191,8 @@ public class Shop {
             Shop newShop = fromBodyElement(bodyElement, true);
 
             if (newShop == null) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to create shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
@@ -197,7 +200,7 @@ public class Shop {
 
             return this;
         }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(Shop.class, "Failed to create shop: " + uuid.toString());
+            BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
             exception.printStackTrace();
             return null;
         });
@@ -216,8 +219,8 @@ public class Shop {
             int statusCode = response.getStatusCode();
 
             if (!(statusCode >= 200 || statusCode < 300)) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to update shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
@@ -229,14 +232,14 @@ public class Shop {
             Shop updatedShop = fromBodyElement(bodyElement, true);
 
             if (updatedShop == null) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to update shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
             return this;
         }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(Shop.class, "Failed to update shop: " + uuid.toString());
+            BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
             exception.printStackTrace();
             return null;
         });
@@ -255,8 +258,8 @@ public class Shop {
             int statusCode = response.getStatusCode();
 
             if (!(statusCode >= 200 || statusCode < 300)) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to delete shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
@@ -268,14 +271,14 @@ public class Shop {
             Shop deletedShop = fromBodyElement(bodyElement, true);
 
             if (deletedShop == null) {
-                DataApi.getDataInstance().logError(Shop.class, "Failed to delete shop: " + uuid.toString());
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
+                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
                 return null;
             }
 
             return this;
         }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(Shop.class, "Failed to delete shop: " + uuid.toString());
+            BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
             exception.printStackTrace();
             return null;
         });
@@ -350,18 +353,30 @@ public class Shop {
         }
 
         if (itemStack != null) {
-            ItemMeta itemMeta = itemStack.getItemMeta();
+            TextComponent.Builder builder = Component.text();
+            ItemMeta itemMeta = itemStack.clone().getItemMeta();
+
+            builder.append(Component.text(amount + "x", MessageManager.VARIABLE_VALUE));
 
             if (itemMeta != null) {
                 if (itemMeta.hasDisplayName()) {
-                    lines.add(itemMeta.displayName());
+                    builder.append(itemMeta.displayName().colorIfAbsent(MessageManager.VARIABLE_VALUE));
                 } else {
-                    lines.add(Component.text(itemStack.getType().name(), NamedTextColor.YELLOW));
+                    builder.append(Component.text(itemStack.getType().name(), MessageManager.VARIABLE_VALUE));
                 }
             }
         }
 
         return lines;
+    }
+
+    /**
+     * Decreases the amount
+     */
+    public CompletableFuture<Shop> decreaseAmount(int amount) {
+        this.amount -= amount;
+
+        return update();
     }
 
     /**

@@ -1,8 +1,14 @@
 package dev.slne.shop.message;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 
@@ -168,5 +174,103 @@ public class MessageManager {
         }
 
         return prefix().append(Component.text("Der Shop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
+    }
+
+    /**
+     * Returns a component which tells the user that the shop is not setup
+     *
+     * @return the component
+     */
+    public static Component getShopIsNotSetupComponent() {
+        return prefix().append(Component.text("Der Shop wurde noch nicht eingerichtet.", ERROR));
+    }
+
+    /**
+     * Returns a component which tells the user that they bought x items
+     *
+     * @param boughtItemstack the itemstack bought
+     * @param amount          the amount bought
+     * @return the component
+     */
+    public static Component getShopBoughtAmountBuyerComponent(ItemStack boughtItemstack, int amount) {
+        TextComponent.Builder builder = Component.text();
+
+        builder.append(prefix());
+        builder.append(Component.text("Du hast ", INFO));
+        builder.append(Component.text(amount, VARIABLE_VALUE));
+        builder.append(Component.text("x ", INFO));
+
+        builder.append(getItemStackComponent(boughtItemstack));
+        builder.append(Component.text(" gekauft.", INFO));
+
+        return builder.build();
+    }
+
+    /**
+     * Returns a component which tells the user that they sold x items
+     *
+     * @param buyer           the player who bought the item
+     * @param boughtItemStack the itemstack bought
+     * @param amount          the amount bought
+     * @return the component
+     */
+    public static Component getShopBoughtAmountOwnerComponent(Player buyer, ItemStack boughtItemStack, int amount) {
+        TextComponent.Builder builder = Component.text();
+
+        builder.append(prefix());
+
+        if (buyer != null) {
+            builder.append(buyer.displayName().colorIfAbsent(VARIABLE_VALUE));
+        } else {
+            builder.append(Component.text("Jemand", VARIABLE_VALUE));
+        }
+
+        builder.append(Component.text(" hat ", INFO));
+        builder.append(Component.text(amount, VARIABLE_VALUE));
+        builder.append(Component.text("x ", INFO));
+
+        builder.append(getItemStackComponent(boughtItemStack));
+        builder.append(Component.text(" gekauft.", INFO));
+
+        return builder.build();
+    }
+
+    /**
+     * Returns an itemstack component
+     *
+     * @param itemStack the itemstack
+     * @return the component
+     */
+    private static Component getItemStackComponent(ItemStack itemStack) {
+        Component name = itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()
+                ? itemStack.getItemMeta().displayName()
+                : Component.text(itemStack.getType().name());
+        name = name.colorIfAbsent(VARIABLE_VALUE);
+
+        List<Component> lore = itemStack.hasItemMeta() && itemStack.getItemMeta().hasLore()
+                ? itemStack.getItemMeta().lore()
+                : new ArrayList<>();
+
+        TextComponent.Builder itemStackBuilder = Component.text();
+        itemStackBuilder.append(name);
+
+        for (Component loreComponent : lore) {
+            itemStackBuilder.append(Component.newline());
+            itemStackBuilder.append(loreComponent);
+        }
+
+        return name.hoverEvent(HoverEvent.showText(itemStackBuilder.build()));
+    }
+
+    /**
+     * Returns a component which tells the user that they cannot accept those items
+     *
+     * @param amount the amount tried to add
+     * @return the component
+     */
+    public static Component getInventoryCannotAcceptNItemsComponent(int amount) {
+        return prefix().append(Component.text("Dein Inventar kann die Menge von ", ERROR))
+                .append(Component.text(amount, VARIABLE_VALUE)).append(Component.text(" Items", VARIABLE_VALUE))
+                .append(Component.text(" nicht aufnehmen.", ERROR));
     }
 }

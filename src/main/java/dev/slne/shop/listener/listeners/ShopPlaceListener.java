@@ -1,5 +1,6 @@
 package dev.slne.shop.listener.listeners;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -13,16 +14,16 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import dev.slne.shop.BukkitMain;
 import dev.slne.shop.instance.BukkitApi;
+import dev.slne.shop.listener.events.state.ShopCreateEvent;
 import dev.slne.shop.message.MessageManager;
 import dev.slne.shop.shop.Shop;
 
 public class ShopPlaceListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
+    @SuppressWarnings("java:S3776")
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         Block block = event.getBlock();
@@ -70,6 +71,15 @@ public class ShopPlaceListener implements Listener {
                 return;
             }
 
+            ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player);
+            Bukkit.getPluginManager().callEvent(shopCreateEvent);
+
+            if (shopCreateEvent.isCancelled()) {
+                shopCreateEvent.applyCancelled(event.getPlayer());
+                event.setCancelled(true);
+                return;
+            }
+
             handleFinalPlace(player, block, chest);
         } else {
             if (nextToShop) {
@@ -90,24 +100,18 @@ public class ShopPlaceListener implements Listener {
         PersistentDataContainer container = chest.getPersistentDataContainer();
 
         Location location = block.getLocation();
-        Shop shop = new Shop(player.getUniqueId(), null, location);
+        Shop shop = new Shop(player.getUniqueId(), new ItemStack(Material.STONE), location);
+        shop.setAmount(100000);
+
         shop.create().thenAcceptAsync(created -> {
             if (created == null) {
                 player.sendMessage(MessageManager.getShopCreatedFailureComponent());
                 return;
             }
 
-            BukkitApi.getInstance().getShopManager().getVisualizerTask().addVisualizer(shop);
-            BukkitApi.getInstance().getShopManager().getVisualizerTask().addPlayer(player, shop);
             BukkitApi.getInstance().getShopManager().addShop(shop);
-
             container.set(Shop.SHOP_KEY, PersistentDataType.STRING, shop.getUuid().toString());
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    chest.update();
-                }
-            }.runTask(BukkitMain.getInstance());
+            chest.update();
 
             player.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
         }).exceptionally(throwable -> {
