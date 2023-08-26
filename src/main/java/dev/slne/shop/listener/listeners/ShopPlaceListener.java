@@ -1,5 +1,7 @@
 package dev.slne.shop.listener.listeners;
 
+import dev.slne.data.api.DataApi;
+import dev.slne.shop.util.ShopUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,37 +27,25 @@ public class ShopPlaceListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     @SuppressWarnings("java:S3776")
     public void onBlockPlace(BlockPlaceEvent event) {
-        Player player = event.getPlayer();
-        Block block = event.getBlock();
+        final Player player = event.getPlayer();
+        final Block block = event.getBlock();
 
-        Material type = block.getType();
-        if (!type.equals(Material.CHEST)) {
+        if (!(block.getState() instanceof Chest chest)) {
             return;
         }
 
-        Chest chest = (Chest) block.getState();
-        ItemStack handItem = event.getItemInHand();
-        PersistentDataContainer handItemContainer = handItem.getItemMeta().getPersistentDataContainer();
+        final ItemStack handItem = event.getItemInHand();
+        final PersistentDataContainer handItemContainer = handItem.getItemMeta().getPersistentDataContainer();
 
         boolean handItemIsShop = handItem.hasItemMeta() && handItemContainer.has(Shop.SHOP_KEY);
         boolean nextToChest = false;
         boolean nextToShop = false;
 
-        BlockFace[] possibleNextTo = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH,
-                BlockFace.WEST };
+        for (Chest surroundingChests : ShopUtils.getSurroundingBlockStates(block, Chest.class)) {
+            nextToChest = true;
 
-        for (BlockFace face : possibleNextTo) {
-            Block relative = block.getRelative(face);
-            if (relative.getType().equals(Material.CHEST)) {
-                nextToChest = true;
-
-                Chest relativeChest = (Chest) relative.getState();
-                PersistentDataContainer container = relativeChest.getPersistentDataContainer();
-
-                if (container.has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
-                    nextToShop = true;
-                }
-
+            if (surroundingChests.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
+                nextToShop = true;
                 break;
             }
         }
@@ -72,14 +62,17 @@ public class ShopPlaceListener implements Listener {
             }
 
             ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player);
-            Bukkit.getPluginManager().callEvent(shopCreateEvent);
 
-            if (shopCreateEvent.isCancelled()) {
+            System.out.println("shopCreateEvent = " + shopCreateEvent);
+
+            if (!shopCreateEvent.callEvent()) {
+                System.out.println("shopCreateEvent.isCancelled() = " + shopCreateEvent.isCancelled());
                 shopCreateEvent.applyCancelled(event.getPlayer());
                 event.setCancelled(true);
                 return;
             }
 
+            System.out.println("shopCreateEvent.isCancelled() = " + shopCreateEvent.isCancelled());
             handleFinalPlace(player, block, chest);
         } else {
             if (nextToShop) {
@@ -97,11 +90,14 @@ public class ShopPlaceListener implements Listener {
      * @param chest  the chest
      */
     private void handleFinalPlace(Player player, Block block, Chest chest) {
-        PersistentDataContainer container = chest.getPersistentDataContainer();
+        System.out.println("handleFinalPlace");
+        final PersistentDataContainer container = chest.getPersistentDataContainer();
+        final Location location = block.getLocation();
+        final Shop shop = new Shop(player.getUniqueId(), new ItemStack(Material.STONE), location);
 
-        Location location = block.getLocation();
-        Shop shop = new Shop(player.getUniqueId(), new ItemStack(Material.STONE), location);
-        shop.setAmount(100000);
+        System.out.println("shop = " + shop);
+
+        shop.setAmount(100000); // TODO: 26.08.2023 remove this line when finished with testing
 
         shop.create().thenAcceptAsync(created -> {
             if (created == null) {
@@ -115,7 +111,7 @@ public class ShopPlaceListener implements Listener {
 
             player.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
         }).exceptionally(throwable -> {
-            throwable.printStackTrace();
+            DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
             player.sendMessage(MessageManager.getShopCreatedFailureComponent());
             return null;
         });

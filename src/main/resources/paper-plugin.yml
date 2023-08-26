@@ -2,49 +2,53 @@ name: SurfShop
 version: 1.0-SNAPSHOT
 description: SurfShop
 api-version: "1.20"
-api: ["1.20", "1.20.1"]
+api: [ "1.20", "1.20.1" ]
 
 loader: dev.slne.shop.BukkitLoader
 
 main: dev.slne.shop.BukkitMain
 
 dependencies:
-    server:
-        SurfData:
-            join-classpath: true
-            load: BEFORE
-            required: true
-        CommandAPI:
-            join-classpath: true
-            load: BEFORE
-            required: true
+  server:
+    SurfDataBukkit:
+      join-classpath: true
+      load: BEFORE
+      required: true
+    CommandAPI:
+      join-classpath: true
+      load: BEFORE
+      required: true
+    SurfGui:
+      join-classpath: true
+      load: BEFORE
+      required: true
 
 permissions:
-    surf.shop.*:
-        default: "false"
-        children:
-            surf.shop.item.menu.back-item: true
-            surf.shop.item.menu.close-item: true
+  surf.shop.*:
+    default: "false"
+    children:
+      surf.shop.item.menu.back-item: true
+      surf.shop.item.menu.close-item: true
 
-            surf.shop.item.main-menu.sell: true
-            surf.shop.item.main-menu.owner: true
-            surf.shop.item.main-menu.edit: true
-            surf.shop.item.main-menu.info: true
-            surf.shop.item.main-menu.shop-item: true
-            surf.shop.item.main-menu.buy: true
+      surf.shop.item.main-menu.sell: true
+      surf.shop.item.main-menu.owner: true
+      surf.shop.item.main-menu.edit: true
+      surf.shop.item.main-menu.info: true
+      surf.shop.item.main-menu.shop-item: true
+      surf.shop.item.main-menu.buy: true
 
-            surf.shop.item.sell-menu.owner: true
-            surf.shop.item.sell-menu.info: true
-            surf.shop.item.sell-menu.buy: true
-            surf.shop.item.sell-menu.reset: true
-            surf.shop.item.sell-menu.shop-item: true
-            surf.shop.item.sell-menu.decrease-1000: true
-            surf.shop.item.sell-menu.decrease-100: true
-            surf.shop.item.sell-menu.decrease-10: true
-            surf.shop.item.sell-menu.decrease-1: true
-            surf.shop.item.sell-menu.increase-1: true
-            surf.shop.item.sell-menu.increase-10: true
-            surf.shop.item.sell-menu.increase-100: true
-            surf.shop.item.sell-menu.increase-1000: true
+      surf.shop.item.sell-menu.owner: true
+      surf.shop.item.sell-menu.info: true
+      surf.shop.item.sell-menu.buy: true
+      surf.shop.item.sell-menu.reset: true
+      surf.shop.item.sell-menu.shop-item: true
+      surf.shop.item.sell-menu.decrease-1000: true
+      surf.shop.item.sell-menu.decrease-100: true
+      surf.shop.item.sell-menu.decrease-10: true
+      surf.shop.item.sell-menu.decrease-1: true
+      surf.shop.item.sell-menu.increase-1: true
+      surf.shop.item.sell-menu.increase-10: true
+      surf.shop.item.sell-menu.increase-100: true
+      surf.shop.item.sell-menu.increase-1000: true
 
-            surf.shop.give: true
+      surf.shop.give: true

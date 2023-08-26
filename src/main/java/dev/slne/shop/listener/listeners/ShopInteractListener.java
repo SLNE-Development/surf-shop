@@ -1,5 +1,6 @@
 package dev.slne.shop.listener.listeners;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.Material;
@@ -31,34 +32,37 @@ public class ShopInteractListener implements Listener {
         }
 
         EquipmentSlot hand = event.getHand();
-        if (!hand.equals(EquipmentSlot.HAND)) {
+        if (!Objects.equals(hand, EquipmentSlot.HAND)) {
             return;
         }
 
-        Block block = event.getClickedBlock();
+        final Block block = event.getClickedBlock();
         if (block == null) {
             return;
         }
 
-        if (!block.getType().equals(Material.CHEST)) {
+        if (!(block.getState() instanceof Chest chest)) {
             return;
         }
 
-        Chest chest = (Chest) block.getState();
-        PersistentDataContainer container = chest.getPersistentDataContainer();
+        final PersistentDataContainer container = chest.getPersistentDataContainer();
+
         if (!container.has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
             return;
         }
 
-        String shopUuidString = container.get(Shop.SHOP_KEY, PersistentDataType.STRING);
-        UUID shopUuid = UUID.fromString(shopUuidString);
-        Shop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
+        final String shopUuidString = container.get(Shop.SHOP_KEY, PersistentDataType.STRING);
+
+        assert shopUuidString != null;
+
+        final UUID shopUuid = UUID.fromString(shopUuidString);
+        final Shop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
 
         if (shop == null) {
             return;
         }
 
-        Player player = event.getPlayer();
+        final Player player = event.getPlayer();
         boolean isOwner = shop.isOwner(player);
         boolean isMember = shop.isMember(player);
 

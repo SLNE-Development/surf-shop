@@ -5,16 +5,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import org.bukkit.entity.Player;
-
-import dev.slne.data.core.instance.DataApi;
+import dev.slne.data.api.DataApi;
+import dev.slne.shop.shop.visualizer.ShopVisualizer;
 import dev.slne.shop.shop.visualizer.ShopVisualizerTask;
+import dev.slne.shop.shop.visualizer.ShopVisualizerTaskAsync;
+import org.bukkit.entity.Player;
 
 public class ShopManager {
 
     private List<Shop> shops;
     private boolean fetched;
-    private ShopVisualizerTask visualizerTask;
+    private final ShopVisualizerTask visualizerTask;
 
     /**
      * A new {@link ShopManager} instance
@@ -45,7 +46,7 @@ public class ShopManager {
 
             return fetchedShops;
         }).exceptionally(throwable -> {
-            throwable.printStackTrace();
+            DataApi.getDataInstance().logError(getClass(), "Failed to fetch shops", throwable);
             return null;
         });
     }

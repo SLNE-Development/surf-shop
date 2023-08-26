@@ -1,26 +1,12 @@
 package dev.slne.shop.shop;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-
+import com.google.common.base.MoreObjects;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
-
-import dev.slne.data.core.instance.DataApi;
-import dev.slne.data.core.web.WebRequest;
+import dev.slne.data.api.DataApi;
+import dev.slne.data.api.web.WebRequest;
 import dev.slne.shop.BukkitMain;
 import dev.slne.shop.api.API;
 import dev.slne.shop.api.BukkitGsonConverter;
@@ -30,6 +16,16 @@ import dev.slne.shop.shop.member.ShopMember;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class Shop {
 
@@ -77,6 +73,8 @@ public class Shop {
     private boolean locked;
     private Player lockedByPlayer;
 
+    private boolean deleting = false;
+
     /**
      * A new {@link Shop} instance
      *
@@ -114,36 +112,36 @@ public class Shop {
         List<Shop> shops = new ArrayList<>();
 
         return request.executeGet().thenApplyAsync(response -> {
-            int statusCode = response.getStatusCode();
+            int statusCode = response.statusCode();
 
-            if (!(statusCode >= 200 || statusCode < 300)) {
+            if (!(statusCode >= 200 || statusCode < 300)) { // TODO: Condition '!(statusCode >= 200 || statusCode < 300)' is always 'false'
                 DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops");
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                DataApi.getDataInstance().logError(Shop.class, response.body().toString());
                 return null;
             }
 
             BukkitGsonConverter gson = new BukkitGsonConverter();
-            Object body = response.getBody();
+            Object body = response.body();
             String bodyString = body.toString();
             JsonElement bodyElement = gson.fromJson(bodyString, JsonElement.class);
 
             if (!bodyElement.isJsonObject()) {
                 DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops");
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                DataApi.getDataInstance().logError(Shop.class, response.body().toString());
                 return null;
             }
 
             JsonObject bodyObject = bodyElement.getAsJsonObject();
             if (!bodyObject.has("data")) {
                 DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops");
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                DataApi.getDataInstance().logError(Shop.class, response.body().toString());
                 return null;
             }
 
             JsonElement dataElement = bodyObject.get("data");
             if (!dataElement.isJsonArray()) {
                 DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops");
-                DataApi.getDataInstance().logError(Shop.class, response.getBody().toString());
+                DataApi.getDataInstance().logError(Shop.class, response.body().toString());
                 return null;
             }
 
@@ -160,8 +158,7 @@ public class Shop {
 
             return shops;
         }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops");
-            exception.printStackTrace();
+            DataApi.getDataInstance().logError(Shop.class, "Failed to fetch shops", exception);
             return null;
         });
     }
@@ -172,27 +169,36 @@ public class Shop {
      * @return the shop
      */
     public CompletableFuture<Shop> create() {
-        WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(API.SHOPS).build();
+        System.out.println("Creating shop");
+        WebRequest request = WebRequest.builder()
+                .json(true)
+                .parameters(toParameters())
+                .url(API.SHOPS)
+                .build();
 
         return request.executePost().thenApplyAsync(response -> {
-            int statusCode = response.getStatusCode();
+            int statusCode = response.statusCode();
 
-            if (!(statusCode >= 200 || statusCode < 300)) {
+            System.out.println("statusCode = " + statusCode);
+
+            if (!(statusCode >= 200 || statusCode < 300)) { // TODO: 26.08.2023 Condition '!(statusCode >= 200 || statusCode < 300)' is always 'false'
                 BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
             }
 
             BukkitGsonConverter gson = new BukkitGsonConverter();
-            Object body = response.getBody();
+            Object body = response.body();
             String bodyString = body.toString();
             JsonElement bodyElement = gson.fromJson(bodyString, JsonElement.class);
 
             Shop newShop = fromBodyElement(bodyElement, true);
 
             if (newShop == null) {
+                System.out.println("newShop = " + null);
+
                 BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
             }
 
@@ -200,8 +206,8 @@ public class Shop {
 
             return this;
         }).exceptionally(exception -> {
-            BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
             exception.printStackTrace();
+            DataApi.getDataInstance().logError(getClass(), "Failed to create shop: " + uuid.toString(), exception);
             return null;
         });
     }
@@ -216,16 +222,16 @@ public class Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executePut().thenApplyAsync(response -> {
-            int statusCode = response.getStatusCode();
+            int statusCode = response.statusCode();
 
-            if (!(statusCode >= 200 || statusCode < 300)) {
+            if (!(statusCode >= 200 || statusCode < 300)) { // TODO: 26.08.2023 Condition '!(statusCode >= 200 || statusCode < 300)' is always 'false'
                 BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
             }
 
             BukkitGsonConverter gson = new BukkitGsonConverter();
-            Object body = response.getBody();
+            Object body = response.body();
             String bodyString = body.toString();
             JsonElement bodyElement = gson.fromJson(bodyString, JsonElement.class);
 
@@ -233,14 +239,13 @@ public class Shop {
 
             if (updatedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
             }
 
             return this;
         }).exceptionally(exception -> {
-            BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
-            exception.printStackTrace();
+            DataApi.getDataInstance().logError(getClass(), "Failed to update shop: " + uuid.toString(), exception);
             return null;
         });
     }
@@ -251,20 +256,24 @@ public class Shop {
      * @return the shop
      */
     public CompletableFuture<Shop> delete() {
+        deleting = true;
+
         String url = String.format(API.SHOP, uuid.toString());
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executeDelete().thenApplyAsync(response -> {
-            int statusCode = response.getStatusCode();
+            int statusCode = response.statusCode();
 
             if (!(statusCode >= 200 || statusCode < 300)) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
+
+                deleting = false;
                 return null;
             }
 
             BukkitGsonConverter gson = new BukkitGsonConverter();
-            Object body = response.getBody();
+            Object body = response.body();
             String bodyString = body.toString();
             JsonElement bodyElement = gson.fromJson(bodyString, JsonElement.class);
 
@@ -272,14 +281,18 @@ public class Shop {
 
             if (deletedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.getBody().toString());
+                BukkitMain.getInstance().getLogger().severe(response.body().toString());
+
+                deleting = false;
                 return null;
             }
 
+            deleting = false;
             return this;
         }).exceptionally(exception -> {
-            BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
-            exception.printStackTrace();
+            DataApi.getDataInstance().logError(getClass(), "Failed to delete shop: " + uuid.toString(), exception);
+
+            deleting = false;
             return null;
         });
     }
@@ -289,8 +302,8 @@ public class Shop {
      *
      * @return the parameter map
      */
-    private Map<String, String> toParameters() {
-        Map<String, String> parameters = new HashMap<>();
+    private Map<String, Object> toParameters() {
+        Map<String, Object> parameters = new HashMap<>();
 
         parameters.put("uuid", uuid.toString());
         parameters.put("owner_uuid", ownerUuid.toString());
@@ -583,7 +596,7 @@ public class Shop {
      * @param player the player
      * @return if the player is the owner
      */
-    public boolean isOwner(Player player) {
+    public boolean isOwner(OfflinePlayer player) {
         return ownerUuid != null && ownerUuid.equals(player.getUniqueId());
     }
 
@@ -593,8 +606,40 @@ public class Shop {
      * @param player the player
      * @return if the player is a member
      */
-    public boolean isMember(Player player) {
+    public boolean isMember(OfflinePlayer player) {
         return members != null
                 && members.stream().anyMatch(member -> member.getMemberUuid().equals(player.getUniqueId()));
+    }
+
+    /**
+     * Returns if the shop is currently deleting
+     *
+     * @return if the shop is currently deleting
+     * @since 1.0.0
+     */
+    public boolean isDeleting() {
+        return deleting;
+    }
+
+    @Override
+    public String toString() {
+
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
+                .add("uuid", uuid)
+                .add("ownerUuid", ownerUuid)
+                .add("itemStack", itemStack)
+                .add("amount", amount)
+                .add("worldName", worldName)
+                .add("x", x)
+                .add("y", y)
+                .add("z", z)
+                .add("sellAmount", sellAmount)
+                .add("sellPrice", sellPrice)
+                .add("members", members)
+                .add("locked", locked)
+                .add("lockedByPlayer", lockedByPlayer)
+                .add("deleting", deleting)
+                .toString();
     }
 }

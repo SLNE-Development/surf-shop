@@ -16,16 +16,11 @@ public class ShopWaterlogListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onWaterlog(PlayerBucketEmptyEvent event) {
-        Block block = event.getBlock();
-
-        if (!block.getType().equals(Material.CHEST)) {
+        if (!(event.getBlock().getState() instanceof Chest chest)) {
             return;
         }
 
-        Chest chest = (Chest) block.getState();
-        PersistentDataContainer container = chest.getPersistentDataContainer();
-
-        if (container.has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
+        if (chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
             event.setCancelled(true);
         }
     }

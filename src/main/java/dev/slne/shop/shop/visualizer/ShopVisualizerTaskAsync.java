@@ -1,35 +1,30 @@
 package dev.slne.shop.shop.visualizer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-
 import dev.slne.shop.BukkitMain;
 import dev.slne.shop.instance.BukkitApi;
 import dev.slne.shop.shop.Shop;
-import org.jetbrains.annotations.NotNull;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
-public class ShopVisualizerTask extends BukkitRunnable {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
-    private Map<Shop, ShopVisualizer> visualizers;
+public class ShopVisualizerTaskAsync {
+    private ScheduledTask task = null;
+    private final Map<Shop, ShopVisualizer> visualizers;
 
-    /**
-     * A new {@link ShopVisualizerTask} instance
-     */
-    public ShopVisualizerTask() {
-        this.visualizers = new HashMap<>();
+    public ShopVisualizerTaskAsync() {
+        this.visualizers = new ConcurrentHashMap<>();
     }
 
-    @Override
-    public void run() {
+    /**
+     * Runs the task
+     */
+    private void run() {
         cleanupVisualizers();
 
         List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
@@ -60,32 +55,21 @@ public class ShopVisualizerTask extends BukkitRunnable {
      * Starts the task
      */
     public void start() {
-        try {
-            this.runTaskTimer(BukkitMain.getInstance(), 0, 1 * 20L);
-        } catch (Exception exception) {
-            // IGNORE
-        }
+        Bukkit.getAsyncScheduler().runAtFixedRate(BukkitMain.getInstance(), scheduledTask -> {
+            task = scheduledTask;
+            run();
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     /**
      * Stops the task
      */
     public void stop() {
-        try {
-            if (!this.isCancelled()) {
-                this.cancel();
-            }
-        } catch (Exception exception) {
-            // IGNORE
+        if (task != null) {
+            task.cancel();
         }
     }
 
-    /**
-     * @return the visualizers
-     */
-    public Map<Shop, ShopVisualizer> getVisualizers() {
-        return visualizers;
-    }
 
     /**
      * Removes a visualizer
@@ -110,5 +94,12 @@ public class ShopVisualizerTask extends BukkitRunnable {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).spawn(player);
         }
+    }
+
+    /**
+     * @return the visualizers
+     */
+    public Map<Shop, ShopVisualizer> getVisualizers() {
+        return visualizers;
     }
 }

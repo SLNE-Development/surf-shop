@@ -182,7 +182,7 @@ public class ItemUtils {
      * @return the shop sell item
      */
     public static ItemStack sellItem(Shop shop) {
-        ItemStack toReturn = null;
+        ItemStack toReturn;
 
         if (shop.getItemStack() == null) {
             toReturn = disabledItem();
@@ -222,7 +222,7 @@ public class ItemUtils {
         lore.add(Component.empty());
 
         return item(Material.OAK_SIGN, 1, 0, Component.text("Info", NamedTextColor.GOLD),
-                lore.stream().toArray(size -> new Component[size]));
+                lore.toArray(Component[]::new));
     }
 
     /**

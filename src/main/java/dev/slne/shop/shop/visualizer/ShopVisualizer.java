@@ -1,57 +1,55 @@
 package dev.slne.shop.shop.visualizer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.util.Quaternion4f;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.util.Vector3f;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
+import dev.slne.shop.BukkitMain;
+import dev.slne.shop.shop.Shop;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
-import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
-import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
-import com.github.retrooper.packetevents.util.Vector3d;
-import com.github.retrooper.packetevents.util.Vector3f;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
-
-import dev.slne.shop.BukkitMain;
-import dev.slne.shop.shop.Shop;
-import io.github.retrooper.packetevents.util.SpigotConversionUtil;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShopVisualizer {
+
+    private static final GsonComponentSerializer gsonComponentSerializer = GsonComponentSerializer.gson();
 
     private static final double ABOVE_SHOP_HEIGHT = 1.25;
     private static final double LINE_HEIGHT = 0.35;
     private static final double MATERIAL_LINES_SPACING = 0.35;
 
-    private static final float MATERIAL_SCALE = 0.5f;
+    private static final float MATERIAL_SCALE = 0.65f;
     private static final float LINE_SCALE = 0.75f;
 
     private static final int RANGE_SQUARED = (int) Math.pow(10, 2);
 
-    private Shop shop;
-    private Map<UUID, List<Integer>> playerEntityIds;
+    private final Shop shop;
+    private final Map<UUID, List<Integer>> playerEntityIds;
 
     /**
      * A new {@link ShopVisualizer} instance
      */
     public ShopVisualizer(Shop shop) {
         this.shop = shop;
-        this.playerEntityIds = new HashMap<>();
+        this.playerEntityIds = new ConcurrentHashMap<>();
     }
 
     /**
@@ -85,7 +83,7 @@ public class ShopVisualizer {
      * @return true if the player is in range, otherwise false
      */
     private boolean isInRange(Player player, int rangeSquared) {
-        Location shopLocation = getShopLocation();
+        final Location shopLocation = getShopLocation();
 
         if (shopLocation == null) {
             return false;
@@ -104,7 +102,7 @@ public class ShopVisualizer {
      * @param player the player
      */
     public void spawn(Player player) {
-        Location shopLocation = getShopLocation();
+        final Location shopLocation = getShopLocation();
 
         if (shopLocation == null) {
             return;
@@ -119,10 +117,11 @@ public class ShopVisualizer {
         int shopZ = shopLocation.getBlockZ();
 
         // Material
-        if (getMaterial() != null) {
+        final Material sellItemMaterial = getSellItemMaterial();
+        if (sellItemMaterial != null) {
             double materialY = shopY + calculateMaterialHeight();
 
-            spawnMaterial(player, shopX, materialY, shopZ, getMaterial());
+            spawnMaterial(player, shopX, materialY, shopZ, sellItemMaterial);
         }
 
         // Lines
@@ -198,23 +197,22 @@ public class ShopVisualizer {
         int entityId = spawnPacketEntity(player, EntityTypes.ITEM_DISPLAY, x, y, z);
 
         // Defaults
-        Vector3f scale = new Vector3f(MATERIAL_SCALE, MATERIAL_SCALE, MATERIAL_SCALE);
-        BillboardConstraint billboardConstraint = BillboardConstraint.CENTER;
-        int billboardConstraintOrdinal = billboardConstraint.ordinal();
-        byte billboardConstraintByte = (byte) billboardConstraintOrdinal;
+        final Vector3f scale = new Vector3f(MATERIAL_SCALE, MATERIAL_SCALE, MATERIAL_SCALE);
+        final BillboardConstraint billboardConstraint = BillboardConstraint.CENTER;
+        byte billboardConstraintByte = (byte) billboardConstraint.getId();
 
         // Slot
-        ItemStack bukkitItemStack = new ItemStack(material);
-        com.github.retrooper.packetevents.protocol.item.ItemStack packetItemStack = SpigotConversionUtil
+        final ItemStack bukkitItemStack = new ItemStack(material);
+        final com.github.retrooper.packetevents.protocol.item.ItemStack packetItemStack = SpigotConversionUtil
                 .fromBukkitItemStack(bukkitItemStack);
 
         // Display Type
-        DisplayType displayType = DisplayType.NONE;
-        int displayTypeOrdinal = displayType.ordinal();
-        byte displayTypeByte = (byte) displayTypeOrdinal;
+        final DisplayType displayType = DisplayType.NONE;
+        byte displayTypeByte = (byte) displayType.getId();
 
-        List<EntityData> entityData = new ArrayList<>();
+        final List<EntityData> entityData = new ArrayList<>();
 
+        // see https://wiki.vg/Entity_metadata#Display and https://wiki.vg/Entity_metadata#Item_Display
         entityData.add(new EntityData(11, EntityDataTypes.VECTOR3F, scale));
         entityData.add(new EntityData(14, EntityDataTypes.BYTE, billboardConstraintByte));
         entityData.add(new EntityData(22, EntityDataTypes.ITEMSTACK, packetItemStack));
@@ -232,47 +230,22 @@ public class ShopVisualizer {
      * @param z         the z coordinate
      * @param component the component
      */
-    @SuppressWarnings({ "java:S2583", "java:S2589" })
+    @SuppressWarnings({"java:S2583", "java:S2589"})
     private void spawnLine(Player player, double x, double y, double z, Component component) {
         int entityId = spawnPacketEntity(player, EntityTypes.TEXT_DISPLAY, x, y, z);
 
         // Defaults
-        Vector3f scale = new Vector3f(LINE_SCALE, LINE_SCALE, LINE_SCALE);
-        BillboardConstraint billboardConstraint = BillboardConstraint.CENTER;
-        int billboardConstraintOrdinal = billboardConstraint.ordinal();
-        byte billboardConstraintByte = (byte) billboardConstraintOrdinal;
+        final Vector3f scale = new Vector3f(LINE_SCALE, LINE_SCALE, LINE_SCALE);
+        final BillboardConstraint billboardConstraint = BillboardConstraint.CENTER;
+        byte billboardConstraintByte = (byte) billboardConstraint.getId();
 
         // Text
-        GsonComponentSerializer gsonComponentSerializer = GsonComponentSerializer.gson();
-        Component text = component != null ? component : Component.empty();
-        String textJson = gsonComponentSerializer.serialize(text);
+        final Component text = component != null ? component : Component.empty();
+        final String textJson = gsonComponentSerializer.serialize(text);
         int lineWidth = 200;
         int backgroundColor = 0x40000000;
         byte textOpacity = (byte) -1;
-
-        // Bit Mask 0x01 has shadow
-        // Bit Mask 0x02 is see through
-        // Bit Mask 0x04 use default background color
-        // Bit Mask 0x08 alignment 0 = center, 1 or 3 left, 2 right
-        boolean hasShadow = false;
-        boolean isSeeThrough = false;
-        boolean useDefaultBackgroundColor = false;
-        int alignment = 0;
-        byte bitMask = 0;
-
-        if (hasShadow) {
-            bitMask |= 0x01;
-        }
-
-        if (isSeeThrough) {
-            bitMask |= 0x02;
-        }
-
-        if (useDefaultBackgroundColor) {
-            bitMask |= 0x04;
-        }
-
-        bitMask |= alignment << 3;
+        byte bitMask = TextDisplayBitMask.createBitMask();
         List<EntityData> entityData = new ArrayList<>();
 
         entityData.add(new EntityData(11, EntityDataTypes.VECTOR3F, scale));
@@ -293,14 +266,7 @@ public class ShopVisualizer {
      * @param player the player
      */
     private void destroyEntities(Player player) {
-        Entry<UUID, List<Integer>> playerEntry = this.playerEntityIds.entrySet().stream()
-                .filter(entry -> entry.getKey().equals(player.getUniqueId())).findFirst().orElse(null);
-
-        if (playerEntry == null) {
-            return;
-        }
-
-        List<Integer> entityIds = playerEntry.getValue();
+        List<Integer> entityIds = playerEntityIds.get(player.getUniqueId());
 
         if (entityIds == null) {
             return;
@@ -321,7 +287,7 @@ public class ShopVisualizer {
      * @param entityData the entity data
      */
     private void sendMetadata(Player player, int entityId, List<EntityData> entityData) {
-        WrapperPlayServerEntityMetadata entityMetadata = new WrapperPlayServerEntityMetadata(entityId, entityData);
+        final WrapperPlayServerEntityMetadata entityMetadata = new WrapperPlayServerEntityMetadata(entityId, entityData);
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, entityMetadata);
     }
 
@@ -364,7 +330,13 @@ public class ShopVisualizer {
      * @return the random entity id
      */
     private int getRandomEntityId() {
-        return BukkitMain.getInstance().getRandom().nextInt(1000000);
+        final AtomicInteger randomId = new AtomicInteger(BukkitMain.getInstance().getRandom().nextInt(1_000_000));
+
+        while (playerEntityIds.values().stream().flatMap(List::stream).anyMatch(integer -> integer.equals(randomId.get()))) { // Get a new random id if the id is already used
+            randomId.set(BukkitMain.getInstance().getRandom().nextInt(1_000_000));
+        }
+
+        return randomId.get();
     }
 
     /**
@@ -411,7 +383,7 @@ public class ShopVisualizer {
     /**
      * @return the material
      */
-    public Material getMaterial() {
+    public Material getSellItemMaterial() {
         return shop.getItemStack() != null ? shop.getItemStack().getType() : Material.BARRIER;
     }
 

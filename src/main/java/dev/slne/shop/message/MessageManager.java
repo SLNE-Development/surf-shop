@@ -1,16 +1,15 @@
 package dev.slne.shop.message;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MessageManager {
 
@@ -272,5 +271,9 @@ public class MessageManager {
         return prefix().append(Component.text("Dein Inventar kann die Menge von ", ERROR))
                 .append(Component.text(amount, VARIABLE_VALUE)).append(Component.text(" Items", VARIABLE_VALUE))
                 .append(Component.text(" nicht aufnehmen.", ERROR));
+    }
+
+    public static Component getShopAlreadyRemovingComponent() {
+        return prefix().append(Component.text("Der Shop wird bereits entfernt.", ERROR));
     }
 }

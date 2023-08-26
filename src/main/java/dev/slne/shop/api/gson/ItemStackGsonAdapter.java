@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.google.common.reflect.TypeToken;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -18,13 +19,14 @@ import com.google.gson.JsonSerializer;
 public class ItemStackGsonAdapter implements JsonSerializer<ItemStack>, JsonDeserializer<ItemStack> {
 
     @Override
-    public ItemStack deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-            throws JsonParseException {
+    public ItemStack deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         if (json.isJsonNull() || !json.isJsonObject()) {
             return null;
         }
 
-        Map<String, Object> serialized = context.deserialize(json, Map.class);
+        Type type = new TypeToken<Map<String, Object>>() {
+        }.getType();
+        Map<String, Object> serialized = context.deserialize(json, type);
 
         System.out.println("Deserialized: ");
         System.out.println(serialized);
@@ -55,7 +57,7 @@ public class ItemStackGsonAdapter implements JsonSerializer<ItemStack>, JsonDese
         System.out.println("Serialized: ");
         System.out.println(toSave);
 
-        return context.serialize(toSave);
+        return context.serialize(src.serialize()); // TODO: 26.08.2023 Test this
     }
 
 }

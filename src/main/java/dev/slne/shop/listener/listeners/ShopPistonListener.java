@@ -52,13 +52,6 @@ public class ShopPistonListener implements Listener {
      * @return true if the block is a shop
      */
     private boolean handlePiston(Block block) {
-        if (!block.getType().equals(Material.CHEST)) {
-            return false;
-        }
-
-        Chest chest = (Chest) block.getState();
-        PersistentDataContainer container = chest.getPersistentDataContainer();
-
-        return container.has(Shop.SHOP_KEY, PersistentDataType.STRING);
+        return block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
     }
 }

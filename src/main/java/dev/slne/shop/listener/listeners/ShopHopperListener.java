@@ -1,14 +1,13 @@
 package dev.slne.shop.listener.listeners;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import dev.slne.shop.shop.Shop;
+import dev.slne.shop.util.ShopUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Hopper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -19,20 +18,23 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import dev.slne.shop.shop.Shop;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class ShopHopperListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onHopperItemMove(InventoryMoveItemEvent event) {
-        Inventory source = event.getSource();
-        Inventory destination = event.getDestination();
+        final Inventory source = event.getSource();
+        final Inventory destination = event.getDestination();
 
-        Chest sourceChest = getChest(source);
-        Chest destinationChest = getChest(destination);
+        final Chest sourceChest = getChest(source);
+        final Chest destinationChest = getChest(destination);
 
         if (sourceChest != null && handleChest(sourceChest)) {
             event.setCancelled(true);
@@ -46,7 +48,7 @@ public class ShopHopperListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("java:S2583")
     public void onHopperPlace(BlockPlaceEvent event) {
-        Block block = event.getBlock();
+        final Block block = event.getBlock();
 
         if (!block.getType().equals(Material.HOPPER)) {
             return;
@@ -122,20 +124,24 @@ public class ShopHopperListener implements Listener {
      */
     private List<Block> moveBlocksInDirection(BlockFace moveDirection, List<Block> blocks) {
         List<Block> movedBlocks = new ArrayList<>();
-        Map<BlockFace, int[]> blockFaceMap = Map.of(BlockFace.NORTH, new int[] { 0, 0, -1 },
-                BlockFace.EAST, new int[] { 1, 0, 0 }, BlockFace.SOUTH, new int[] { 0, 0, 1 },
-                BlockFace.WEST, new int[] { -1, 0, 0 }, BlockFace.UP, new int[] { 0, 1, 0 },
-                BlockFace.DOWN, new int[] { 0, -1, 0 });
+        Map<BlockFace, Vector> blockFaceMap = Map.of(
+                BlockFace.NORTH, new Vector(0, 0, -1),
+                BlockFace.EAST, new Vector(1, 0, 0),
+                BlockFace.SOUTH, new Vector(0, 0, 1),
+                BlockFace.WEST, new Vector(-1, 0, 0),
+                BlockFace.UP, new Vector(0, 1, 0),
+                BlockFace.DOWN, new Vector(0, -1, 0)
+        );
 
         for (Block block : blocks) {
             Location location = block.getLocation();
-            int[] move = blockFaceMap.get(moveDirection);
+            Vector move = blockFaceMap.get(moveDirection);
 
             if (move == null) {
                 continue;
             }
 
-            Location newLocation = location.clone().add(move[0], move[1], move[2]);
+            Location newLocation = location.clone().add(move);
             movedBlocks.add(location.getWorld().getBlockAt(newLocation));
         }
 
@@ -159,18 +165,9 @@ public class ShopHopperListener implements Listener {
      * @return true if the block is a shop
      */
     private boolean aroundIsShop(Block block) {
-        BlockFace[] faces = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST,
-                BlockFace.UP, BlockFace.DOWN };
-
-        for (BlockFace face : faces) {
-            Block relative = block.getRelative(face);
-
-            if (relative.getType().equals(Material.CHEST)) {
-                Chest chest = (Chest) relative.getState();
-
-                if (handleChest(chest)) {
-                    return true;
-                }
+        for (Chest surroundingChests : ShopUtils.getSurroundingBlockStates(block, Chest.class)) {
+            if (handleChest(surroundingChests)) {
+                return true;
             }
         }
 
@@ -184,18 +181,7 @@ public class ShopHopperListener implements Listener {
      * @return true if the block is a hopper
      */
     private boolean aroundIsHopper(Block block) {
-        BlockFace[] faces = new BlockFace[] { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST,
-                BlockFace.UP, BlockFace.DOWN };
-
-        for (BlockFace face : faces) {
-            Block relative = block.getRelative(face);
-
-            if (relative.getType().equals(Material.HOPPER)) {
-                return true;
-            }
-        }
-
-        return false;
+        return !ShopUtils.getSurroundingBlockStates(block, Hopper.class).isEmpty();
     }
 
     /**
@@ -205,7 +191,7 @@ public class ShopHopperListener implements Listener {
      * @return the chest
      */
     private Chest getChest(Inventory inventory) {
-        InventoryHolder holder = inventory.getHolder();
+        final InventoryHolder holder = inventory.getHolder();
 
         if (holder instanceof Chest chest) {
             return chest;
@@ -220,10 +206,8 @@ public class ShopHopperListener implements Listener {
      * @param chest the chest
      * @return true if the chest is a shop
      */
-    private boolean handleChest(Chest chest) {
-        PersistentDataContainer container = chest.getPersistentDataContainer();
-
-        return container.has(Shop.SHOP_KEY, PersistentDataType.STRING);
+    private boolean handleChest(@NotNull Chest chest) {
+        return chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
     }
 
 }
