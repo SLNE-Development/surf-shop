@@ -7,7 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.persistence.PersistentDataType;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 
 public class ShopWaterlogListener implements Listener {
 
@@ -17,7 +17,7 @@ public class ShopWaterlogListener implements Listener {
             return;
         }
 
-        if (chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
+        if (chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
             event.setCancelled(true);
         }
     }

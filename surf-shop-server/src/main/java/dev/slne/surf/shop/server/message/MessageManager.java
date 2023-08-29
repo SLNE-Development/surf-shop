@@ -39,7 +39,7 @@ public class MessageManager {
      * @return the prefix
      */
     public static Component prefix() {
-        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("Shop", PRIMARY))
+        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("ServerShop", PRIMARY))
                 .append(Component.text(" | ", NamedTextColor.DARK_GRAY));
     }
 
@@ -50,7 +50,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceShopNextToChestComponent() {
-        return prefix().append(Component.text("Du kannst keinen Shop neben einer Kiste platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keinen ServerShop neben einer Kiste platzieren.", ERROR));
     }
 
     /**
@@ -60,7 +60,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceShopNextToShopComponent() {
-        return prefix().append(Component.text("Du kannst keinen Shop neben einem Shop platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keinen ServerShop neben einem ServerShop platzieren.", ERROR));
     }
 
     /**
@@ -70,7 +70,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceChestNextToShopComponent() {
-        return prefix().append(Component.text("Du kannst keine Kiste neben einem Shop platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keine Kiste neben einem ServerShop platzieren.", ERROR));
     }
 
     /**
@@ -79,7 +79,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopCreatedSuccessfullyComponent() {
-        return prefix().append(Component.text("Dein Shop wurde erfolgreich erstellt.", SUCCESS));
+        return prefix().append(Component.text("Dein ServerShop wurde erfolgreich erstellt.", SUCCESS));
     }
 
     /**
@@ -89,7 +89,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopRemovedSuccessfullyComponent() {
-        return prefix().append(Component.text("Dein Shop wurde erfolgreich entfernt.", SUCCESS));
+        return prefix().append(Component.text("Dein ServerShop wurde erfolgreich entfernt.", SUCCESS));
     }
 
     /**
@@ -99,7 +99,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopCreatedFailureComponent() {
-        return prefix().append(Component.text("Dein Shop konnte nicht erstellt werden.", ERROR));
+        return prefix().append(Component.text("Dein ServerShop konnte nicht erstellt werden.", ERROR));
     }
 
     /**
@@ -109,7 +109,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopRemovedFailureComponent() {
-        return prefix().append(Component.text("Dein Shop konnte nicht entfernt werden.", ERROR));
+        return prefix().append(Component.text("Dein ServerShop konnte nicht entfernt werden.", ERROR));
     }
 
     /**
@@ -118,7 +118,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getPlayerNotOwningShopComponent() {
-        return prefix().append(Component.text("Dieser Shop gehört nicht dir.", ERROR));
+        return prefix().append(Component.text("Dieser ServerShop gehört nicht dir.", ERROR));
     }
 
     /**
@@ -143,15 +143,15 @@ public class MessageManager {
         Component message = null;
 
         if (isOwner) {
-            message = Component.text("Der Shop wurde durch den Besitzer ", INFO)
+            message = Component.text("Der ServerShop wurde durch den Besitzer ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         } else if (isMember) {
-            message = Component.text("Der Shop wurde durch ein Mitglied ", INFO)
+            message = Component.text("Der ServerShop wurde durch ein Mitglied ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         } else {
-            message = Component.text("Der Shop wurde durch ", INFO)
+            message = Component.text("Der ServerShop wurde durch ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         }
@@ -167,12 +167,12 @@ public class MessageManager {
      */
     public static Component getShopIsLockedComponent(Player lockedBy) {
         if (lockedBy != null) {
-            return prefix().append(Component.text("Der Shop wird aktuell durch ", INFO))
+            return prefix().append(Component.text("Der ServerShop wird aktuell durch ", INFO))
                     .append(lockedBy.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" verwendet.", INFO));
         }
 
-        return prefix().append(Component.text("Der Shop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
+        return prefix().append(Component.text("Der ServerShop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
     }
 
     /**
@@ -181,7 +181,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopIsNotSetupComponent() {
-        return prefix().append(Component.text("Der Shop wurde noch nicht eingerichtet.", ERROR));
+        return prefix().append(Component.text("Der ServerShop wurde noch nicht eingerichtet.", ERROR));
     }
 
     /**
@@ -274,6 +274,6 @@ public class MessageManager {
     }
 
     public static Component getShopAlreadyRemovingComponent() {
-        return prefix().append(Component.text("Der Shop wird bereits entfernt.", ERROR));
+        return prefix().append(Component.text("Der ServerShop wird bereits entfernt.", ERROR));
     }
 }

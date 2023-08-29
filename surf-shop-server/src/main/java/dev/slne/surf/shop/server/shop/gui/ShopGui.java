@@ -3,7 +3,7 @@ package dev.slne.surf.shop.server.shop.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui.utils.GuiUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryCloseEvent.Reason;
@@ -12,7 +12,7 @@ import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
 
 public abstract class ShopGui extends ChestGui {
 
-    private Shop shop;
+    private ServerShop shop;
     private ShopGui parent;
     private Player viewingPlayer;
 
@@ -25,7 +25,7 @@ public abstract class ShopGui extends ChestGui {
      * @param shop          the shop
      * @param viewingPlayer the player viewing the shop
      */
-    protected ShopGui(ShopGui parent, int rows, String title, Shop shop, Player viewingPlayer) {
+    protected ShopGui(ShopGui parent, int rows, String title, ServerShop shop, Player viewingPlayer) {
         this(parent, rows, title, shop, viewingPlayer, true, true, true, true);
     }
 
@@ -43,8 +43,8 @@ public abstract class ShopGui extends ChestGui {
      * @param cancelBottomDrag  if the bottom inventory drag should be cancelled
      */
     @SuppressWarnings("java:S107")
-    protected ShopGui(ShopGui parent, int rows, String title, Shop shop, Player viewingPlayer, boolean cancelTopClick,
-            boolean cancelTopDrag, boolean cancelBottomClick, boolean cancelBottomDrag) {
+    protected ShopGui(ShopGui parent, int rows, String title, ServerShop shop, Player viewingPlayer, boolean cancelTopClick,
+                      boolean cancelTopDrag, boolean cancelBottomClick, boolean cancelBottomDrag) {
         super(rows, title);
 
         if (rows < 2) {
@@ -123,7 +123,7 @@ public abstract class ShopGui extends ChestGui {
     /**
      * @return the shop
      */
-    public Shop getShop() {
+    public ServerShop getShop() {
         return shop;
     }
 

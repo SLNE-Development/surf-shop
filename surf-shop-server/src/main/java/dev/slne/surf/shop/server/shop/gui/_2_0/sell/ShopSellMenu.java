@@ -5,7 +5,7 @@ import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.listener.events.transaction.sell.ShopItemSellEvent;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui._2_0.ShopGui;
 import dev.slne.surf.shop.server.shop.gui.inventory.InventoryTransfer;
 import dev.slne.surf.shop.server.shop.gui.inventory.bukkit.LimitedShadowInventory;
@@ -35,8 +35,8 @@ public class ShopSellMenu extends ShopGui {
     private StaticPane shopPane;
     private int selectedAmount;
 
-    public ShopSellMenu(@NotNull Shop shop, @NotNull SurfGui parent, Player viewingPlayer) {
-        super(shop, parent, 8, Component.text("Shop - Kaufen"));
+    public ShopSellMenu(@NotNull ServerShop shop, @NotNull SurfGui parent, Player viewingPlayer) {
+        super(shop, parent, 8, Component.text("ServerShop - Kaufen"));
 
         this.viewingPlayer = viewingPlayer;
         this.selectedAmount = 0;

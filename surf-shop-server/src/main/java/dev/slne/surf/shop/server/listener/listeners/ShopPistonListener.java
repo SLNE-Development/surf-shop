@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
+import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
@@ -8,8 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.persistence.PersistentDataType;
-
-import dev.slne.surf.shop.server.shop.Shop;
 
 public class ShopPistonListener implements Listener {
 
@@ -50,6 +49,6 @@ public class ShopPistonListener implements Listener {
      * @return true if the block is a shop
      */
     private boolean handlePiston(Block block) {
-        return block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
+        return block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
     }
 }

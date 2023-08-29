@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -96,7 +96,7 @@ public class ShopHopperListener implements Listener {
      */
     private boolean itemIsShopItem(ItemStack itemStack) {
         return itemStack != null && itemStack.hasItemMeta()
-                && itemStack.getItemMeta().getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
+                && itemStack.getItemMeta().getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
     }
 
     /**
@@ -207,7 +207,7 @@ public class ShopHopperListener implements Listener {
      * @return true if the chest is a shop
      */
     private boolean handleChest(@NotNull Chest chest) {
-        return chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
+        return chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
     }
 
 }

@@ -3,7 +3,7 @@ package dev.slne.surf.shop.server.shop.gui._2_0;
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.ShopEditMainMenu;
 import dev.slne.surf.shop.server.shop.gui.utils.ItemUtils;
 import dev.slne.surf.shop.server.util.Permissions;
@@ -14,8 +14,8 @@ import org.jetbrains.annotations.NotNull;
 public class ShopMainMenu extends ShopGui {
     private final Player viewingPlayer;
 
-    public ShopMainMenu(@NotNull Shop shop, @NotNull Player viewingPlayer) {
-        super(shop, null, 6, Component.text("Shop - Menü", MessageManager.PRIMARY));
+    public ShopMainMenu(@NotNull ServerShop shop, @NotNull Player viewingPlayer) {
+        super(shop, null, 6, Component.text("ServerShop - Menü", MessageManager.PRIMARY));
         this.viewingPlayer = viewingPlayer;
 
         final StaticPane shopPane = new StaticPane(0, 1, 9, 4);

@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 public class ShopManager {
 
-    private List<Shop> shops;
+    private List<ServerShop> shops;
     private boolean fetched;
     private final ShopVisualizerTask visualizerTask;
 
@@ -25,14 +25,14 @@ public class ShopManager {
     }
 
     /**
-     * Fetches all {@link Shop} instances from the database
+     * Fetches all {@link ServerShop} instances from the database
      *
      * @return the {@link CompletableFuture} instance
      */
-    public CompletableFuture<List<Shop>> fetchShops() {
+    public CompletableFuture<List<ServerShop>> fetchShops() {
         this.fetched = false;
 
-        return Shop.shops().thenApplyAsync(fetchedShops -> {
+        return ServerShop.shops().thenApplyAsync(fetchedShops -> {
             if (fetchedShops == null) {
                 throw new NullPointerException("Fetch shops returned null");
             }
@@ -73,38 +73,38 @@ public class ShopManager {
     /**
      * @return the shops
      */
-    public List<Shop> getShops() {
+    public List<ServerShop> getShops() {
         return shops;
     }
 
     /**
-     * Returns a list of {@link Shop} instances by the given {@link Player}
+     * Returns a list of {@link ServerShop} instances by the given {@link Player}
      *
      * @param player the player
-     * @return the list of {@link Shop} instances
+     * @return the list of {@link ServerShop} instances
      */
-    public List<Shop> getShops(Player player) {
+    public List<ServerShop> getShops(Player player) {
         return shops.stream().filter(shop -> shop.getOwner() != null && shop.getOwner().equals(player))
                 .toList();
     }
 
     /**
-     * Returns a {@link Shop} instance by the given {@link UUID}
+     * Returns a {@link ServerShop} instance by the given {@link UUID}
      *
      * @param uuid the uuid
-     * @return the {@link Shop} instance
+     * @return the {@link ServerShop} instance
      */
-    public Shop getShop(UUID uuid) {
-        return shops.stream().filter(shop -> shop.getUuid().equals(uuid)).findFirst().orElse(null);
+    public ServerShop getShop(UUID uuid) {
+        return shops.stream().filter(shop -> shop.getUUID().equals(uuid)).findFirst().orElse(null);
     }
 
     /**
-     * Returns a {@link Shop} instance by the given id
+     * Returns a {@link ServerShop} instance by the given id
      *
      * @param id the id
-     * @return the {@link Shop} instance
+     * @return the {@link ServerShop} instance
      */
-    public Shop getShop(long id) {
+    public ServerShop getShop(long id) {
         return shops.stream().filter(shop -> shop.getId() == id && id != 0 && shop.getId() != 0).findFirst()
                 .orElse(null);
     }
@@ -117,20 +117,20 @@ public class ShopManager {
     }
 
     /**
-     * Adds a {@link Shop} instance to the list
+     * Adds a {@link ServerShop} instance to the list
      *
      * @param shop the shop
      */
-    public void addShop(Shop shop) {
+    public void addShop(ServerShop shop) {
         shops.add(shop);
     }
 
     /**
-     * Removes a {@link Shop} instance from the list
+     * Removes a {@link ServerShop} instance from the list
      *
      * @param shop the shop
      */
-    public void removeShop(Shop shop) {
+    public void removeShop(ServerShop shop) {
         shops.remove(shop);
     }
 

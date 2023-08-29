@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -14,7 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
 import dev.slne.surf.shop.server.shop.gui.ShopGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -161,8 +161,8 @@ public class ItemUtils {
      * @return the shop edit item
      */
     public static ItemStack editShopItem() {
-        return item(Material.WRITABLE_BOOK, 1, 0, Component.text("Shop bearbeiten", NamedTextColor.GOLD),
-                Component.empty(), Component.text("Öffnet das Shop Bearbeitungs Menü", NamedTextColor.GRAY),
+        return item(Material.WRITABLE_BOOK, 1, 0, Component.text("ServerShop bearbeiten", NamedTextColor.GOLD),
+                Component.empty(), Component.text("Öffnet das ServerShop Bearbeitungs Menü", NamedTextColor.GRAY),
                 Component.empty());
     }
 
@@ -181,14 +181,14 @@ public class ItemUtils {
      *
      * @return the shop sell item
      */
-    public static ItemStack sellItem(Shop shop) {
+    public static ItemStack sellItem(ServerShop shop) {
         ItemStack toReturn;
 
         if (shop.getItemStack() == null) {
             toReturn = disabledItem();
         } else if (shop.getItemStack() != null && shop.getAmount() == 0) {
             toReturn = item(Material.BARRIER, 1, 0, Component.text("Leer", NamedTextColor.GOLD),
-                    Component.empty(), Component.text("Der Shop ist leer", NamedTextColor.GRAY),
+                    Component.empty(), Component.text("Der ServerShop ist leer", NamedTextColor.GRAY),
                     Component.empty());
         } else {
             toReturn = item(Material.GREEN_CONCRETE, 1, 0, Component.text("Verkauf", NamedTextColor.GOLD),
@@ -205,7 +205,7 @@ public class ItemUtils {
      * @param shop the shop
      * @return the shop info item
      */
-    public static ItemStack infoItem(Shop shop) {
+    public static ItemStack infoItem(ServerShop shop) {
         List<Component> lore = new ArrayList<>();
 
         String space = " ".repeat(3);
@@ -216,7 +216,7 @@ public class ItemUtils {
         lore.add(Component.text(space + shop.getAmount(), MessageManager.VARIABLE_VALUE));
         lore.add(Component.empty());
 
-        lore.add(Component.text("Shop UUID: ", MessageManager.VARIABLE_KEY));
+        lore.add(Component.text("ServerShop UUID: ", MessageManager.VARIABLE_KEY));
         lore.add(Component.text(space + shop.getUuid().toString(), MessageManager.VARIABLE_VALUE));
 
         lore.add(Component.empty());
@@ -231,12 +231,12 @@ public class ItemUtils {
      * @param shop the shop
      * @return the shop item
      */
-    public static ItemStack shopItem(Shop shop) {
+    public static ItemStack shopItem(ServerShop shop) {
         ItemStack toShow = shop.getItemStack();
 
         if (toShow == null) {
             toShow = ItemUtils.item(Material.BARRIER, 1, 0, Component.text("Nicht eingerichtet", NamedTextColor.GOLD),
-                    Component.empty(), Component.text("Dieser Shop ist nicht eingerichtet", NamedTextColor.GRAY),
+                    Component.empty(), Component.text("Dieser ServerShop ist nicht eingerichtet", NamedTextColor.GRAY),
                     Component.empty());
         } else {
             toShow = toShow.clone();

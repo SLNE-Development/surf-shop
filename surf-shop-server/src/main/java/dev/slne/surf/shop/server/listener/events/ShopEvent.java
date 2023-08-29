@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.events;
 
+import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -8,7 +9,6 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import dev.slne.surf.shop.server.shop.Shop;
 import dev.slne.surf.shop.server.shop.gui.utils.GuiUtils;
 import net.kyori.adventure.text.Component;
 
@@ -16,7 +16,7 @@ public class ShopEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Shop shop;
+    private final ServerShop shop;
     private final Player player;
 
     private boolean cancelled;
@@ -30,7 +30,7 @@ public class ShopEvent extends Event implements Cancellable {
      * @param player the player
      * @param async  Whether the event is asynchronous.
      */
-    public ShopEvent(Shop shop, Player player, boolean async) {
+    public ShopEvent(ServerShop shop, Player player, boolean async) {
         super(async);
 
         this.shop = shop;
@@ -47,7 +47,7 @@ public class ShopEvent extends Event implements Cancellable {
      * @param shop   The shop.
      * @param player the player
      */
-    public ShopEvent(Shop shop, Player player) {
+    public ShopEvent(ServerShop shop, Player player) {
         this(shop, player, false);
     }
 
@@ -56,7 +56,7 @@ public class ShopEvent extends Event implements Cancellable {
      *
      * @return The shop.
      */
-    public Shop getShop() {
+    public ServerShop getShop() {
         return shop;
     }
 

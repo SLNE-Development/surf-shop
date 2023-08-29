@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.server.shop.gui;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui.edit.ShopEditMainMenu;
 import dev.slne.surf.shop.server.shop.gui.sell.ShopSellMenu;
 import dev.slne.surf.shop.server.shop.gui.utils.ItemUtils;
@@ -17,8 +17,8 @@ public class ShopMainMenu extends ShopGui {
      * @param shop          the shop
      * @param viewingPlayer the player viewing the shop
      */
-    public ShopMainMenu(Shop shop, Player viewingPlayer) {
-        super(null, 6, "Shop - Menü", shop, viewingPlayer);
+    public ShopMainMenu(ServerShop shop, Player viewingPlayer) {
+        super(null, 6, "ServerShop - Menü", shop, viewingPlayer);
 
         StaticPane shopPane = new StaticPane(0, 0, 9, 6);
 

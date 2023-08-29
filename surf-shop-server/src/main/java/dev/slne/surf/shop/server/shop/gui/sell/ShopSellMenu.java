@@ -5,6 +5,7 @@ import java.util.List;
 
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.listener.events.transaction.sell.ShopItemSellEvent;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui.inventory.bukkit.LimitedShadowInventory;
 import dev.slne.surf.shop.server.shop.gui.utils.ConfirmationGui;
 import dev.slne.surf.shop.server.shop.gui.utils.GuiSound;
@@ -21,7 +22,6 @@ import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
 import dev.slne.surf.shop.server.shop.gui.ShopGui;
 import dev.slne.surf.shop.server.shop.gui.inventory.InventoryTransfer;
 import dev.slne.surf.shop.server.shop.gui.inventory.InventoryTransfer.InventoryResultReason;
@@ -42,8 +42,8 @@ public class ShopSellMenu extends ShopGui {
 	 * @param shop          the shop
 	 * @param viewingPlayer the player viewing the shop
 	 */
-	public ShopSellMenu(ShopGui parent, Shop shop, Player viewingPlayer) {
-		super(parent, 6, "Shop - Kaufen", shop, viewingPlayer);
+	public ShopSellMenu(ShopGui parent, ServerShop shop, Player viewingPlayer) {
+		super(parent, 6, "ServerShop - Kaufen", shop, viewingPlayer);
 
 		this.selectedAmount = 0;
 

@@ -4,7 +4,7 @@ import dev.slne.surf.shop.server.listener.events.ShopEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 
 public class ShopItemSellEvent extends ShopEvent {
 
@@ -19,7 +19,7 @@ public class ShopItemSellEvent extends ShopEvent {
      * @param player          The player.
      * @param boughtItemStack The item stack bought.
      */
-    public ShopItemSellEvent(Shop shop, Player player, ItemStack boughtItemStack, int boughtAmount) {
+    public ShopItemSellEvent(ServerShop shop, Player player, ItemStack boughtItemStack, int boughtAmount) {
         super(shop, player);
 
         this.boughtItemStack = boughtItemStack;

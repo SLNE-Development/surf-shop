@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
@@ -28,5 +28,5 @@ public class ShopExplodeListener implements Listener {
      * Handles the block being exploded
      */
     private static final Predicate<? super Block> handleExplode = block ->
-            block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING);
+            block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
 }

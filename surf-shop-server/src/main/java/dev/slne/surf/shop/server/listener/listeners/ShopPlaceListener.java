@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
 import dev.slne.data.api.DataApi;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,7 +19,6 @@ import org.bukkit.persistence.PersistentDataType;
 import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.listener.events.state.ShopCreateEvent;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
 
 public class ShopPlaceListener implements Listener {
 
@@ -35,14 +35,14 @@ public class ShopPlaceListener implements Listener {
         final ItemStack handItem = event.getItemInHand();
         final PersistentDataContainer handItemContainer = handItem.getItemMeta().getPersistentDataContainer();
 
-        boolean handItemIsShop = handItem.hasItemMeta() && handItemContainer.has(Shop.SHOP_KEY);
+        boolean handItemIsShop = handItem.hasItemMeta() && handItemContainer.has(ServerShop.SHOP_KEY);
         boolean nextToChest = false;
         boolean nextToShop = false;
 
         for (Chest surroundingChests : ShopUtils.getSurroundingBlockStates(block, Chest.class)) {
             nextToChest = true;
 
-            if (surroundingChests.getPersistentDataContainer().has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
+            if (surroundingChests.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
                 nextToShop = true;
                 break;
             }
@@ -91,7 +91,7 @@ public class ShopPlaceListener implements Listener {
         System.out.println("handleFinalPlace");
         final PersistentDataContainer container = chest.getPersistentDataContainer();
         final Location location = block.getLocation();
-        final Shop shop = new Shop(player.getUniqueId(), new ItemStack(Material.STONE), location);
+        final ServerShop shop = new ServerShop(player.getUniqueId(), new ItemStack(Material.STONE), location);
 
         System.out.println("shop = " + shop);
 
@@ -104,7 +104,7 @@ public class ShopPlaceListener implements Listener {
             }
 
             BukkitApi.getInstance().getShopManager().addShop(shop);
-            container.set(Shop.SHOP_KEY, PersistentDataType.STRING, shop.getUuid().toString());
+            container.set(ServerShop.SHOP_KEY, PersistentDataType.STRING, shop.getUuid().toString());
             chest.update();
 
             player.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());

@@ -2,7 +2,8 @@ package dev.slne.surf.shop.server.shop.member;
 
 import java.util.UUID;
 
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.api.shop.member.ShopMember;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -10,7 +11,7 @@ import com.google.gson.annotations.SerializedName;
 
 import dev.slne.surf.shop.server.instance.BukkitApi;
 
-public class ShopMember {
+public class ServerShopMember implements ShopMember {
 
     @SerializedName("id")
     private long id;
@@ -22,12 +23,12 @@ public class ShopMember {
     private UUID memberUuid;
 
     /**
-     * A new {@link ShopMember} instance
+     * A new {@link ServerShopMember} instance
      *
      * @param shop       the shop
      * @param memberUuid the member uuid
      */
-    public ShopMember(Shop shop, UUID memberUuid) {
+    public ServerShopMember(ServerShop shop, UUID memberUuid) {
         this.shopId = shop.getId();
         this.memberUuid = memberUuid;
     }
@@ -42,7 +43,7 @@ public class ShopMember {
     /**
      * @return the memberUuid
      */
-    public UUID getMemberUuid() {
+    public UUID getUUID() {
         return memberUuid;
     }
 
@@ -63,12 +64,16 @@ public class ShopMember {
     }
 
     /**
-     * Returns the {@link Shop} instance of the member
+     * Returns the {@link ServerShop} instance of the member
      *
-     * @return the {@link Shop} instance
+     * @return the {@link ServerShop} instance
      */
-    public Shop getShop() {
+    public ServerShop getShop() {
         return BukkitApi.getInstance().getShopManager().getShop(id);
     }
 
+    @Override
+    public ShopMember inter() {
+        return this;
+    }
 }

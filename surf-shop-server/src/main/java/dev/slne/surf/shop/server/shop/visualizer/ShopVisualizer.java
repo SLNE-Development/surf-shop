@@ -11,7 +11,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDe
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import dev.slne.surf.shop.server.BukkitMain;
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -40,13 +40,13 @@ public class ShopVisualizer {
 
     private static final int RANGE_SQUARED = (int) Math.pow(10, 2);
 
-    private final Shop shop;
+    private final ServerShop shop;
     private final Map<UUID, List<Integer>> playerEntityIds;
 
     /**
      * A new {@link ShopVisualizer} instance
      */
-    public ShopVisualizer(Shop shop) {
+    public ShopVisualizer(ServerShop shop) {
         this.shop = shop;
         this.playerEntityIds = new ConcurrentHashMap<>();
     }
@@ -403,7 +403,7 @@ public class ShopVisualizer {
     /**
      * @return the shop
      */
-    public Shop getShop() {
+    public ServerShop getShop() {
         return shop;
     }
 

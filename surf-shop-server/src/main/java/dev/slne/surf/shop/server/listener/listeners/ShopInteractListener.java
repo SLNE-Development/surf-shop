@@ -17,7 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.Shop;
+import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui.ShopMainMenu;
 
 public class ShopInteractListener implements Listener {
@@ -46,16 +46,16 @@ public class ShopInteractListener implements Listener {
 
         final PersistentDataContainer container = chest.getPersistentDataContainer();
 
-        if (!container.has(Shop.SHOP_KEY, PersistentDataType.STRING)) {
+        if (!container.has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
             return;
         }
 
-        final String shopUuidString = container.get(Shop.SHOP_KEY, PersistentDataType.STRING);
+        final String shopUuidString = container.get(ServerShop.SHOP_KEY, PersistentDataType.STRING);
 
         assert shopUuidString != null;
 
         final UUID shopUuid = UUID.fromString(shopUuidString);
-        final Shop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
+        final ServerShop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
 
         if (shop == null) {
             return;
