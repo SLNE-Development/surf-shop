@@ -1,25 +1,29 @@
 package dev.slne.surf.shop.server.instance;
 
-import com.google.common.base.Preconditions;
+import dev.slne.data.api.DataApi;
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.command.BukkitCommandManager;
 import dev.slne.surf.shop.server.listener.BukkitListenerManager;
+import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.ServerShopManager;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import dev.slne.surf.shop.server.util.UUIDDataType;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -35,13 +39,12 @@ public class BukkitInstance implements ShopInstance {
      */
     @Override
     public void onLoad() {
+        new ShopApi(this);
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
 
         shopManager = new ServerShopManager();
         shopManager.onLoad();
-
-        new ShopApi(this);
     }
 
     /**
@@ -81,8 +84,32 @@ public class BukkitInstance implements ShopInstance {
     }
 
     @Override
-    public Shop createShop(UUID owner, ItemStack itemStack, Location location) {
-        return new ServerShop(owner, itemStack, location);
+    public CompletableFuture<Shop> createShop(@NotNull Player owner, ItemStack itemStack, @NotNull Location location) {
+        final BlockState blockState = location.getBlock().getState();
+
+        checkArgument(blockState instanceof Chest, "Location is not a chest");
+
+        final ServerShop shop = new ServerShop(owner.getUniqueId(), itemStack, location);
+
+        shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
+
+        return shop.create().thenApplyAsync(created -> {
+            if (created == null) {
+                owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
+                return null;
+            }
+
+            ShopApi.getShopManager().addShop(shop);
+            ShopApi.getShopManager().makeShop(((Chest) blockState), shop);
+
+            owner.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
+
+            return created;
+        }).exceptionally(throwable -> {
+            DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
+            owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
+            return null;
+        });
     }
 
     @Override

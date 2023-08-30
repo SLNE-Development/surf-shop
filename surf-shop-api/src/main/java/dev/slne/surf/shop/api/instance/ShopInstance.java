@@ -5,11 +5,13 @@ import dev.slne.surf.shop.api.shop.ShopManager;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface ShopInstance {
+
     void onLoad();
 
     void onEnable();
@@ -18,7 +20,19 @@ public interface ShopInstance {
 
     ShopManager getShopManager();
 
-    Shop createShop(UUID owner, ItemStack itemStack, Location location);
+    /**
+     * Creates a shop with the specified owner, item stack, and location.
+     * <p>
+     * <b>IMPORTANT:</b> This method requires that the {@link BlockState}
+     * at the specified location is a {@link org.bukkit.block.Chest}. If
+     * it is not, this method will throw an {@link IllegalArgumentException}.
+     *
+     * @param owner     The owner of the shop.
+     * @param itemStack The item stack of the shop.
+     * @param location  The location of the shop.
+     * @return A {@link CompletableFuture} that completes with the created shop.
+     */
+    CompletableFuture<Shop> createShop(Player owner, ItemStack itemStack, Location location);
 
     ItemStack constructCreationItem();
 

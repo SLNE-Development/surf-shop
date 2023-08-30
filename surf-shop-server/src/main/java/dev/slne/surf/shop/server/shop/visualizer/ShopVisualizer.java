@@ -197,7 +197,7 @@ public class ShopVisualizer {
 
         // Defaults
         final Vector3f scale = new Vector3f(MATERIAL_SCALE, MATERIAL_SCALE, MATERIAL_SCALE);
-        final BillboardConstraint billboardConstraint = BillboardConstraint.FIXED;
+        final BillboardConstraint billboardConstraint = BillboardConstraint.CENTER;
         byte billboardConstraintByte = (byte) billboardConstraint.getId();
 
         // Slot
@@ -206,7 +206,7 @@ public class ShopVisualizer {
                 .fromBukkitItemStack(bukkitItemStack);
 
         // Display Type
-        final DisplayType displayType = DisplayType.NONE;
+        final DisplayType displayType = DisplayType.FIXED;
         byte displayTypeByte = (byte) displayType.getId();
 
         final List<EntityData> entityData = new ArrayList<>();

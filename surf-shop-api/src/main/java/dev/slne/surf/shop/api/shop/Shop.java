@@ -24,12 +24,12 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
     /**
      * The created shop key
      */
-    NamespacedKey CREATED_SHOP_KEY = new NamespacedKey("SurfShops", "placed_shop");
+    NamespacedKey CREATED_SHOP_KEY = new NamespacedKey("surf-shops", "placed_shop");
 
     /**
      * The creation item key
      */
-    NamespacedKey CREATION_ITEM_KEY = new NamespacedKey("SurfShops", "creation_item");
+    NamespacedKey CREATION_ITEM_KEY = new NamespacedKey("surf-shops", "creation_item");
 
     CompletableFuture<Shop> create();
 

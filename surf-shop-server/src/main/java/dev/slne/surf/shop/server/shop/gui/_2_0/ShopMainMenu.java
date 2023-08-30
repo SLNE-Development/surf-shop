@@ -16,7 +16,7 @@ public class ShopMainMenu extends ShopGui {
     private final Player viewingPlayer;
 
     public ShopMainMenu(@NotNull Shop shop, @NotNull Player viewingPlayer) {
-        super(shop, null, 6, Component.text("ServerShop - Menü", MessageManager.PRIMARY));
+        super(shop, null, 6, Component.text("Shop - Menü", MessageManager.PRIMARY));
         this.viewingPlayer = viewingPlayer;
 
         final StaticPane shopPane = new StaticPane(0, 1, 9, 4);

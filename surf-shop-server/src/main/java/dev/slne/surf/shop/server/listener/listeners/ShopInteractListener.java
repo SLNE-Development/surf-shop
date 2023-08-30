@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.server.shop.gui._2_0.ShopMainMenu;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
@@ -20,7 +21,6 @@ import org.bukkit.persistence.PersistentDataType;
 import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
-import dev.slne.surf.shop.server.shop.gui.ShopMainMenu;
 
 public class ShopInteractListener implements Listener {
 

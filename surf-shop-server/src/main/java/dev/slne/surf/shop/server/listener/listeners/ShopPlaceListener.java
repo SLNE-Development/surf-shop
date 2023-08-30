@@ -5,6 +5,7 @@ import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.util.ShopUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -30,7 +31,7 @@ public class ShopPlaceListener implements Listener {
         final Player player = event.getPlayer();
         final Block block = event.getBlock();
 
-        if (!(block.getState() instanceof Chest chest)) {
+        if (!(block.getState() instanceof Chest)) {
             return;
         }
 
@@ -60,19 +61,15 @@ public class ShopPlaceListener implements Listener {
                 return;
             }
 
-            ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player);
-
-            System.out.println("shopCreateEvent = " + shopCreateEvent);
+            final ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player);
 
             if (!shopCreateEvent.callEvent()) {
-                System.out.println("shopCreateEvent.isCancelled() = " + shopCreateEvent.isCancelled());
                 shopCreateEvent.applyCancelled(event.getPlayer());
                 event.setCancelled(true);
                 return;
             }
 
-            System.out.println("shopCreateEvent.isCancelled() = " + shopCreateEvent.isCancelled());
-            handleFinalPlace(player, block, chest);
+            ShopApi.getInstance().createShop(player, new ItemStack(Material.STRUCTURE_VOID), block.getLocation());
         } else {
             if (nextToShop) {
                 player.sendMessage(MessageManager.getCannotPlaceChestNextToShopComponent());
@@ -80,39 +77,4 @@ public class ShopPlaceListener implements Listener {
             }
         }
     }
-
-    /**
-     * Handles the final place of the shop
-     *
-     * @param player the player
-     * @param block  the block
-     * @param chest  the chest
-     */
-    private void handleFinalPlace(Player player, Block block, Chest chest) {
-        System.out.println("handleFinalPlace");
-        final PersistentDataContainer container = chest.getPersistentDataContainer();
-        final Location location = block.getLocation();
-        final ServerShop shop = new ServerShop(player.getUniqueId(), new ItemStack(Material.STRUCTURE_VOID), location);
-
-        System.out.println("shop = " + shop);
-
-        shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
-
-        shop.create().thenAcceptAsync(created -> {
-            if (created == null) {
-                player.sendMessage(MessageManager.getShopCreatedFailureComponent());
-                return;
-            }
-
-            ShopApi.getShopManager().addShop(shop);
-            ShopApi.getShopManager().makeShop(chest, shop);
-
-            player.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
-        }).exceptionally(throwable -> {
-            DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
-            player.sendMessage(MessageManager.getShopCreatedFailureComponent());
-            return null;
-        });
-    }
-
 }

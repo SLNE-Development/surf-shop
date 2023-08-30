@@ -1,25 +1,27 @@
 package dev.slne.surf.shop.server.shop;
 
+import dev.slne.data.api.DataApi;
+import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.shop.ShopManager;
+import dev.slne.surf.shop.server.BukkitMain;
+import dev.slne.surf.shop.server.shop.visualizer.ShopVisualizerTask;
+import dev.slne.surf.shop.server.util.UUIDDataType;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Chest;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import dev.slne.data.api.DataApi;
-import dev.slne.surf.shop.api.shop.Shop;
-import dev.slne.surf.shop.api.shop.ShopManager;
-import dev.slne.surf.shop.server.shop.visualizer.ShopVisualizerTask;
-import dev.slne.surf.shop.server.util.UUIDDataType;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.block.Chest;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
-
 public class ServerShopManager implements ShopManager {
 
-    private List<ServerShop> shops;
+    private List<Shop> shops;
     private boolean fetched;
     private final ShopVisualizerTask visualizerTask;
 
@@ -50,7 +52,7 @@ public class ServerShopManager implements ShopManager {
 
             DataApi.getDataInstance().logInfo(getClass(), "Fetched " + fetchedShops.size() + " shops");
 
-            return fetchedShops.stream().map(ServerShop::inter).collect(Collectors.toList());
+            return fetchedShops;
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to fetch shops", throwable);
             return null;
@@ -82,7 +84,7 @@ public class ServerShopManager implements ShopManager {
      * @return the shops
      */
     public List<Shop> getShops() {
-        return shops.stream().map(ServerShop::inter).toList();
+        return shops;
     }
 
     @Override
@@ -90,7 +92,6 @@ public class ServerShopManager implements ShopManager {
         return Stream.of(shops)
                 .flatMap(List::stream)
                 .filter(shop -> shop.getOwner().getUniqueId().equals(owner))
-                .map(ServerShop::inter)
                 .collect(Collectors.toList());
     }
 
@@ -106,8 +107,11 @@ public class ServerShopManager implements ShopManager {
      * @return the {@link ServerShop} instance
      */
     @Override
-    public ServerShop getShop(UUID uuid) {
-        return shops.stream().filter(shop -> shop.getUUID().equals(uuid)).findFirst().orElse(null);
+    public Shop getShop(UUID uuid) {
+        return shops.stream()
+                .filter(shop -> Objects.equals(shop.getUUID(), uuid))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -116,8 +120,9 @@ public class ServerShopManager implements ShopManager {
      * @param id the id
      * @return the {@link ServerShop} instance
      */
-    public ServerShop getShop(long id) {
-        return shops.stream().filter(shop -> shop.getId() == id && id != 0 && shop.getId() != 0).findFirst()
+    public Shop getShop(long id) {
+        return shops.stream()
+                .filter(shop -> shop.getId() == id && id != 0 && shop.getId() != 0).findFirst()
                 .orElse(null);
     }
 
@@ -130,27 +135,20 @@ public class ServerShopManager implements ShopManager {
 
     @Override
     public void addShop(Shop shop) {
-        if (!(shop instanceof ServerShop serverShop)) {
-            throw new IllegalArgumentException("Shop is not a ServerShop");
-        }
-
-        shops.add(serverShop);
+        shops.add(shop);
     }
 
     @Override
     public void removeShop(Shop shop) {
-        if (!(shop instanceof ServerShop serverShop)) {
-            throw new IllegalArgumentException("Shop is not a ServerShop");
-        }
-
-        shops.remove(serverShop);
+        shops.remove(shop);
     }
 
     @Override
     public void makeShop(Chest chest, Shop shop) {
-        chest.getPersistentDataContainer().set(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID, shop.getUUID());
-
-        chest.update();
+        Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
+            chest.getPersistentDataContainer().set(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID, shop.getUUID());
+            chest.update();
+        });
     }
 
     /**

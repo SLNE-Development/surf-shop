@@ -12,7 +12,6 @@ import dev.slne.surf.shop.api.shop.member.ShopMember;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.api.API;
 import dev.slne.surf.shop.server.api.BukkitGsonConverter;
-import dev.slne.surf.shop.server.api.buffer.ItemBuffer;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.member.ServerShopMember;
 import net.kyori.adventure.text.Component;
@@ -71,6 +70,11 @@ public class ServerShop implements Shop {
 
     private boolean deleting = false;
 
+    @Deprecated
+    public ServerShop() {
+        this.members = new ArrayList<>();
+    }
+
     /**
      * A new {@link ServerShop} instance
      *
@@ -103,15 +107,15 @@ public class ServerShop implements Shop {
      *
      * @return the shops
      */
-    public static CompletableFuture<List<ServerShop>> shops() {
+    public static CompletableFuture<List<Shop>> shops() {
         WebRequest request = WebRequest.builder().json(true).url(API.SHOPS).build();
-        List<ServerShop> shops = new ArrayList<>();
+        List<Shop> shops = new ArrayList<>();
 
         return request.executeGet().thenApplyAsync(response -> {
 
             JsonArray bodyArray = response.bodyArray(GSON_CONVERTER);
             for (JsonElement element : bodyArray) {
-                ServerShop shop = fromBodyElement(element, false);
+                Shop shop = fromBodyElement(element, false);
 
                 if (shop == null) {
                     continue;
@@ -142,7 +146,7 @@ public class ServerShop implements Shop {
                 .build();
 
         return request.executePost().thenApplyAsync(response -> {
-            ServerShop newShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop newShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
 
             if (newShop == null) {
                 System.out.println("newShop = " + null);
@@ -152,7 +156,7 @@ public class ServerShop implements Shop {
                 return null;
             }
 
-            id = newShop.id;
+            id = newShop.getId();
 
             return this.inter();
         }).exceptionally(exception -> {
@@ -172,7 +176,7 @@ public class ServerShop implements Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executePut().thenApplyAsync(response -> {
-            ServerShop updatedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop updatedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
 
             if (updatedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
@@ -199,7 +203,7 @@ public class ServerShop implements Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executeDelete().thenApplyAsync(response -> {
-            ServerShop deletedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop deletedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
 
             if (deletedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
@@ -229,10 +233,10 @@ public class ServerShop implements Shop {
 
         parameters.put("uuid", uuid.toString());
         parameters.put("owner_uuid", ownerUuid.toString());
-        parameters.put("shop_itemstack", ItemBuffer.toString(itemStack));
+        parameters.put("shop_itemstack", itemStack);
         parameters.put("shop_amount", String.valueOf(amount));
 
-        parameters.put("location_world", worldUUID);
+        parameters.put("location_world", worldUUID.toString());
         parameters.put("location_x", String.valueOf(x));
         parameters.put("location_y", String.valueOf(y));
         parameters.put("location_z", String.valueOf(z));
@@ -249,29 +253,11 @@ public class ServerShop implements Shop {
      * @param bodyElement the body json element
      * @return the shop
      */
-    private static ServerShop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
-        BukkitGsonConverter gson = new BukkitGsonConverter();
+    private static Shop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
 
-        JsonElement dataElement = bodyElement;
-        if (isRootElement) {
-            if (!bodyElement.isJsonObject()) {
-                return null;
-            }
+        JsonObject dataObject = bodyElement.getAsJsonObject();
 
-            JsonObject bodyObject = bodyElement.getAsJsonObject();
-            if (!bodyObject.has("data")) {
-                return null;
-            }
-
-            dataElement = bodyObject.get("data");
-            if (!dataElement.isJsonObject()) {
-                return null;
-            }
-        }
-
-        JsonObject dataObject = dataElement.getAsJsonObject();
-
-        return gson.fromJson(dataObject.toString(), ServerShop.class);
+        return GSON_CONVERTER.fromJson(dataObject.toString(), Shop.class);
     }
 
     /**
@@ -297,7 +283,7 @@ public class ServerShop implements Shop {
             if (itemMeta != null) {
                 if (itemMeta.hasDisplayName()) {
                     final Component displayName = itemMeta.displayName();
-                    assert displayName != null : "???";
+                    assert displayName != null : "What is happening???";
 
                     builder.append(displayName.colorIfAbsent(MessageManager.VARIABLE_VALUE));
                 } else {
@@ -463,7 +449,7 @@ public class ServerShop implements Shop {
 
     @Override
     public boolean isOwner(UUID player) {
-        return ownerUuid != null && ownerUuid.equals(player);
+        return Objects.equals(ownerUuid, player);
     }
 
     /**
@@ -530,7 +516,7 @@ public class ServerShop implements Shop {
                 .add("ownerUuid", ownerUuid)
                 .add("itemStack", itemStack)
                 .add("amount", amount)
-                .add("worldName", worldUUID)
+                .add("worldUUID", worldUUID)
                 .add("x", x)
                 .add("y", y)
                 .add("z", z)

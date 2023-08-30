@@ -6,15 +6,12 @@ import dev.slne.surf.shop.api.events.state.ShopRemoveEvent;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.ServerShop;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -38,8 +35,7 @@ public class ShopBreakListener implements Listener {
             return;
         }
 
-        final UUID ownerUuid = shop.getUUID();
-        if (!Objects.equals(ownerUuid, player.getUniqueId())) {
+        if (!shop.isOwner(player)) {
             player.sendMessage(MessageManager.getPlayerNotOwningShopComponent());
             event.setCancelled(true);
             return;
