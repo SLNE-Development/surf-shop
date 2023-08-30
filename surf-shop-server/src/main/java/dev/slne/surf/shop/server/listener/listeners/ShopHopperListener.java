@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import org.bukkit.Location;
@@ -95,8 +96,7 @@ public class ShopHopperListener implements Listener {
      * @return true if the item is a shop item
      */
     private boolean itemIsShopItem(ItemStack itemStack) {
-        return itemStack != null && itemStack.hasItemMeta()
-                && itemStack.getItemMeta().getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
+        return ShopApi.isShopItem(itemStack);
     }
 
     /**
@@ -123,8 +123,8 @@ public class ShopHopperListener implements Listener {
      * @return the moved blocks
      */
     private List<Block> moveBlocksInDirection(BlockFace moveDirection, List<Block> blocks) {
-        List<Block> movedBlocks = new ArrayList<>();
-        Map<BlockFace, Vector> blockFaceMap = Map.of(
+        final List<Block> movedBlocks = new ArrayList<>();
+        final Map<BlockFace, Vector> blockFaceMap = Map.of(
                 BlockFace.NORTH, new Vector(0, 0, -1),
                 BlockFace.EAST, new Vector(1, 0, 0),
                 BlockFace.SOUTH, new Vector(0, 0, 1),
@@ -134,14 +134,14 @@ public class ShopHopperListener implements Listener {
         );
 
         for (Block block : blocks) {
-            Location location = block.getLocation();
-            Vector move = blockFaceMap.get(moveDirection);
+            final Location location = block.getLocation();
+            final Vector move = blockFaceMap.get(moveDirection);
 
             if (move == null) {
                 continue;
             }
 
-            Location newLocation = location.clone().add(move);
+            final Location newLocation = location.clone().add(move);
             movedBlocks.add(location.getWorld().getBlockAt(newLocation));
         }
 
@@ -207,7 +207,7 @@ public class ShopHopperListener implements Listener {
      * @return true if the chest is a shop
      */
     private boolean handleChest(@NotNull Chest chest) {
-        return chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
+        return ShopApi.isShop(chest);
     }
 
 }

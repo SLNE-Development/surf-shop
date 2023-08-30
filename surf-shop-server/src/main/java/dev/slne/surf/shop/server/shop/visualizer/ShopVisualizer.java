@@ -10,8 +10,8 @@ import com.github.retrooper.packetevents.util.Vector3f;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
-import dev.slne.surf.shop.server.shop.ServerShop;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -40,13 +40,13 @@ public class ShopVisualizer {
 
     private static final int RANGE_SQUARED = (int) Math.pow(10, 2);
 
-    private final ServerShop shop;
+    private final Shop shop;
     private final Map<UUID, List<Integer>> playerEntityIds;
 
     /**
      * A new {@link ShopVisualizer} instance
      */
-    public ShopVisualizer(ServerShop shop) {
+    public ShopVisualizer(Shop shop) {
         this.shop = shop;
         this.playerEntityIds = new ConcurrentHashMap<>();
     }
@@ -397,13 +397,13 @@ public class ShopVisualizer {
      * @return the material
      */
     public Material getSellItemMaterial() {
-        return shop.getItemStack() != null ? shop.getItemStack().getType() : Material.BARRIER;
+        return shop.item() != null ? shop.item().getType() : Material.BARRIER;
     }
 
     /**
      * @return the shop
      */
-    public ServerShop getShop() {
+    public Shop getShop() {
         return shop;
     }
 

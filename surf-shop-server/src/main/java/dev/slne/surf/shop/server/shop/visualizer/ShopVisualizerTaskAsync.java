@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.shop.visualizer;
 
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.shop.ServerShop;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ShopVisualizerTaskAsync {
     private ScheduledTask task = null;
-    private final Map<ServerShop, ShopVisualizer> visualizers;
+    private final Map<Shop, ShopVisualizer> visualizers;
 
     public ShopVisualizerTaskAsync() {
         this.visualizers = new ConcurrentHashMap<>();
@@ -27,9 +28,9 @@ public class ShopVisualizerTaskAsync {
     private void run() {
         cleanupVisualizers();
 
-        List<ServerShop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
+        List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
 
-        for (ServerShop shop : shops) {
+        for (Shop shop : shops) {
             visualizers.computeIfAbsent(shop, key -> new ShopVisualizer(shop));
         }
 
@@ -42,9 +43,9 @@ public class ShopVisualizerTaskAsync {
      * Cleanup the visualizers
      */
     private void cleanupVisualizers() {
-        List<ServerShop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
+        List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
 
-        for (ServerShop shop : new ArrayList<>(visualizers.keySet())) {
+        for (Shop shop : new ArrayList<>(visualizers.keySet())) {
             if (!shops.contains(shop)) {
                 removeVisualizer(shop);
             }
@@ -76,7 +77,7 @@ public class ShopVisualizerTaskAsync {
      *
      * @param shop the shop
      */
-    private void removeVisualizer(ServerShop shop) {
+    private void removeVisualizer(Shop shop) {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).despawnAll();
         }
@@ -90,7 +91,7 @@ public class ShopVisualizerTaskAsync {
      * @param player the player
      * @param shop   the shop
      */
-    public void addPlayer(Player player, ServerShop shop) {
+    public void addPlayer(Player player, Shop shop) {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).spawn(player);
         }
@@ -99,7 +100,7 @@ public class ShopVisualizerTaskAsync {
     /**
      * @return the visualizers
      */
-    public Map<ServerShop, ShopVisualizer> getVisualizers() {
+    public Map<Shop, ShopVisualizer> getVisualizers() {
         return visualizers;
     }
 }

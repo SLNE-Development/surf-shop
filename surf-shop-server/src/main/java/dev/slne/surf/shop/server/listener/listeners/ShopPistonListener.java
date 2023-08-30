@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -49,6 +50,6 @@ public class ShopPistonListener implements Listener {
      * @return true if the block is a shop
      */
     private boolean handlePiston(Block block) {
-        return block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
+        return ShopApi.isShop(block);
     }
 }

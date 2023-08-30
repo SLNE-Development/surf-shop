@@ -1,6 +1,8 @@
-package dev.slne.surf.shop.server.listener.events;
+package dev.slne.surf.shop.api.events;
 
-import dev.slne.surf.shop.server.shop.ServerShop;
+import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.util.ApiUtils;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -8,15 +10,16 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import dev.slne.surf.shop.server.shop.gui.utils.GuiUtils;
-import net.kyori.adventure.text.Component;
+import java.util.Optional;
 
-public class ShopEvent extends Event implements Cancellable {
+@ApiStatus.Internal
+public abstract class ShopEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final ServerShop shop;
+    private final @Nullable Shop shop;
     private final Player player;
 
     private boolean cancelled;
@@ -30,7 +33,7 @@ public class ShopEvent extends Event implements Cancellable {
      * @param player the player
      * @param async  Whether the event is asynchronous.
      */
-    public ShopEvent(ServerShop shop, Player player, boolean async) {
+    public ShopEvent(@Nullable Shop shop, Player player, boolean async) {
         super(async);
 
         this.shop = shop;
@@ -47,7 +50,7 @@ public class ShopEvent extends Event implements Cancellable {
      * @param shop   The shop.
      * @param player the player
      */
-    public ShopEvent(ServerShop shop, Player player) {
+    public ShopEvent(@Nullable Shop shop, Player player) {
         this(shop, player, false);
     }
 
@@ -56,8 +59,8 @@ public class ShopEvent extends Event implements Cancellable {
      *
      * @return The shop.
      */
-    public ServerShop getShop() {
-        return shop;
+    public Optional<Shop> getShop() {
+        return Optional.ofNullable(shop);
     }
 
     /**
@@ -124,7 +127,7 @@ public class ShopEvent extends Event implements Cancellable {
         }
 
         if (cancelSound != null) {
-            GuiUtils.playSound(cancelSound, player);
+            ApiUtils.playSound(cancelSound, player);
         }
     }
 

@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import dev.slne.surf.shop.server.shop.ServerShop;
+import dev.slne.surf.shop.api.shop.Shop;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -181,12 +181,12 @@ public class ItemUtils {
      *
      * @return the shop sell item
      */
-    public static ItemStack sellItem(ServerShop shop) {
+    public static ItemStack sellItem(Shop shop) {
         ItemStack toReturn;
 
-        if (shop.getItemStack() == null) {
+        if (shop.item() == null) {
             toReturn = disabledItem();
-        } else if (shop.getItemStack() != null && shop.getAmount() == 0) {
+        } else if (shop.item() != null && shop.isInventoryEmpty()) {
             toReturn = item(Material.BARRIER, 1, 0, Component.text("Leer", NamedTextColor.GOLD),
                     Component.empty(), Component.text("Der ServerShop ist leer", NamedTextColor.GRAY),
                     Component.empty());
@@ -205,7 +205,7 @@ public class ItemUtils {
      * @param shop the shop
      * @return the shop info item
      */
-    public static ItemStack infoItem(ServerShop shop) {
+    public static ItemStack infoItem(Shop shop) {
         List<Component> lore = new ArrayList<>();
 
         String space = " ".repeat(3);
@@ -213,11 +213,11 @@ public class ItemUtils {
         lore.add(Component.empty());
 
         lore.add(Component.text("Anzahl: ", MessageManager.VARIABLE_KEY));
-        lore.add(Component.text(space + shop.getAmount(), MessageManager.VARIABLE_VALUE));
+        lore.add(Component.text(space + shop.amount(), MessageManager.VARIABLE_VALUE));
         lore.add(Component.empty());
 
         lore.add(Component.text("ServerShop UUID: ", MessageManager.VARIABLE_KEY));
-        lore.add(Component.text(space + shop.getUuid().toString(), MessageManager.VARIABLE_VALUE));
+        lore.add(Component.text(space + shop.getUUID().toString(), MessageManager.VARIABLE_VALUE));
 
         lore.add(Component.empty());
 
@@ -231,8 +231,8 @@ public class ItemUtils {
      * @param shop the shop
      * @return the shop item
      */
-    public static ItemStack shopItem(ServerShop shop) {
-        ItemStack toShow = shop.getItemStack();
+    public static ItemStack shopItem(Shop shop) {
+        ItemStack toShow = shop.item();
 
         if (toShow == null) {
             toShow = ItemUtils.item(Material.BARRIER, 1, 0, Component.text("Nicht eingerichtet", NamedTextColor.GOLD),
@@ -285,8 +285,7 @@ public class ItemUtils {
 
         lore.add(Component.empty());
 
-        return item(material, 1, 0, Component.text((increase ? "+" : "-") + amount, NamedTextColor.GOLD),
-                lore.stream().toArray(size -> new Component[size]));
+        return item(material, 1, 0, Component.text((increase ? "+" : "-") + amount, NamedTextColor.GOLD), lore.toArray(Component[]::new));
     }
 
     /**

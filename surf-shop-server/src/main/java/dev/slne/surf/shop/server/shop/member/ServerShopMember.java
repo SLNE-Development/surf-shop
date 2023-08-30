@@ -2,6 +2,7 @@ package dev.slne.surf.shop.server.shop.member;
 
 import java.util.UUID;
 
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.member.ShopMember;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Bukkit;
@@ -28,7 +29,7 @@ public class ServerShopMember implements ShopMember {
      * @param shop       the shop
      * @param memberUuid the member uuid
      */
-    public ServerShopMember(ServerShop shop, UUID memberUuid) {
+    public ServerShopMember(Shop shop, UUID memberUuid) {
         this.shopId = shop.getId();
         this.memberUuid = memberUuid;
     }
@@ -68,7 +69,7 @@ public class ServerShopMember implements ShopMember {
      *
      * @return the {@link ServerShop} instance
      */
-    public ServerShop getShop() {
+    public Shop getShop() {
         return BukkitApi.getInstance().getShopManager().getShop(id);
     }
 

@@ -2,6 +2,7 @@ package dev.slne.surf.shop.server.shop.gui._2_0;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.ShopEditMainMenu;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 public class ShopMainMenu extends ShopGui {
     private final Player viewingPlayer;
 
-    public ShopMainMenu(@NotNull ServerShop shop, @NotNull Player viewingPlayer) {
+    public ShopMainMenu(@NotNull Shop shop, @NotNull Player viewingPlayer) {
         super(shop, null, 6, Component.text("ServerShop - Menü", MessageManager.PRIMARY));
         this.viewingPlayer = viewingPlayer;
 
@@ -23,13 +24,13 @@ public class ShopMainMenu extends ShopGui {
         if (viewingPlayer.hasPermission(Permissions.MENU_SELL)) {
             shopPane.addItem(sellItem(), 1, 2);
 
-            if (shop.getItemStack() == null || shop.getAmount() == 0) {
+            if (shop.item() == null || shop.isInventoryEmpty()) {
                 shopPane.addItem(new GuiItem(ItemUtils.disabledItem()), 1, 3);
             }
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_OWNER)) {
-            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUuid())), 4, 0);
+            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUUID())), 4, 0);
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_EDIT) && (shop.isOwner(viewingPlayer) || shop.isMember(viewingPlayer))) {
@@ -53,7 +54,7 @@ public class ShopMainMenu extends ShopGui {
 
     private GuiItem sellItem() {
         return new GuiItem(ItemUtils.sellItem(getShop()), event -> {
-            if (getShop().getItemStack() != null && getShop().getAmount() > 0) {
+            if (getShop().item() != null && !getShop().isInventoryEmpty()) {
                 //new ShopSellMenu(this, getShop(), viewingPlayer).show(event.getWhoClicked());
             }
         });

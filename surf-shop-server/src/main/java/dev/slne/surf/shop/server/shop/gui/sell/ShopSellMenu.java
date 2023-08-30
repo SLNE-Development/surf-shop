@@ -3,9 +3,9 @@ package dev.slne.surf.shop.server.shop.gui.sell;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
-import dev.slne.surf.shop.server.listener.events.transaction.sell.ShopItemSellEvent;
-import dev.slne.surf.shop.server.shop.ServerShop;
+import dev.slne.surf.shop.api.events.transaction.sell.ShopItemSellEvent;
 import dev.slne.surf.shop.server.shop.gui.inventory.bukkit.LimitedShadowInventory;
 import dev.slne.surf.shop.server.shop.gui.utils.ConfirmationGui;
 import dev.slne.surf.shop.server.shop.gui.utils.GuiSound;
@@ -42,8 +42,8 @@ public class ShopSellMenu extends ShopGui {
 	 * @param shop          the shop
 	 * @param viewingPlayer the player viewing the shop
 	 */
-	public ShopSellMenu(ShopGui parent, ServerShop shop, Player viewingPlayer) {
-		super(parent, 6, "ServerShop - Kaufen", shop, viewingPlayer);
+	public ShopSellMenu(ShopGui parent, Shop shop, Player viewingPlayer) {
+		super(parent, 6, "Shop - Kaufen", shop, viewingPlayer);
 
 		this.selectedAmount = 0;
 
@@ -53,7 +53,7 @@ public class ShopSellMenu extends ShopGui {
 
 		// X == 4
 		if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.owner")) {
-			shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUuid())), 4, 0);
+			shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUUID())), 4, 0);
 		}
 
 		if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.info")) {
@@ -74,7 +74,7 @@ public class ShopSellMenu extends ShopGui {
 	 */
 	@SuppressWarnings("java:S3776")
 	private void setIncreaseDecreaseItems(Player viewingPlayer) {
-		int maxAmount = getShop().getAmount();
+		int maxAmount = getShop().amount();
 
 		// X == 0
 		if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.decrease-1000")) {
@@ -145,7 +145,7 @@ public class ShopSellMenu extends ShopGui {
 
 		if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.buy") && selectedAmount > 0) {
 			shopPane.addItem(
-					new GuiItem(ItemUtils.buyItem(selectedAmount, getShop().getAmount()), event -> buyItems()), 5, 4);
+					new GuiItem(ItemUtils.buyItem(selectedAmount, getShop().amount()), event -> buyItems()), 5, 4);
 		} else if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.buy") && selectedAmount == 0) {
 			shopPane.removeItem(5, 4);
 		}
@@ -194,7 +194,7 @@ public class ShopSellMenu extends ShopGui {
 	 */
 	private void increaseDecreaseAmount(int amount) {
 		this.selectedAmount += amount;
-		int maxAmount = getShop().getAmount();
+		int maxAmount = getShop().amount();
 
 		if (this.selectedAmount <= 0) {
 			this.selectedAmount = 0;
@@ -210,7 +210,7 @@ public class ShopSellMenu extends ShopGui {
 	 * Buys the selected amount of items.
 	 */
 	private void buyItems() {
-		ItemStack itemStack = getShop().getItemStack();
+		ItemStack itemStack = getShop().item();
 		if (itemStack == null) {
 			return;
 		}
@@ -252,7 +252,7 @@ public class ShopSellMenu extends ShopGui {
 	 */
 	private boolean transferItems(ConfirmationGui gui, Player player, boolean performTransaction, int amount) {
 		PlayerInventory inventory = player.getInventory();
-		ItemStack itemStack = getShop().getItemStack().clone();
+		ItemStack itemStack = getShop().item().clone();
 
 		int maxStackSize = itemStack.getMaxStackSize();
 		Inventory transferInventory = Bukkit.createInventory(null, 9 * 6);
@@ -293,7 +293,7 @@ public class ShopSellMenu extends ShopGui {
 	 * @param gui the gui
 	 */
 	private void handleBuyConfirm(ConfirmationGui gui) {
-		ShopItemSellEvent event = new ShopItemSellEvent(getShop(), getViewingPlayer(), getShop().getItemStack(),
+		ShopItemSellEvent event = new ShopItemSellEvent(getShop(), getViewingPlayer(), getShop().item(),
 				selectedAmount);
 		Bukkit.getPluginManager().callEvent(event);
 
@@ -315,7 +315,7 @@ public class ShopSellMenu extends ShopGui {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				ItemStack boughtItemStack = getShop().getItemStack();
+				ItemStack boughtItemStack = getShop().item();
 
 				if (boughtItemStack == null) {
 					return;
@@ -327,10 +327,9 @@ public class ShopSellMenu extends ShopGui {
 							MessageManager.getShopBoughtAmountBuyerComponent(boughtItemStack, selectedAmount));
 				}
 
-				if (getShop().getOwner() != null) {
-					getShop().getOwner().sendMessage(
-							MessageManager.getShopBoughtAmountOwnerComponent(getViewingPlayer(), boughtItemStack,
-									selectedAmount));
+				Player player = getShop().getOwner().getPlayer();
+				if (player != null && player.isConnected()) {
+					player.sendMessage(MessageManager.getShopBoughtAmountOwnerComponent(getViewingPlayer(), boughtItemStack, selectedAmount));
 				}
 			}
 		}.runTask(BukkitMain.getInstance());

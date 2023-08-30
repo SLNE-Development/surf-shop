@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.shop.gui.edit;
 
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.entity.Player;
 
@@ -14,7 +15,7 @@ public class ShopEditMainMenu extends ShopGui {
      * @param shop   the shop
      * @param player the player viewing the shop
      */
-    public ShopEditMainMenu(ShopGui parent, ServerShop shop, Player viewingPlayer) {
+    public ShopEditMainMenu(ShopGui parent, Shop shop, Player viewingPlayer) {
         super(parent, 2, "ServerShop - Bearbeiten", shop, viewingPlayer);
     }
 

@@ -1,10 +1,10 @@
-package dev.slne.surf.shop.server.listener.events.state;
+package dev.slne.surf.shop.api.events.state;
 
-import dev.slne.surf.shop.server.listener.events.ShopEvent;
+import dev.slne.surf.shop.api.events.ShopEvent;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public class ShopCreateEvent extends ShopEvent {
+public final class ShopCreateEvent extends ShopEvent {
 
     private final Block block;
 

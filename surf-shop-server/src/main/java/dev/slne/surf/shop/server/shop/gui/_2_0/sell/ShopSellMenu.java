@@ -2,8 +2,9 @@ package dev.slne.surf.shop.server.shop.gui._2_0.sell;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
-import dev.slne.surf.shop.server.listener.events.transaction.sell.ShopItemSellEvent;
+import dev.slne.surf.shop.api.events.transaction.sell.ShopItemSellEvent;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui._2_0.ShopGui;
@@ -35,8 +36,8 @@ public class ShopSellMenu extends ShopGui {
     private StaticPane shopPane;
     private int selectedAmount;
 
-    public ShopSellMenu(@NotNull ServerShop shop, @NotNull SurfGui parent, Player viewingPlayer) {
-        super(shop, parent, 8, Component.text("ServerShop - Kaufen"));
+    public ShopSellMenu(@NotNull Shop shop, @NotNull SurfGui parent, Player viewingPlayer) {
+        super(shop, parent, 8, Component.text("Shop - Kaufen"));
 
         this.viewingPlayer = viewingPlayer;
         this.selectedAmount = 0;
@@ -47,7 +48,7 @@ public class ShopSellMenu extends ShopGui {
 
         // X == 4
         if (viewingPlayer.hasPermission(Permissions.SELL_MENU_OWNER)) {
-            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUuid())), 4, 0);
+            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUUID())), 4, 0);
         }
 
         if (viewingPlayer.hasPermission(Permissions.SELL_MENU_INFO)) {
@@ -69,7 +70,7 @@ public class ShopSellMenu extends ShopGui {
      */
     @SuppressWarnings("java:S3776")
     private void setIncreaseDecreaseItems(Player viewingPlayer) {
-        int maxAmount = getShop().getAmount();
+        int maxAmount = getShop().amount();
 
         // X == 0
         if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.decrease-1000")) {
@@ -140,7 +141,7 @@ public class ShopSellMenu extends ShopGui {
 
         if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.buy") && selectedAmount > 0) {
             shopPane.addItem(
-                    new GuiItem(ItemUtils.buyItem(selectedAmount, getShop().getAmount()), event -> buyItems()), 5, 4);
+                    new GuiItem(ItemUtils.buyItem(selectedAmount, getShop().amount()), event -> buyItems()), 5, 4);
         } else if (viewingPlayer.hasPermission("surf.shop.item.sell-menu.buy") && selectedAmount == 0) {
             shopPane.removeItem(5, 4);
         }
@@ -189,7 +190,7 @@ public class ShopSellMenu extends ShopGui {
      */
     private void increaseDecreaseAmount(int amount) {
         this.selectedAmount += amount;
-        int maxAmount = getShop().getAmount();
+        int maxAmount = getShop().amount();
 
         if (this.selectedAmount <= 0) {
             this.selectedAmount = 0;
@@ -205,7 +206,7 @@ public class ShopSellMenu extends ShopGui {
      * Buys the selected amount of items.
      */
     private void buyItems() {
-        ItemStack itemStack = getShop().getItemStack();
+        ItemStack itemStack = getShop().item();
         if (itemStack == null) {
             return;
         }
@@ -247,7 +248,7 @@ public class ShopSellMenu extends ShopGui {
      */
     private boolean transferItems(ConfirmationGui gui, Player player, boolean performTransaction, int amount) {
         PlayerInventory inventory = player.getInventory();
-        ItemStack itemStack = getShop().getItemStack().clone();
+        ItemStack itemStack = getShop().item().clone();
 
         int maxStackSize = itemStack.getMaxStackSize();
         Inventory transferInventory = Bukkit.createInventory(null, 9 * 6);
@@ -288,7 +289,7 @@ public class ShopSellMenu extends ShopGui {
      * @param gui the gui
      */
     private void handleBuyConfirm(ConfirmationGui gui) {
-        ShopItemSellEvent event = new ShopItemSellEvent(getShop(), viewingPlayer, getShop().getItemStack(),
+        ShopItemSellEvent event = new ShopItemSellEvent(getShop(), viewingPlayer, getShop().item(),
                 selectedAmount);
         Bukkit.getPluginManager().callEvent(event);
 
@@ -305,29 +306,30 @@ public class ShopSellMenu extends ShopGui {
 
         // Decrease actual shop items and add transactions
         transferItems(gui, viewingPlayer, true, finalAmount);
-        getShop().decreaseAmount(finalAmount);
+        getShop().decreaseAmount(finalAmount).thenAccept(shop -> {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    ItemStack boughtItemStack = shop.item();
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                ItemStack boughtItemStack = getShop().getItemStack();
+                    if (boughtItemStack == null) {
+                        return;
+                    }
 
-                if (boughtItemStack == null) {
-                    return;
+                    if (viewingPlayer != null) {
+                        viewingPlayer.closeInventory();
+                        viewingPlayer.sendMessage(
+                                MessageManager.getShopBoughtAmountBuyerComponent(boughtItemStack, selectedAmount));
+                    }
+
+                    Player player = shop.getOwner().getPlayer();
+                    if (player != null) {
+                        player.sendMessage(MessageManager.getShopBoughtAmountOwnerComponent(viewingPlayer, boughtItemStack, selectedAmount));
+                    }
                 }
+            }.runTask(BukkitMain.getInstance());
+        });
 
-                if (viewingPlayer != null) {
-                    viewingPlayer.closeInventory();
-                    viewingPlayer.sendMessage(
-                            MessageManager.getShopBoughtAmountBuyerComponent(boughtItemStack, selectedAmount));
-                }
 
-                if (getShop().getOwner() != null) {
-                    getShop().getOwner().sendMessage(
-                            MessageManager.getShopBoughtAmountOwnerComponent(viewingPlayer, boughtItemStack,
-                                    selectedAmount));
-                }
-            }
-        }.runTask(BukkitMain.getInstance());
     }
 }

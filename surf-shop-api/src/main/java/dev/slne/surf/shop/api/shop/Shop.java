@@ -21,8 +21,15 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
+    /**
+     * The created shop key
+     */
+    NamespacedKey CREATED_SHOP_KEY = new NamespacedKey("SurfShops", "placed_shop");
 
-    NamespacedKey SHOP_KEY = new NamespacedKey("slne", "shop");
+    /**
+     * The creation item key
+     */
+    NamespacedKey CREATION_ITEM_KEY = new NamespacedKey("SurfShops", "creation_item");
 
     CompletableFuture<Shop> create();
 
@@ -35,6 +42,14 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
     int amount();
 
     CompletableFuture<Shop> amount(int amount);
+
+    default CompletableFuture<Shop> decreaseAmount(int amount) {
+        return this.amount(this.amount() - amount);
+    }
+
+    default CompletableFuture<Shop> increaseAmount(int amount) {
+        return this.amount(this.amount() + amount);
+    }
 
     long getId();
 

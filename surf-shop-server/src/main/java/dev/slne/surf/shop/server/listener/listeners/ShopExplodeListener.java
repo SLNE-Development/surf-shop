@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -16,17 +17,11 @@ public class ShopExplodeListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(handleExplode);
+        event.blockList().removeIf(ShopApi::isShop);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(handleExplode);
+        event.blockList().removeIf(ShopApi::isShop);
     }
-
-    /**
-     * Handles the block being exploded
-     */
-    private static final Predicate<? super Block> handleExplode = block ->
-            block.getState() instanceof Chest chest && chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING);
 }

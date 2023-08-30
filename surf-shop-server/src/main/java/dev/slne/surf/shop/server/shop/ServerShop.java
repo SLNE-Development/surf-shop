@@ -28,11 +28,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class ServerShop implements Shop {
 
-    /**
-     * The shop key
-     */
-    public static final NamespacedKey SHOP_KEY = new NamespacedKey("slne", "shop");
-
     private static final BukkitGsonConverter GSON_CONVERTER = new BukkitGsonConverter();
 
     @SerializedName("id")
@@ -484,7 +479,7 @@ public class ServerShop implements Shop {
     @Override
     public boolean isMember(UUID player) {
         return members != null
-                && members.stream().anyMatch(member -> member.getMemberUuid().equals(player));
+                && members.stream().anyMatch(member -> member.getUUID().equals(player));
     }
 
     /**

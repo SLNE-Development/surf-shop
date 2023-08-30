@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
+import dev.slne.surf.shop.api.ShopApi;
 import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,11 +14,7 @@ public class ShopWaterlogListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onWaterlog(PlayerBucketEmptyEvent event) {
-        if (!(event.getBlock().getState() instanceof Chest chest)) {
-            return;
-        }
-
-        if (chest.getPersistentDataContainer().has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
+        if (ShopApi.isShop(event.getBlock())) {
             event.setCancelled(true);
         }
     }

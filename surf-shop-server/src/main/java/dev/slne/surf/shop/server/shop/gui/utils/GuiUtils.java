@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.shop.gui.utils;
 
+import dev.slne.surf.shop.api.util.ApiUtils;
 import dev.slne.surf.shop.server.BukkitMain;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -14,25 +15,12 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.sound.Sound.Emitter;
 import net.kyori.adventure.sound.Sound.Source;
 
-public class GuiUtils {
+public class GuiUtils extends ApiUtils {
 
     /**
      * Prevents instantiation.
      */
     private GuiUtils() {
-    }
-
-    /**
-     * Plays a sound to the player.
-     *
-     * @param toPlay The sound to play.
-     * @param player The player to play the sound to.
-     */
-    public static void playSound(org.bukkit.Sound toPlay, Player player) {
-        Sound sound = Sound.sound().type(toPlay.getKey()).volume(.5f).pitch(1f).source(Source.MASTER).build();
-        Emitter emitter = Emitter.self();
-
-        player.playSound(sound, emitter);
     }
 
     /**

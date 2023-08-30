@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.shop.gui;
 
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui.edit.ShopEditMainMenu;
 import dev.slne.surf.shop.server.shop.gui.sell.ShopSellMenu;
@@ -17,7 +18,7 @@ public class ShopMainMenu extends ShopGui {
      * @param shop          the shop
      * @param viewingPlayer the player viewing the shop
      */
-    public ShopMainMenu(ServerShop shop, Player viewingPlayer) {
+    public ShopMainMenu(Shop shop, Player viewingPlayer) {
         super(null, 6, "ServerShop - Menü", shop, viewingPlayer);
 
         StaticPane shopPane = new StaticPane(0, 0, 9, 6);
@@ -25,19 +26,19 @@ public class ShopMainMenu extends ShopGui {
         // X == 1
         if (viewingPlayer.hasPermission("surf.shop.item.main-menu.sell")) {
             shopPane.addItem(new GuiItem(ItemUtils.sellItem(shop), event -> {
-                if (shop.getItemStack() != null && shop.getAmount() > 0) {
+                if (shop.item() != null && !shop.isInventoryEmpty()) {
                     new ShopSellMenu(this, shop, viewingPlayer).show(event.getWhoClicked());
                 }
             }), 1, 2);
 
-            if (shop.getItemStack() == null || shop.getAmount() == 0) {
+            if (shop.item() == null || shop.isInventoryEmpty()) {
                 shopPane.addItem(new GuiItem(ItemUtils.disabledItem()), 1, 3);
             }
         }
 
         // X == 4
         if (viewingPlayer.hasPermission("surf.shop.item.main-menu.owner")) {
-            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUuid())), 4, 0);
+            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUUID())), 4, 0);
         }
 
         if (viewingPlayer.hasPermission("surf.shop.item.main-menu.edit")

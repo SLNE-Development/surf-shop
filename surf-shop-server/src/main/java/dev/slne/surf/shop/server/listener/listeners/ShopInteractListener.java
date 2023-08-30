@@ -3,6 +3,8 @@ package dev.slne.surf.shop.server.listener.listeners;
 import java.util.Objects;
 import java.util.UUID;
 
+import dev.slne.surf.shop.api.ShopApi;
+import dev.slne.surf.shop.api.shop.Shop;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
@@ -24,38 +26,23 @@ public class ShopInteractListener implements Listener {
 
     @EventHandler
     public void onShopInteract(PlayerInteractEvent event) {
-        Action action = event.getAction();
+        final Action action = event.getAction();
 
         if (!action.equals(Action.RIGHT_CLICK_BLOCK)) {
             return;
         }
 
-        EquipmentSlot hand = event.getHand();
+        final EquipmentSlot hand = event.getHand();
         if (!Objects.equals(hand, EquipmentSlot.HAND)) {
             return;
         }
 
         final Block block = event.getClickedBlock();
-        if (block == null) {
+        if (!ShopApi.isShop(block)) {
             return;
         }
 
-        if (!(block.getState() instanceof Chest chest)) {
-            return;
-        }
-
-        final PersistentDataContainer container = chest.getPersistentDataContainer();
-
-        if (!container.has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
-            return;
-        }
-
-        final String shopUuidString = container.get(ServerShop.SHOP_KEY, PersistentDataType.STRING);
-
-        assert shopUuidString != null;
-
-        final UUID shopUuid = UUID.fromString(shopUuidString);
-        final ServerShop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
+        final Shop shop = ShopApi.getShop(block);
 
         if (shop == null) {
             return;
@@ -65,29 +52,30 @@ public class ShopInteractListener implements Listener {
         boolean isOwner = shop.isOwner(player);
         boolean isMember = shop.isMember(player);
 
-        if (isOwner || isMember && shop.isLocked()) {
-            Player lockedByPlayer = shop.getLockedByPlayer();
-
-            if (lockedByPlayer != null && lockedByPlayer.isOnline()) {
-                shop.unlock();
-                lockedByPlayer.closeInventory(Reason.UNKNOWN);
-                lockedByPlayer.sendMessage(MessageManager.getClosedDueToEditorRequest(isOwner, isMember, player));
-            }
+        if (isOwner || isMember && shop.locked()) {
+            shop.getLockedBy().ifPresent(lockedBy -> {
+                if (lockedBy.isOnline()) {
+                    lockedBy.closeInventory(Reason.UNKNOWN);
+                    lockedBy.sendMessage(MessageManager.getClosedDueToEditorRequest(isOwner, isMember, player));
+                }
+            });
         }
 
-        if (shop.isLocked()) {
-            player.sendMessage(MessageManager.getShopIsLockedComponent(shop.getLockedByPlayer()));
-            event.setCancelled(true);
+        if (shop.locked()) {
+            shop.getLockedBy().ifPresent(lockedBy -> {
+                player.sendMessage(MessageManager.getShopIsLockedComponent(shop.getLockedBy().orElseThrow().getPlayer()));
+                event.setCancelled(true);
+            });
             return;
         }
 
-        if (shop.getItemStack() == null && !isOwner) {
+        if (shop.item() == null && !isOwner) {
             player.sendMessage(MessageManager.getShopIsNotSetupComponent());
             event.setCancelled(true);
             return;
         }
 
-        ShopMainMenu mainMenu = new ShopMainMenu(shop, player);
+        final ShopMainMenu mainMenu = new ShopMainMenu(shop, player);
 
         event.setCancelled(true);
         shop.lock(player);

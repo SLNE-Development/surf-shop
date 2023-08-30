@@ -1,30 +1,53 @@
 package dev.slne.surf.shop.server.instance;
 
+import com.google.common.base.Preconditions;
+import dev.slne.surf.shop.api.ShopApi;
+import dev.slne.surf.shop.api.instance.ShopInstance;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.command.BukkitCommandManager;
 import dev.slne.surf.shop.server.listener.BukkitListenerManager;
-import dev.slne.surf.shop.server.shop.ShopManager;
+import dev.slne.surf.shop.server.shop.ServerShop;
+import dev.slne.surf.shop.server.shop.ServerShopManager;
+import dev.slne.surf.shop.server.util.ShopUtils;
+import dev.slne.surf.shop.server.util.UUIDDataType;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Chest;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
-public class BukkitInstance {
+import java.util.UUID;
+
+import static com.google.common.base.Preconditions.*;
+
+public class BukkitInstance implements ShopInstance {
 
     private BukkitCommandManager commandManager;
     private BukkitListenerManager listenerManager;
 
-    private ShopManager shopManager;
+    private ServerShopManager shopManager;
 
     /**
      * Called when the plugin is loaded
      */
+    @Override
     public void onLoad() {
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
 
-        shopManager = new ShopManager();
+        shopManager = new ServerShopManager();
         shopManager.onLoad();
+
+        new ShopApi(this);
     }
 
     /**
      * Called when the plugin is enabled
      */
+    @Override
     public void onEnable() {
         commandManager.registerCommands();
         listenerManager.registerListeners();
@@ -53,8 +76,71 @@ public class BukkitInstance {
     /**
      * @return the shopManager
      */
-    public ShopManager getShopManager() {
+    public ServerShopManager getShopManager() {
         return shopManager;
     }
 
+    @Override
+    public Shop createShop(UUID owner, ItemStack itemStack, Location location) {
+        return new ServerShop(owner, itemStack, location);
+    }
+
+    @Override
+    public ItemStack constructCreationItem() {
+        return ShopUtils.constructCreationItem();
+    }
+
+    @Override
+    public boolean isShop(Location location) {
+        return isShop(location.getBlock());
+    }
+
+    @Override
+    public boolean isShop(Block block) {
+        if (block == null) {
+            return false;
+        }
+
+        return isShop(block.getState());
+    }
+
+    @Override
+    public boolean isShop(BlockState blockState) {
+        if (!(blockState instanceof Chest chest)) {
+            return false;
+        }
+
+        return chest.getPersistentDataContainer().has(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID);
+    }
+
+    @Override
+    public boolean isShopItem(ItemStack itemStack) {
+        if (itemStack == null) {
+            return false;
+        }
+
+        if (!itemStack.hasItemMeta()) {
+            return false;
+        }
+
+        return itemStack.getItemMeta().getPersistentDataContainer().has(ServerShop.CREATION_ITEM_KEY, PersistentDataType.BYTE);
+    }
+
+    @Override
+    public Shop getShop(@NotNull Location location) {
+        return getShop(location.getBlock());
+    }
+
+    @Override
+    public Shop getShop(@NotNull Block block) {
+        checkState(block.getState() instanceof Chest, "Block is not a chest");
+
+        final Chest chest = (Chest) block.getState();
+        final PersistentDataContainer dataContainer = chest.getPersistentDataContainer();
+        final UUID shopUuid = dataContainer.get(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID);
+
+        checkState(shopUuid != null, "Block is not a shop");
+
+        return shopManager.getShop(shopUuid);
+    }
 }

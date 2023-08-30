@@ -1,19 +1,19 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
 import dev.slne.data.api.DataApi;
+import dev.slne.surf.shop.api.ShopApi;
+import dev.slne.surf.shop.api.events.state.ShopRemoveEvent;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.instance.BukkitApi;
-import dev.slne.surf.shop.server.listener.events.state.ShopRemoveEvent;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
@@ -25,28 +25,12 @@ public class ShopBreakListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         final Block block = event.getBlock();
         final Player player = event.getPlayer();
-        final Material type = block.getType();
 
-        if (!type.equals(Material.CHEST)) {
+        if (!ShopApi.getInstance().isShop(block)) {
             return;
         }
 
-        if (!(block.getState() instanceof Chest chest)) {
-            return;
-        }
-
-        final PersistentDataContainer container = chest.getPersistentDataContainer();
-
-        if (!container.has(ServerShop.SHOP_KEY, PersistentDataType.STRING)) {
-            return;
-        }
-
-        final String shopUuidString = container.get(ServerShop.SHOP_KEY, PersistentDataType.STRING);
-
-        assert shopUuidString != null;
-
-        final UUID shopUuid = UUID.fromString(shopUuidString);
-        final ServerShop shop = BukkitApi.getInstance().getShopManager().getShop(shopUuid);
+        final Shop shop = ShopApi.getShop(block);
 
         if (shop == null) {
             player.sendMessage(MessageManager.getShopRemovedFailureComponent());
@@ -54,7 +38,7 @@ public class ShopBreakListener implements Listener {
             return;
         }
 
-        final UUID ownerUuid = shop.getOwnerUuid();
+        final UUID ownerUuid = shop.getUUID();
         if (!Objects.equals(ownerUuid, player.getUniqueId())) {
             player.sendMessage(MessageManager.getPlayerNotOwningShopComponent());
             event.setCancelled(true);
@@ -87,7 +71,7 @@ public class ShopBreakListener implements Listener {
                 BukkitApi.getInstance().getShopManager().removeShop(shop);
             } else {
                 player.sendMessage(MessageManager.getShopRemovedFailureComponent());
-                event.setCancelled(true);
+                event.setCancelled(true); // TODO: Can you cancel an event later?
             }
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to delete shop", throwable);

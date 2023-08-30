@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.destroystokyo.paper.ParticleBuilder;
+import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.entity.Player;
@@ -14,7 +16,7 @@ import dev.slne.surf.shop.server.instance.BukkitApi;
 
 public class ShopVisualizerTask extends BukkitRunnable {
 
-    private Map<ServerShop, ShopVisualizer> visualizers;
+    private final Map<Shop, ShopVisualizer> visualizers;
 
     /**
      * A new {@link ShopVisualizerTask} instance
@@ -27,9 +29,9 @@ public class ShopVisualizerTask extends BukkitRunnable {
     public void run() {
         cleanupVisualizers();
 
-        List<ServerShop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
+        List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
 
-        for (ServerShop shop : shops) {
+        for (Shop shop : shops) {
             visualizers.computeIfAbsent(shop, key -> new ShopVisualizer(shop));
         }
 
@@ -42,9 +44,9 @@ public class ShopVisualizerTask extends BukkitRunnable {
      * Cleanup the visualizers
      */
     private void cleanupVisualizers() {
-        List<ServerShop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
+        List<Shop> shops = new ArrayList<>(BukkitApi.getInstance().getShopManager().getShops());
 
-        for (ServerShop shop : new ArrayList<>(visualizers.keySet())) {
+        for (Shop shop : new ArrayList<>(visualizers.keySet())) {
             if (!shops.contains(shop)) {
                 removeVisualizer(shop);
             }
@@ -56,7 +58,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
      */
     public void start() {
         try {
-            this.runTaskTimer(BukkitMain.getInstance(), 0, 1 * 20L);
+            this.runTaskTimer(BukkitMain.getInstance(), 0, 20L);
         } catch (Exception exception) {
             // IGNORE
         }
@@ -78,7 +80,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
     /**
      * @return the visualizers
      */
-    public Map<ServerShop, ShopVisualizer> getVisualizers() {
+    public Map<Shop, ShopVisualizer> getVisualizers() {
         return visualizers;
     }
 
@@ -87,7 +89,7 @@ public class ShopVisualizerTask extends BukkitRunnable {
      *
      * @param shop the shop
      */
-    private void removeVisualizer(ServerShop shop) {
+    private void removeVisualizer(Shop shop) {
         if (visualizers.containsKey(shop)) {
             visualizers.get(shop).despawnAll();
         }

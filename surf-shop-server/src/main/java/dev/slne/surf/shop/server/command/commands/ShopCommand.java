@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.server.command.commands;
 
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import org.bukkit.Material;
@@ -22,15 +23,7 @@ public class ShopCommand extends CommandAPICommand {
         withPermission("surf.shop.give");
 
         executesPlayer((player, args) -> {
-            ItemStack chest = new ItemStack(Material.CHEST);
-            ItemMeta meta = chest.getItemMeta();
-
-            meta.displayName(Component.text("ServerShop", MessageManager.PRIMARY));
-            PersistentDataContainer container = meta.getPersistentDataContainer();
-            container.set(ServerShop.SHOP_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
-            chest.setItemMeta(meta);
-
-            player.getInventory().addItem(chest);
+            player.getInventory().addItem(ShopApi.constructCreationItem());
         });
 
         register();
