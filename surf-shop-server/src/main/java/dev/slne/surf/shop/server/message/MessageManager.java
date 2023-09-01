@@ -7,6 +7,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +41,7 @@ public class MessageManager {
      * @return the prefix
      */
     public static Component prefix() {
-        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("ServerShop", PRIMARY))
+        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("Shop", PRIMARY))
                 .append(Component.text(" | ", NamedTextColor.DARK_GRAY));
     }
 
@@ -50,7 +52,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceShopNextToChestComponent() {
-        return prefix().append(Component.text("Du kannst keinen ServerShop neben einer Kiste platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keinen Shop neben einer Kiste platzieren.", ERROR));
     }
 
     /**
@@ -60,7 +62,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceShopNextToShopComponent() {
-        return prefix().append(Component.text("Du kannst keinen ServerShop neben einem ServerShop platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keinen Shop neben einem Shop platzieren.", ERROR));
     }
 
     /**
@@ -70,7 +72,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getCannotPlaceChestNextToShopComponent() {
-        return prefix().append(Component.text("Du kannst keine Kiste neben einem ServerShop platzieren.", ERROR));
+        return prefix().append(Component.text("Du kannst keine Kiste neben einem Shop platzieren.", ERROR));
     }
 
     /**
@@ -79,7 +81,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopCreatedSuccessfullyComponent() {
-        return prefix().append(Component.text("Dein ServerShop wurde erfolgreich erstellt.", SUCCESS));
+        return prefix().append(Component.text("Dein Shop wurde erfolgreich erstellt.", SUCCESS));
     }
 
     /**
@@ -89,7 +91,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopRemovedSuccessfullyComponent() {
-        return prefix().append(Component.text("Dein ServerShop wurde erfolgreich entfernt.", SUCCESS));
+        return prefix().append(Component.text("Dein Shop wurde erfolgreich entfernt.", SUCCESS));
     }
 
     /**
@@ -99,7 +101,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopCreatedFailureComponent() {
-        return prefix().append(Component.text("Dein ServerShop konnte nicht erstellt werden.", ERROR));
+        return prefix().append(Component.text("Dein Shop konnte nicht erstellt werden.", ERROR));
     }
 
     /**
@@ -109,7 +111,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopRemovedFailureComponent() {
-        return prefix().append(Component.text("Dein ServerShop konnte nicht entfernt werden.", ERROR));
+        return prefix().append(Component.text("Dein Shop konnte nicht entfernt werden.", ERROR));
     }
 
     /**
@@ -118,7 +120,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getPlayerNotOwningShopComponent() {
-        return prefix().append(Component.text("Dieser ServerShop gehört nicht dir.", ERROR));
+        return prefix().append(Component.text("Dieser Shop gehört nicht dir.", ERROR));
     }
 
     /**
@@ -140,18 +142,18 @@ public class MessageManager {
      * @return the component
      */
     public static Component getClosedDueToEditorRequest(boolean isOwner, boolean isMember, Player closer) {
-        Component message = null;
+        Component message;
 
         if (isOwner) {
-            message = Component.text("Der ServerShop wurde durch den Besitzer ", INFO)
+            message = Component.text("Der Shop wurde durch den Besitzer ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         } else if (isMember) {
-            message = Component.text("Der ServerShop wurde durch ein Mitglied ", INFO)
+            message = Component.text("Der Shop wurde durch ein Mitglied ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         } else {
-            message = Component.text("Der ServerShop wurde durch ", INFO)
+            message = Component.text("Der Shop wurde durch ", INFO)
                     .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" geschlossen.", INFO));
         }
@@ -165,14 +167,14 @@ public class MessageManager {
      * @param lockedBy the player who locked the shop
      * @return the component
      */
-    public static Component getShopIsLockedComponent(Player lockedBy) {
+    public static @NotNull Component getShopIsLockedComponent(@Nullable Player lockedBy) {
         if (lockedBy != null) {
-            return prefix().append(Component.text("Der ServerShop wird aktuell durch ", INFO))
+            return prefix().append(Component.text("Der Shop wird aktuell durch ", INFO))
                     .append(lockedBy.displayName().colorIfAbsent(VARIABLE_VALUE))
                     .append(Component.text(" verwendet.", INFO));
         }
 
-        return prefix().append(Component.text("Der ServerShop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
+        return prefix().append(Component.text("Der Shop wird aktuell durch einen anderen Benutzer verwendet.", INFO));
     }
 
     /**
@@ -181,7 +183,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getShopIsNotSetupComponent() {
-        return prefix().append(Component.text("Der ServerShop wurde noch nicht eingerichtet.", ERROR));
+        return prefix().append(Component.text("Der Shop wurde noch nicht eingerichtet.", ERROR));
     }
 
     /**
@@ -244,6 +246,7 @@ public class MessageManager {
         Component name = itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()
                 ? itemStack.getItemMeta().displayName()
                 : Component.text(itemStack.getType().name());
+        assert name != null;
         name = name.colorIfAbsent(VARIABLE_VALUE);
 
         List<Component> lore = itemStack.hasItemMeta() && itemStack.getItemMeta().hasLore()
@@ -253,6 +256,7 @@ public class MessageManager {
         TextComponent.Builder itemStackBuilder = Component.text();
         itemStackBuilder.append(name);
 
+        assert lore != null;
         for (Component loreComponent : lore) {
             itemStackBuilder.append(Component.newline());
             itemStackBuilder.append(loreComponent);
@@ -274,6 +278,22 @@ public class MessageManager {
     }
 
     public static Component getShopAlreadyRemovingComponent() {
-        return prefix().append(Component.text("Der ServerShop wird bereits entfernt.", ERROR));
+        return prefix().append(Component.text("Der Shop wird bereits entfernt.", ERROR));
+    }
+
+    public static Component getShopNotSellingComponent() {
+        return prefix().append(Component.text("Der Shop verkauft aktuell nichts.", ERROR));
+    }
+
+    public static Component getNotEnoughMoneyComponent() {
+        return prefix().append(Component.text("Du hast nicht genug Geld.", ERROR));
+    }
+
+    public static Component getTransactionErrorComponent() {
+        return prefix().append(Component.text("Es ist ein Fehler bei der Transaktion aufgetreten.", ERROR));
+    }
+
+    public static Component getErrorComponent() {
+        return prefix().append(Component.text("Es ist ein Fehler aufgetreten.", ERROR));
     }
 }

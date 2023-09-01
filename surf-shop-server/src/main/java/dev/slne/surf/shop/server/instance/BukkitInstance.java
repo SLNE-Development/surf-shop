@@ -4,13 +4,16 @@ import dev.slne.data.api.DataApi;
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.command.BukkitCommandManager;
 import dev.slne.surf.shop.server.listener.BukkitListenerManager;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.ServerShopManager;
+import dev.slne.surf.shop.server.util.Permissions;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import dev.slne.surf.shop.server.util.UUIDDataType;
+import dev.slne.transaction.api.currency.Currency;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -22,6 +25,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -42,6 +46,8 @@ public class BukkitInstance implements ShopInstance {
         new ShopApi(this);
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
+
+        Permissions.invoke();
 
         shopManager = new ServerShopManager();
         shopManager.onLoad();
@@ -84,16 +90,19 @@ public class BukkitInstance implements ShopInstance {
     }
 
     @Override
-    public CompletableFuture<Shop> createShop(@NotNull Player owner, ItemStack itemStack, @NotNull Location location) {
+    public CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, ItemStack itemStack, @NotNull Location location) {
+        checkNotNull(currency, "Currency cannot be null");
+        checkNotNull(owner, "Owner cannot be null");
+
         final BlockState blockState = location.getBlock().getState();
 
         checkArgument(blockState instanceof Chest, "Location is not a chest");
 
-        final ServerShop shop = new ServerShop(owner.getUniqueId(), itemStack, location);
+        final ServerShop shop = new ServerShop(currency, owner.getUniqueId(), itemStack, location);
 
-        shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
 
-        return shop.create().thenApplyAsync(created -> {
+
+        return shop.create().thenComposeAsync(created -> {
             if (created == null) {
                 owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
                 return null;
@@ -104,7 +113,7 @@ public class BukkitInstance implements ShopInstance {
 
             owner.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
 
-            return created;
+            return shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
             owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
@@ -169,5 +178,15 @@ public class BukkitInstance implements ShopInstance {
         checkState(shopUuid != null, "Block is not a shop");
 
         return shopManager.getShop(shopUuid);
+    }
+
+    @Override
+    public Currency getDefaultCurrency() {
+        return BukkitMain.getInstance().getDefaultCurrency();
+    }
+
+    @Override
+    public List<Currency> getOtherCurrencies() {
+        return BukkitMain.getInstance().getOtherCurrencies();
     }
 }

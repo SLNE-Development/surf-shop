@@ -1,12 +1,10 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
-import dev.slne.data.api.DataApi;
 import dev.slne.surf.shop.api.ShopApi;
-import dev.slne.surf.shop.api.shop.Shop;
-import dev.slne.surf.shop.server.shop.ServerShop;
+import dev.slne.surf.shop.api.events.state.ShopCreateEvent;
+import dev.slne.surf.shop.api.instance.ShopInstance;
+import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.util.ShopUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -16,12 +14,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-
-import dev.slne.surf.shop.server.instance.BukkitApi;
-import dev.slne.surf.shop.api.events.state.ShopCreateEvent;
-import dev.slne.surf.shop.server.message.MessageManager;
 
 public class ShopPlaceListener implements Listener {
 
@@ -69,7 +61,8 @@ public class ShopPlaceListener implements Listener {
                 return;
             }
 
-            ShopApi.getInstance().createShop(player, new ItemStack(Material.STRUCTURE_VOID), block.getLocation());
+            final ShopInstance shopInstance = ShopApi.getInstance();
+            shopInstance.createShop(shopInstance.getDefaultCurrency(), player, new ItemStack(Material.STRUCTURE_VOID), block.getLocation());
         } else {
             if (nextToShop) {
                 player.sendMessage(MessageManager.getCannotPlaceChestNextToShopComponent());

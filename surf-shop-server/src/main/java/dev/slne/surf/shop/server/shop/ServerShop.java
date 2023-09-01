@@ -7,23 +7,43 @@ import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import dev.slne.data.api.DataApi;
 import dev.slne.data.api.web.WebRequest;
+import dev.slne.surf.shop.api.events.transaction.buy.ShopItemBuyEvent;
+import dev.slne.surf.shop.api.events.transaction.sell.ShopItemSellEvent;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.member.ShopMember;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.api.API;
 import dev.slne.surf.shop.server.api.BukkitGsonConverter;
 import dev.slne.surf.shop.server.message.MessageManager;
+import dev.slne.surf.shop.server.shop.gui._2_0.inventory.CouldNotAddAllItemsToInventoryException;
+import dev.slne.surf.shop.server.shop.gui._2_0.inventory.PlayerInventoryItemsTransfer;
+import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiSound;
+import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiUtils;
 import dev.slne.surf.shop.server.shop.member.ServerShopMember;
+import dev.slne.transaction.api.TransactionApi;
+import dev.slne.transaction.api.currency.Currency;
+import dev.slne.transaction.api.player.TransactionPlayer;
+import dev.slne.transaction.api.transaction.Transaction;
+import dev.slne.transaction.api.transaction.result.TransactionAddResult;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+
+import static com.google.common.base.Preconditions.*;
 
 public class ServerShop implements Shop {
 
@@ -62,13 +82,23 @@ public class ServerShop implements Shop {
     @SerializedName("sell_price")
     private double sellPrice;
 
+    @SerializedName("buy_amount")
+    private int buyAmount; // TODO: Add to database
+
+    @SerializedName("buy_price")
+    private double buyPrice; // TODO: Add to database
+
     @SerializedName("members")
     private List<ServerShopMember> members;
+
+    @SerializedName("currency")
+    private Currency currency;
 
     private boolean locked;
     private Player lockedByPlayer;
 
     private boolean deleting = false;
+    private boolean isAdminShop = false;
 
     @Deprecated
     public ServerShop() {
@@ -82,8 +112,12 @@ public class ServerShop implements Shop {
      * @param itemStack the itemstack
      * @param location  the location
      */
-    public ServerShop(UUID owner, ItemStack itemStack, Location location) {
+    public ServerShop(@NotNull Currency currency, @NotNull UUID owner, @Nullable ItemStack itemStack, @Nullable Location location) {
+        checkNotNull(currency, "currency");
+        checkNotNull(owner, "owner");
+
         this.ownerUuid = owner;
+        this.currency = currency;
 
         if (itemStack != null) {
             this.itemStack = itemStack;
@@ -235,6 +269,7 @@ public class ServerShop implements Shop {
         parameters.put("owner_uuid", ownerUuid.toString());
         parameters.put("shop_itemstack", itemStack);
         parameters.put("shop_amount", String.valueOf(amount));
+        parameters.put("currency_id", currency.getId());
 
         parameters.put("location_world", worldUUID.toString());
         parameters.put("location_x", String.valueOf(x));
@@ -254,7 +289,6 @@ public class ServerShop implements Shop {
      * @return the shop
      */
     private static Shop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
-
         JsonObject dataObject = bodyElement.getAsJsonObject();
 
         return GSON_CONVERTER.fromJson(dataObject.toString(), Shop.class);
@@ -478,6 +512,165 @@ public class ServerShop implements Shop {
         return deleting;
     }
 
+    @Override
+    public boolean isSelling() {
+        return sellPrice > 0;
+    }
+
+    @Override
+    public boolean isBuying() {
+        return buyPrice > 0;
+    }
+
+    /**
+     * Sells the specified amount of the selling item to the shop.
+     * <p>
+     * This will also call the {@link ShopItemBuyEvent} event
+     *
+     * @param player              the player who is buying
+     * @param amountOfSellingItem the amount of the selling item <b>not</b> the total amount of items.
+     *                            <p>
+     *                            <b>EXAMPLE:</b> If the {@link #sellAmount()} is 2 and the
+     *                            {@code amountOfSellingItem} is 3 then the player will become 6
+     *                            items in total
+     *                            </p>
+     * @return true if everything went fine and the player has been charged
+     *
+     * <li>
+     * If the player inventory is full then the action will be cancelled
+     * and {@code  false} will be returned
+     * </li>
+     * <li>
+     * If the player don´t have enough space in his invenvotry and the
+     * check was broken for some reasons than the leftover items will be
+     * dropped at the players position
+     * </li>
+     * <li>
+     * If the player does not have enough money then the action will be
+     * cancelled and {@code false} will be returned
+     * </li>
+     */
+    @Override
+    public CompletableFuture<Boolean> buy(Player player, int amountOfSellingItem) {
+        checkNotNull(player, "player");
+        checkArgument(amountOfSellingItem > 0, "amountOfSellingItem must be greater than 0");
+        checkState(player.isConnected(), "player is not connected");
+        checkState(!isDeleting(), "shop is currently deleting");
+
+        if (amount < (amountOfSellingItem * sellAmount)) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        final ShopItemSellEvent event = new ShopItemSellEvent(this, player, itemStack, amountOfSellingItem);
+
+        if (!event.callEvent()) {
+            event.applyCancelled(player);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        final int finalAmount = event.getBoughtAmount();
+        final int totalItems = finalAmount * sellAmount;
+
+        // Charge player
+        executeTransaction(player, sellPrice * finalAmount).thenComposeAsync(transactionResult -> {
+            if (transactionResult == TransactionAddResult.NOT_ENOUGH_MONEY) {
+                player.sendMessage(MessageManager.getNotEnoughMoneyComponent());
+                GuiUtils.playGuiSound(GuiSound.DENY_ACTION, player);
+                return CompletableFuture.completedFuture(false);
+            }
+
+            if (transactionResult != TransactionAddResult.SUCCESS) {
+                player.sendMessage(MessageManager.getTransactionErrorComponent());
+                GuiUtils.playGuiSound(GuiSound.DENY_ACTION, player);
+                return CompletableFuture.completedFuture(false);
+            }
+
+            return decreaseAmount(totalItems).thenApplyAsync(shop -> {
+                Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
+                    final ItemStack itemStack = shop.item();
+
+                    if (itemStack == null) {
+                        return;
+                    }
+
+                    final Player playerNow = Bukkit.getPlayer(player.getUniqueId());
+
+                    if (playerNow != null) {
+                        playerNow.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+                        playerNow.sendMessage(MessageManager.getShopBoughtAmountBuyerComponent(itemStack, totalItems));
+                    }
+
+                    final Player owner = getOwner().getPlayer();
+                    if (owner != null && owner.isConnected()) {
+                        owner.sendMessage(MessageManager.getShopBoughtAmountOwnerComponent(player, itemStack, totalItems));
+                    }
+                });
+
+                // Transfer items
+                return transferItems(player, finalAmount);
+            });
+        });
+
+        return CompletableFuture.completedFuture(true);
+    }
+
+    /**
+     * Tries to transfer the items to the player.
+     *
+     * @param player the player
+     * @param amount the amount of items to transfer
+     * @return whether the transfer was successful
+     */
+    private boolean transferItems(@NotNull Player player, int amount) {
+        checkNotNull(player, "player");
+        checkArgument(amount > 0, "amount must be greater than 0");
+
+        final PlayerInventoryItemsTransfer itemTransfer = new PlayerInventoryItemsTransfer(
+                item(),
+                amount,
+                player.getInventory()
+        );
+
+        try {
+            if (!itemTransfer.transferItems()) {
+                player.sendMessage(MessageManager.getInventoryCannotAcceptNItemsComponent(amount));
+                GuiUtils.playGuiSound(GuiSound.DENY_ACTION, player);
+                return false;
+            }
+
+        } catch (CouldNotAddAllItemsToInventoryException exception) {
+            final Location playerLocation = player.getLocation();
+            final World playerWorld = player.getWorld();
+
+            for (Map.Entry<Integer, ItemStack> leftOver : exception.getLeftOver().entrySet()) {
+                playerWorld.dropItem(playerLocation, leftOver.getValue(), item -> {
+                    item.setOwner(player.getUniqueId());
+                    item.setThrower(player.getUniqueId());
+                });
+            }
+        }
+
+        return true;
+    }
+
+    private CompletableFuture<TransactionAddResult> executeTransaction(Player buyer, double price) {
+        final TransactionPlayer ownerTransactionPlayer = TransactionApi.getTransactionPlayer(ownerUuid, false);
+        final TransactionPlayer buyerTransactionPlayer = TransactionApi.getTransactionPlayer(buyer.getUniqueId(), true);
+        final Transaction buyerTransaction = TransactionApi.createTransaction(null, buyerTransactionPlayer.uuid(), this.currency, BigDecimal.valueOf(-price));
+        final Transaction ownerTransaction = TransactionApi.createTransaction(null, ownerTransactionPlayer.uuid(), this.currency, BigDecimal.valueOf(price));
+
+        buyerTransaction.setTransactionData(new ShopTransactionData(this, buyer));
+        ownerTransaction.setTransactionData(new ShopTransactionData(this, buyer));
+
+        return buyerTransactionPlayer.addTransaction(buyerTransaction).thenComposeAsync(buyerTransactionResult -> {
+            if (buyerTransactionResult == TransactionAddResult.SUCCESS) {
+                return ownerTransactionPlayer.addTransaction(ownerTransaction).thenApplyAsync(ownerTransactionResult -> buyerTransactionResult);
+            }
+
+            return CompletableFuture.completedFuture(buyerTransactionResult);
+        });
+    }
+
     /**
      * Gets the block x value for this shop
      *
@@ -569,5 +762,15 @@ public class ServerShop implements Shop {
     @Override
     public Shop inter() {
         return this;
+    }
+
+    /**
+     * Checks if this shop is an admin shop (Currently not implemented)
+     *
+     * @return true if admin shop
+     */
+    @Override
+    public boolean isAdminShop() {
+        return isAdminShop;
     }
 }

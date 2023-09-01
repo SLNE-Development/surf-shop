@@ -1,4 +1,4 @@
-package dev.slne.surf.shop.server.shop.gui.utils;
+package dev.slne.surf.shop.server.shop.gui._2_0.util;
 
 import org.bukkit.Sound;
 

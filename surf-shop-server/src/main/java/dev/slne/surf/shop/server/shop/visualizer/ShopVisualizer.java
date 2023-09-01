@@ -10,6 +10,7 @@ import com.github.retrooper.packetevents.util.Vector3f;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
+import com.google.common.collect.Lists;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
@@ -118,18 +119,13 @@ public class ShopVisualizer {
         // Material
         final Material sellItemMaterial = getSellItemMaterial();
         if (sellItemMaterial != null) {
-            double materialY = shopY + calculateMaterialHeight();
+            double materialY = shopY + 1.025;
 
             spawnMaterial(player, shopX, materialY, shopZ, sellItemMaterial);
         }
 
         // Lines
-        List<Component> lines = getLines();
-        List<Component> linesReversed = new ArrayList<>();
-
-        for (int i = lines.size() - 1; i >= 0; i--) {
-            linesReversed.add(lines.get(i));
-        }
+        List<Component> linesReversed = Lists.reverse(getLines());
 
         for (int i = 0; i < linesReversed.size(); i++) {
             double lineY = shopY + calculateLineHeight(i);
@@ -206,7 +202,7 @@ public class ShopVisualizer {
                 .fromBukkitItemStack(bukkitItemStack);
 
         // Display Type
-        final DisplayType displayType = DisplayType.FIXED;
+        final DisplayType displayType = DisplayType.NONE;
         byte displayTypeByte = (byte) displayType.getId();
 
         final List<EntityData> entityData = new ArrayList<>();

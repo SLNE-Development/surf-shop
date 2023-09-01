@@ -22,6 +22,10 @@ dependencies:
       join-classpath: true
       load: BEFORE
       required: true
+    SurfTransactionBukkit:
+      join-classpath: true
+      load: BEFORE
+      required: true
 
 permissions:
   surf.shop.*:

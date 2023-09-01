@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import java.util.List;
 import java.util.Optional;
@@ -100,6 +101,51 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
     boolean isMember(UUID player);
 
     boolean isDeleting();
+
+    boolean isSelling();
+
+    default boolean isBuying() {
+        return false;
+    }
+
+    /**
+     * Checks if this shop is an admin shop (Currently not implemented)
+     *
+     * @return true if admin shop
+     */
+    default boolean isAdminShop() {
+        return false;
+    }
+
+    /**
+     * Sells the specified amount of the selling item to the shop.
+     * <p>
+     *     This will also call the {@link dev.slne.surf.shop.api.events.transaction.buy.ShopItemBuyEvent} event
+     *
+     * @param player              the player who is buying
+     * @param amountOfSellingItem the amount of the selling item <b>not</b> the total amount of items.
+     *                            <p>
+     *                            <b>EXAMPLE:</b> If the {@link #sellAmount()} is 2 and the
+     *                            {@code amountOfSellingItem} is 3 then the player will become 6
+     *                            items in total
+     *                            </p>
+     * @return true if everything went fine and the player has been charged
+     *
+     * <li>
+     * If the player inventory is full then the action will be cancelled
+     * and {@code  false} will be returned
+     * </li>
+     * <li>
+     * If the player don´t have enough space in his invenvotry and the
+     * check was broken for some reasons than the leftover items will be
+     * dropped at the players position
+     * </li>
+     * <li>
+     * If the player does not have enough money then the action will be
+     * cancelled and {@code false} will be returned
+     * </li>
+     */
+    CompletableFuture<Boolean> buy(Player player, @Range(from = 1, to = Integer.MAX_VALUE) int amountOfSellingItem);
 
     /**
      * Gets the block x value for this shop

@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import dev.slne.surf.shop.api.ShopApi;
@@ -45,27 +46,30 @@ public class ShopInteractListener implements Listener {
         final Shop shop = ShopApi.getShop(block);
 
         if (shop == null) {
+            event.setCancelled(true);
             return;
         }
 
         final Player player = event.getPlayer();
+        final Optional<Player> shopLockedBy = shop.getLockedBy();
         boolean isOwner = shop.isOwner(player);
         boolean isMember = shop.isMember(player);
 
         if (isOwner || isMember && shop.locked()) {
-            shop.getLockedBy().ifPresent(lockedBy -> {
-                if (lockedBy.isOnline()) {
+            if (shopLockedBy.isPresent()) {
+                final Player lockedBy = shopLockedBy.get();
+
+                if (lockedBy.isConnected()) {
                     lockedBy.closeInventory(Reason.UNKNOWN);
                     lockedBy.sendMessage(MessageManager.getClosedDueToEditorRequest(isOwner, isMember, player));
+                    return;
                 }
-            });
+            }
         }
 
         if (shop.locked()) {
-            shop.getLockedBy().ifPresent(lockedBy -> {
-                player.sendMessage(MessageManager.getShopIsLockedComponent(shop.getLockedBy().orElseThrow().getPlayer()));
-                event.setCancelled(true);
-            });
+            player.sendMessage(MessageManager.getShopIsLockedComponent(shopLockedBy.orElse(null)));
+            event.setCancelled(true);
             return;
         }
 

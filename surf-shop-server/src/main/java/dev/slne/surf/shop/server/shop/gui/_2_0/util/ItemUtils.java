@@ -1,11 +1,11 @@
-package dev.slne.surf.shop.server.shop.gui.utils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+package dev.slne.surf.shop.server.shop.gui._2_0.util;
 
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.server.message.MessageManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -13,13 +13,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.NotNull;
 
-import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.gui.ShopGui;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 public class ItemUtils {
 
@@ -68,8 +67,7 @@ public class ItemUtils {
     /**
      * Creates a skull item.
      *
-     * @param uuid        The owner uuid of the skull.
-     * @param displayName The display name of the skull.
+     * @param ownerUuid        The owner uuid of the skull.
      * @param lore        The lore of the skull.
      * @return The created skull item.
      */
@@ -88,71 +86,11 @@ public class ItemUtils {
      * @return The created skull item.
      */
     public static ItemStack head(OfflinePlayer owner, Component displayName, Component... lore) {
-        ItemStack head = item(Material.PLAYER_HEAD, 1, 0, displayName.colorIfAbsent(NamedTextColor.GOLD),
-                lore);
-        ItemMeta meta = head.getItemMeta();
+        final ItemStack head = item(Material.PLAYER_HEAD, 1, 0, displayName.colorIfAbsent(NamedTextColor.GOLD), lore);
 
-        if (meta instanceof SkullMeta skullMeta) {
-            skullMeta.setOwningPlayer(owner);
-        }
-
-        head.setItemMeta(meta);
+        head.editMeta(SkullMeta.class, meta -> meta.setOwningPlayer(owner));
 
         return head;
-    }
-
-    /**
-     * Creates a pane item.
-     *
-     * @return The created pane item.
-     */
-    public static ItemStack paneItem() {
-        return item(Material.GRAY_STAINED_GLASS_PANE, 1, 0, Component.space());
-    }
-
-    /**
-     * Creates a close item.
-     *
-     * @return The created close item.
-     */
-    public static ItemStack closeItem() {
-        return item(Material.BARRIER, 1, 0, Component.text("Schließen", NamedTextColor.GOLD),
-                Component.empty(), Component.text("Schließt das Menü", NamedTextColor.GRAY), Component.empty());
-    }
-
-    /**
-     * Creates a back item.
-     *
-     * @return The created back item.
-     */
-    public static ItemStack backItem(ShopGui shopGui) {
-        List<ShopGui> parents = shopGui.walkParents();
-        List<Component> parentNames = new ArrayList<>();
-
-        String formatterParent = "<< %s";
-        String formatterCurrent = ">> %s";
-
-        parentNames.add(
-                Component.text(String.format(formatterCurrent, shopGui.getTitle()), MessageManager.VARIABLE_VALUE));
-        for (ShopGui parent : parents) {
-            parentNames.add(Component.text(String.format(formatterParent, parent.getTitle()), NamedTextColor.GRAY));
-        }
-
-        List<Component> lore = new ArrayList<>();
-        lore.add(Component.empty());
-
-        if (parentNames.size() > 1) {
-            lore.add(Component.text("Geht zurück zum vorherigen Menü.", NamedTextColor.GRAY));
-        } else {
-            lore.add(Component.text("Schließt das Menü", NamedTextColor.GRAY));
-        }
-
-        lore.add(Component.empty());
-        lore.addAll(parentNames);
-        lore.add(Component.empty());
-
-        return item(Material.ARROW, 1, 0, Component.text("Zurück", NamedTextColor.GOLD),
-                lore.stream().toArray(size -> new Component[size]));
     }
 
     /**
@@ -236,13 +174,28 @@ public class ItemUtils {
 
         if (toShow == null) {
             toShow = ItemUtils.item(Material.BARRIER, 1, 0, Component.text("Nicht eingerichtet", NamedTextColor.GOLD),
-                    Component.empty(), Component.text("Dieser ServerShop ist nicht eingerichtet", NamedTextColor.GRAY),
+                    Component.empty(), Component.text("Dieser Shop ist nicht eingerichtet", NamedTextColor.GRAY),
                     Component.empty());
         } else {
             toShow = toShow.clone();
         }
 
         return toShow;
+    }
+
+    /**
+     * Returns the owner item
+     *
+     * @param shop the shop
+     * @return the owner item
+     */
+    public static @NotNull ItemStack ownerItem(@NotNull Shop shop) {
+        final OfflinePlayer owner = Bukkit.getOfflinePlayer(shop.getOwnerUUID());
+        final String name = owner.getName();
+
+        assert name != null : "Owner name cannot be null, as the owner is required to create a shop";
+
+        return head(owner, Component.text("%s´s Shop", MessageManager.VARIABLE_VALUE));
     }
 
     /**
@@ -403,7 +356,7 @@ public class ItemUtils {
         lore.add(Component.empty());
 
         return item(Material.GOLD_BLOCK, 1, 0, Component.text("Kaufen", NamedTextColor.GOLD),
-                lore.stream().toArray(size -> new Component[size]));
+                lore.toArray(Component[]::new));
     }
 
     /**
@@ -430,7 +383,7 @@ public class ItemUtils {
         lore.add(Component.empty());
 
         return item(Material.BRUSH, 1, 0, Component.text("Zurücksetzen", NamedTextColor.GOLD),
-                lore.stream().toArray(size -> new Component[size]));
+                lore.toArray(Component[]::new));
     }
 
     /**

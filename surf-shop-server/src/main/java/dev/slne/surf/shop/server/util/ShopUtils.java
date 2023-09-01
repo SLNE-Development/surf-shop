@@ -2,17 +2,13 @@ package dev.slne.surf.shop.server.util;
 
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.ServerShop;
-import dev.slne.surf.shop.server.shop.gui.utils.ItemUtils;
+import dev.slne.surf.shop.server.shop.gui._2_0.util.ItemUtils;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 

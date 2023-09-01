@@ -4,9 +4,9 @@ import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
-import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.ShopEditMainMenu;
-import dev.slne.surf.shop.server.shop.gui.utils.ItemUtils;
+import dev.slne.surf.shop.server.shop.gui._2_0.sell.ShopSellMenu;
+import dev.slne.surf.shop.server.shop.gui._2_0.util.ItemUtils;
 import dev.slne.surf.shop.server.util.Permissions;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
@@ -30,19 +30,19 @@ public class ShopMainMenu extends ShopGui {
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_OWNER)) {
-            shopPane.addItem(new GuiItem(ItemUtils.head(shop.getOwnerUUID())), 4, 0);
+            shopPane.addItem(ownerItem(), 4, 0);
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_EDIT) && (shop.isOwner(viewingPlayer) || shop.isMember(viewingPlayer))) {
-            shopPane.addItem(editShopItem(), 4, 1);
+            shopPane.addItem(editShopItem(), 3, 0);
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_INFO)) {
-            shopPane.addItem(infoItem(), 4, 2);
+            shopPane.addItem(infoItem(), 5, 0);
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_SHOP_ITEM)) {
-            shopPane.addItem(shopItem(), 4, 3);
+            shopPane.addItem(shopItem(), 4, 2);
         }
 
         if (viewingPlayer.hasPermission(Permissions.MENU_BUY)) {
@@ -50,12 +50,15 @@ public class ShopMainMenu extends ShopGui {
             shopPane.addItem(new GuiItem(ItemUtils.disabledItem()), 7, 3);
         }
 
+        addPane(shopPane);
     }
 
     private GuiItem sellItem() {
         return new GuiItem(ItemUtils.sellItem(getShop()), event -> {
             if (getShop().item() != null && !getShop().isInventoryEmpty()) {
-                //new ShopSellMenu(this, getShop(), viewingPlayer).show(event.getWhoClicked());
+                new ShopSellMenu( getShop(), this, viewingPlayer).show(event.getWhoClicked());
+            } else {
+                viewingPlayer.sendMessage(MessageManager.getShopNotSellingComponent());
             }
         });
     }
@@ -70,5 +73,9 @@ public class ShopMainMenu extends ShopGui {
 
     private GuiItem shopItem() {
         return new GuiItem(ItemUtils.shopItem(getShop()));
+    }
+
+    private GuiItem ownerItem() {
+        return new GuiItem(ItemUtils.ownerItem(getShop()));
     }
 }

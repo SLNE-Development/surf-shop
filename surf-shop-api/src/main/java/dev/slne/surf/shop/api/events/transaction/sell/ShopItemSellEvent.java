@@ -17,6 +17,7 @@ public final class ShopItemSellEvent extends ShopEvent {
      * @param shop            The shop.
      * @param player          The player.
      * @param boughtItemStack The item stack bought.
+     * @param boughtAmount    The amount of the stack bought. (not the total item amount - the amount of the stack)
      */
     public ShopItemSellEvent(Shop shop, Player player, ItemStack boughtItemStack, int boughtAmount) {
         super(shop, player);

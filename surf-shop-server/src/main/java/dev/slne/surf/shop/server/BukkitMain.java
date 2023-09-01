@@ -1,14 +1,18 @@
 package dev.slne.surf.shop.server;
 
-import java.util.Random;
-
+import com.github.retrooper.packetevents.PacketEvents;
+import dev.slne.surf.shop.server.instance.BukkitApi;
 import dev.slne.surf.shop.server.instance.BukkitInstance;
+import dev.slne.transaction.api.TransactionApi;
+import dev.slne.transaction.api.currency.Currency;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.github.retrooper.packetevents.PacketEvents;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
-import dev.slne.surf.shop.server.instance.BukkitApi;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
+import static com.google.common.base.Preconditions.*;
 
 public class BukkitMain extends JavaPlugin {
 
@@ -16,9 +20,11 @@ public class BukkitMain extends JavaPlugin {
     private static BukkitInstance bukkitInstance;
 
     private Random random;
+    private Currency defaultCurrency;
+    private final List<Currency> otherCurrencies = new ArrayList<>();
 
     @Override
-    @SuppressWarnings({ "java:S3252", "java:S2696" })
+    @SuppressWarnings({"java:S3252", "java:S2696"})
     public void onLoad() {
         instance = this;
         bukkitInstance = new BukkitInstance();
@@ -30,6 +36,9 @@ public class BukkitMain extends JavaPlugin {
         PacketEvents.getAPI().getSettings().checkForUpdates(true).bStats(true);
         PacketEvents.getAPI().load();
 
+        saveDefaultConfig();
+
+        setCurrencies();
         bukkitInstance.onLoad();
     }
 
@@ -45,6 +54,14 @@ public class BukkitMain extends JavaPlugin {
         bukkitInstance.onDisable();
 
         PacketEvents.getAPI().terminate();
+    }
+
+    @Override
+    public void reloadConfig() {
+        super.reloadConfig();
+        otherCurrencies.clear();
+
+        setCurrencies();
     }
 
     /**
@@ -72,4 +89,23 @@ public class BukkitMain extends JavaPlugin {
         return random;
     }
 
+    public Currency getDefaultCurrency() {
+        return defaultCurrency;
+    }
+
+    public List<Currency> getOtherCurrencies() {
+        return otherCurrencies;
+    }
+
+    private void setCurrencies() {
+        final Currency defaultCurrency = TransactionApi.getCurrency(getConfig().getString("default-shop-currency", ""));
+        checkNotNull(defaultCurrency, "Default currency cannot be null");
+
+        final List<String> otherCurrenciesNameList = getConfig().getStringList("other-shop-currencies");
+        TransactionApi.getCurrencyManager().getCurrencies().stream()
+                .filter(currency -> otherCurrenciesNameList.contains(currency.getName()))
+                .forEach(otherCurrencies::add);
+
+        this.defaultCurrency = defaultCurrency;
+    }
 }
