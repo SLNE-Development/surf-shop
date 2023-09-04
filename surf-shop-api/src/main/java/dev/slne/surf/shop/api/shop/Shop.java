@@ -2,10 +2,13 @@ package dev.slne.surf.shop.api.shop;
 
 
 import dev.slne.surf.shop.api.shop.member.ShopMember;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.api.util.Interable;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -24,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("UnstableApiUsage") // Cause of BlockPosition
 public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
+
     /**
      * The created shop key
      */
@@ -34,109 +38,400 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      */
     NamespacedKey CREATION_ITEM_KEY = new NamespacedKey("surf-shops", "creation_item");
 
+    /**
+     * Creates the shop
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> create();
 
+    /**
+     * Updates the shop
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> update();
 
+    /**
+     * Deletes the shop
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> delete();
 
+    /**
+     * Gets the shop lines
+     *
+     * @return the shop lines
+     */
     List<Component> getShopLines();
 
-    int amount();
-
-    CompletableFuture<Shop> amount(int amount);
-
-    default CompletableFuture<Shop> decreaseAmount(int amount) {
-        return this.amount(this.amount() - amount);
+    /**
+     * Gets the amount of items that are in the shop
+     *
+     * @return the amount of items
+     */
+    default int amount() {
+        return getTransactions().stream().mapToInt(ShopTransaction::getAmount).sum();
     }
 
-    default CompletableFuture<Shop> increaseAmount(int amount) {
-        return this.amount(this.amount() + amount);
-    }
+    /**
+     * Decreases the amount of items in the shop
+     *
+     * @param remover the remover
+     * @param amount  the amount
+     *
+     * @return the shop
+     */
+    CompletableFuture<ShopTransactionResult> decreaseAmount(UUID remover, int amount);
 
+    /**
+     * Increases the amount of items in the shop
+     *
+     * @param adder  the adder
+     * @param amount the amount
+     *
+     * @return the shop
+     */
+    CompletableFuture<ShopTransactionResult> increaseAmount(UUID adder, int amount);
+
+    /**
+     * Gets the id of this shop
+     *
+     * @return the id
+     */
     long getId();
 
+    /**
+     * Gets the item of this shop
+     *
+     * @return the item
+     */
     ItemStack item();
 
+    /**
+     * Renders the item of this shop
+     *
+     * @return the rendered item
+     */
     Component renderItem();
 
+    /**
+     * Sets the item of this shop
+     *
+     * @param item the item
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> item(ItemStack item);
 
+    /**
+     * Gets the owner of this shop
+     *
+     * @return the owner
+     */
     OfflinePlayer getOwner();
 
+    /**
+     * Gets the uuid of this shop
+     *
+     * @return the uuid
+     */
     UUID getUUID();
 
+    /**
+     * Gets the owner uuid of this shop
+     *
+     * @return the owner uuid
+     */
     UUID getOwnerUUID();
 
+    /**
+     * Gets the members of this shop
+     *
+     * @return the members
+     */
     @Unmodifiable
     List<ShopMember> getMembers();
 
-    CompletableFuture<Shop> addMember(OfflinePlayer player);
+    /**
+     * Adds a member to this shop
+     *
+     * @param player the player
+     *
+     * @return the shop
+     */
+    default CompletableFuture<Shop> addMember(OfflinePlayer player) {
+        return addMember(player.getUniqueId());
+    }
 
-    CompletableFuture<Shop> addMember(UUID player);
+    /**
+     * Adds a member to this shop
+     *
+     * @param uuid the player uuid
+     *
+     * @return the shop
+     */
+    CompletableFuture<Shop> addMember(UUID uuid);
 
-    CompletableFuture<Shop> removeMember(OfflinePlayer player);
+    /**
+     * Removes a member from this shop
+     *
+     * @param player the player
+     *
+     * @return the shop
+     */
+    default CompletableFuture<Shop> removeMember(OfflinePlayer player) {
+        return removeMember(player.getUniqueId());
+    }
 
-    CompletableFuture<Shop> removeMember(UUID player);
+    /**
+     * Removes a member from this shop
+     *
+     * @param uuid the player uuid
+     *
+     * @return the shop
+     */
+    CompletableFuture<Shop> removeMember(UUID uuid);
 
+    /**
+     * Gets the quantity of this shop
+     *
+     * @return the quantity
+     */
     int quantity();
 
+    /**
+     * Sets the quantity of this shop
+     *
+     * @param amount the amount
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> quantity(@Range(from = 1, to = 64) int amount);
 
-    @Range(from = 1, to = 64)
+    /**
+     * Gets the sell price of this shop
+     *
+     * @return the sell price
+     */
     double sellPrice();
 
+    /**
+     * Renders the sell price of this shop
+     *
+     * @return the rendered sell price
+     */
     Component renderSellPrice();
 
+    /**
+     * Sets the sell price of this shop
+     *
+     * @param price the price
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> sellPrice(double price);
 
+    /**
+     * Gets the buy price of this shop
+     *
+     * @return the buy price
+     */
     double buyPrice();
 
+    /**
+     * Renders the buy price of this shop
+     *
+     * @return the rendered buy price
+     */
     Component renderBuyPrice();
 
+    /**
+     * Sets the buy price of this shop
+     *
+     * @param price the price
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> buyPrice(double price);
 
+    /**
+     * Gets the limit of items that can be sold to the shop
+     *
+     * @return the limit
+     */
     @Range(from = 1, to = Integer.MAX_VALUE)
     int buyLimit();
 
+    /**
+     * Sets the limit of items that can be sold to the shop
+     *
+     * @param limit the limit
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> buyLimit(@Range(from = 1, to = Integer.MAX_VALUE) int limit);
 
+    /**
+     * Returns the uuid of the world
+     *
+     * @return the uuid
+     */
     UUID getWorldUUID();
 
+    /**
+     * Gets the world of this shop
+     *
+     * @return the world
+     */
     Optional<World> getWorld();
 
+    /**
+     * Returns if the inventory of this shop is empty
+     *
+     * @return true if empty
+     */
     boolean isInventoryEmpty();
 
+    /**
+     * Returns the player the shop is locked by
+     *
+     * @return the player
+     */
     Optional<Player> getLockedBy();
 
+    /**
+     * Sets the player the shop is locked by
+     *
+     * @param player the player
+     */
     void setLockedBy(Player player);
 
+    /**
+     * Returns if the shop is locked
+     *
+     * @return true if locked
+     */
     boolean locked();
 
+    /**
+     * Sets if the shop is locked
+     *
+     * @param locked true if locked
+     */
     void locked(boolean locked);
 
+    /**
+     * Locks the shop
+     *
+     * @param player the player
+     */
     void lock(Player player);
 
+    /**
+     * Unlocks the shop
+     */
     void unlock();
 
-    boolean isOwner(OfflinePlayer player);
+    /**
+     * Returns if the given player is the owner of this shop
+     *
+     * @param player the player
+     *
+     * @return true if owner
+     */
+    default boolean isOwner(OfflinePlayer player) {
+        return isOwner(player.getUniqueId());
+    }
 
-    boolean isOwner(UUID player);
+    /**
+     * Returns if the given uuid is the owner of this shop
+     *
+     * @param uuid the uuid
+     *
+     * @return true if owner
+     */
+    default boolean isOwner(UUID uuid) {
+        return getOwnerUUID().equals(uuid);
+    }
 
-    boolean isMember(OfflinePlayer player);
+    /**
+     * Returns if the given player is a member of this shop
+     *
+     * @param player the player
+     *
+     * @return true if member
+     */
+    default boolean isMember(OfflinePlayer player) {
+        return isMember(player.getUniqueId());
+    }
 
-    boolean isMember(UUID player);
+    /**
+     * Returns if the given uuid is a member of this shop
+     *
+     * @param uuid the uuid
+     *
+     * @return true if member
+     */
+    default boolean isMember(UUID uuid) {
+        return getMembers().stream().anyMatch(member -> member.getUUID().equals(uuid));
+    }
 
+    /**
+     * Returns if the shop is deleting
+     *
+     * @return true if deleting
+     */
     boolean isDeleting();
 
+    /**
+     * Returns if the shop is selling
+     *
+     * @return true if selling
+     */
     boolean isSelling();
 
+    /**
+     * Returns the description of this shop
+     *
+     * @return the description
+     */
     Optional<Component> description();
 
+    /**
+     * Sets the description of this shop
+     *
+     * @param description the description
+     *
+     * @return the shop
+     */
     CompletableFuture<Shop> description(Component description);
 
-    CompletableFuture<Shop> description(String description);
+    /**
+     * Sets the description of this shop
+     *
+     * @param description the description
+     *
+     * @return the shop
+     */
+    default CompletableFuture<Shop> description(String description) {
+        return description(
+                LegacyComponentSerializer.builder().hexColors().character('&').build().deserialize(description));
+    }
 
+    /**
+     * Gets the transactions of this shop
+     *
+     * @return the transactions
+     */
+    List<ShopTransaction> getTransactions();
+
+    /**
+     * Returns if this shop is a buying shop
+     *
+     * @return true if buying
+     */
     default boolean isBuying() {
         return false;
     }
@@ -162,6 +457,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *                            {@code amountOfSellingItem} is 3 then the player will become 6
      *                            items in total
      *                            </p>
+     *
      * @return {@code true} if everything went fine and the player has been charged
      *
      * <li>
@@ -192,6 +488,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *                           {@code amountOfBuyingItem} is 3 then the player will become 6
      *                           items in total
      *                           </p>
+     *
      * @return {@code true} if everything went fine and the player has received the money
      *
      * <li>
@@ -299,6 +596,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      * Creates a new location object at this position with the specified world
      *
      * @param world the world for the location object
+     *
      * @return a new location
      */
     @Override
@@ -315,5 +613,10 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
         return getWorld().map(this::toLocation).orElse(null);
     }
 
+    /**
+     * Returns the string representation of this shop
+     *
+     * @return the string representation
+     */
     String toString();
 }

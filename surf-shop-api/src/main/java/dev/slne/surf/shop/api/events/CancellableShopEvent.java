@@ -3,6 +3,7 @@ package dev.slne.surf.shop.api.events;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.util.ApiUtils;
 import net.kyori.adventure.text.Component;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -25,7 +26,7 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
      * @param shop   The shop.
      * @param player the player
      */
-    public CancellableShopEvent(@Nullable Shop shop, Player player) {
+    public CancellableShopEvent(@Nullable Shop shop, OfflinePlayer player) {
         super(shop, player);
     }
 
@@ -36,11 +37,18 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
      * @param player the player
      * @param async  Whether the event is asynchronous.
      */
-    public CancellableShopEvent(@Nullable Shop shop, Player player, boolean async) {
+    public CancellableShopEvent(@Nullable Shop shop, OfflinePlayer player, boolean async) {
         super(shop, player, async);
     }
 
-
+    /**
+     * Returns the handler list.
+     *
+     * @return the handler list
+     */
+    public static HandlerList getHandlerList() {
+        return HANDLERS;
+    }
 
     @Override
     public boolean isCancelled() {
@@ -60,17 +68,17 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
     }
 
     /**
-     * @return the cancelSound
-     */
-    public @Nullable Sound getCancelSound() {
-        return cancelSound;
-    }
-
-    /**
      * @param cancelReason the cancelReason to set
      */
     public void setCancelReason(@Nullable Component cancelReason) {
         this.cancelReason = cancelReason;
+    }
+
+    /**
+     * @return the cancelSound
+     */
+    public @Nullable Sound getCancelSound() {
+        return cancelSound;
     }
 
     /**
@@ -98,10 +106,6 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
 
     @Override
     public @NotNull HandlerList getHandlers() {
-        return HANDLERS;
-    }
-
-    public static HandlerList getHandlerList() {
         return HANDLERS;
     }
 }

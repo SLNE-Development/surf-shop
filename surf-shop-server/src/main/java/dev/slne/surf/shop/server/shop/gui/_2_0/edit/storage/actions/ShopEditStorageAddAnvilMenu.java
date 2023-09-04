@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.server.shop.gui._2_0.edit.storage.actions;
 
-import dev.slne.gui.api.SurfGui;
 import dev.slne.gui.api.anvil.SurfAnvilGui;
 import dev.slne.gui.api.anvil.requirement.AnvilRequirement;
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.SurfShopAnvilGui;
@@ -33,8 +33,10 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
      * @param shop         the shop
      * @param clickedHuman the clicked human
      */
-    public ShopEditStorageAddAnvilMenu(@Nullable SurfShopGui parent, @NotNull Shop shop, @NotNull HumanEntity clickedHuman) {
-        super(shop, parent, String.valueOf(similarItems(shop, clickedHuman)), Component.text("Items hinzufügen", MessageManager.PRIMARY));
+    public ShopEditStorageAddAnvilMenu(@Nullable SurfShopGui parent, @NotNull Shop shop,
+                                       @NotNull HumanEntity clickedHuman) {
+        super(shop, parent, String.valueOf(similarItems(shop, clickedHuman)),
+                Component.text("Items hinzufügen", MessageManager.PRIMARY));
         this.shop = shop;
         this.clickedHuman = clickedHuman;
     }
@@ -61,6 +63,7 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
      * Returns the requirements
      *
      * @param requirements the requirements
+     *
      * @return the requirements
      */
     @Override
@@ -79,9 +82,15 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
     public List<AnvilGUI.ResponseAction> onSubmit(Player player, @NotNull String input) {
         final int amount = Integer.parseInt(input.trim().replace(" ", ""));
 
-        shop.increaseAmount(amount).thenAcceptAsync(updatedShop -> {
-            player.sendMessage(MessageManager.addItems(updatedShop, amount));
-            backToParent(player, updatedShop);
+        shop.increaseAmount(player.getUniqueId(), amount).thenAcceptAsync(result -> {
+            if (result == ShopTransactionResult.SUCCESS) {
+                player.sendMessage(MessageManager.addItems(shop, amount));
+                backToParent(player, shop);
+                return;
+            }
+
+            player.sendMessage(MessageManager.addItemsFailed(shop, amount));
+            backToParent(player, shop);
         });
 
         return new ArrayList<>();

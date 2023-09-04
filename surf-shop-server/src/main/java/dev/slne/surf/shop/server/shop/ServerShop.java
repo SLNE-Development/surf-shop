@@ -6,7 +6,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import dev.slne.data.api.DataApi;
+import dev.slne.data.api.gson.GsonConverter;
 import dev.slne.data.api.web.WebRequest;
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.events.state.ShopChangeDescriptionEvent;
 import dev.slne.surf.shop.api.events.state.ShopEditQuantityEvent;
 import dev.slne.surf.shop.api.events.state.member.ShopAddMemberEvent;
@@ -16,9 +18,10 @@ import dev.slne.surf.shop.api.events.state.price.ShopChangeSellPriceEvent;
 import dev.slne.surf.shop.api.events.transaction.sell.ShopItemSellEvent;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.member.ShopMember;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.api.API;
-import dev.slne.surf.shop.server.api.BukkitGsonConverter;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.inventory.InventoryItemsTransfer;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiSound;
@@ -32,7 +35,6 @@ import dev.slne.transaction.api.transaction.result.TransactionAddResult;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -45,79 +47,69 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class ServerShop implements Shop {
 
-    private static final BukkitGsonConverter GSON_CONVERTER = new BukkitGsonConverter();
     private static final LegacyComponentSerializer LEGACY_COMPONENT_SERIALIZER = LegacyComponentSerializer.builder()
             .hexColors()
             .character('&')
-            .useUnusualXRepeatedCharacterHexFormat()
+            .extractUrls()
             .build();
-
-    private static final PlainTextComponentSerializer PLAIN_TEXT_COMPONENT_SERIALIZER = PlainTextComponentSerializer.plainText();
-
+    private final boolean adminShop = false;
     @SerializedName("id")
     private long id;
-
     @SerializedName("uuid")
     private UUID uuid;
-
     @SerializedName("owner_uuid")
     private UUID ownerUuid;
-
     @SerializedName("shop_itemstack")
     private ItemStack itemStack;
-
     @SerializedName("shop_amount")
     private int amount;
-
     @SerializedName("location_world")
     private UUID worldUUID;
-
     @SerializedName("location_x")
     private int x;
-
     @SerializedName("location_y")
     private int y;
-
     @SerializedName("location_z")
     private int z;
-
-    @SerializedName("stack_size") 
+    @SerializedName("stack_size")
     private int stackSize;
-
     @SerializedName("sell_price")
     private double sellPrice;
-
     @SerializedName("buy_limit")
     private int buyLimit;
-
     @SerializedName("buy_price")
     private double buyPrice;
-
     @SerializedName("members")
     private List<ServerShopMember> members;
-
     @SerializedName("currency")
     private Currency currency;
-
     @SerializedName("description")
     private @Nullable Component description;
+    @SerializedName("transactions")
+    private List<ShopTransaction> transactions;
 
     private boolean locked;
     private Player lockedByPlayer;
-
     private boolean deleting = false;
-    private final boolean adminShop = false;
 
     @Deprecated
     public ServerShop() {
         this.members = new ArrayList<>();
+        this.transactions = new ArrayList<>();
     }
 
     /**
@@ -127,7 +119,10 @@ public class ServerShop implements Shop {
      * @param itemStack the itemstack
      * @param location  the location
      */
-    public ServerShop(@NotNull Currency currency, @NotNull UUID owner, @Nullable ItemStack itemStack, @Nullable Location location) {
+    public ServerShop(@NotNull Currency currency, @NotNull UUID owner, @Nullable ItemStack itemStack,
+                      @Nullable Location location) {
+        this();
+
         checkNotNull(currency, "currency");
         checkNotNull(owner, "owner");
 
@@ -146,8 +141,6 @@ public class ServerShop implements Shop {
         }
 
         this.uuid = UUID.randomUUID();
-        this.members = new ArrayList<>();
-
         this.locked = false;
     }
 
@@ -162,7 +155,7 @@ public class ServerShop implements Shop {
 
         return request.executeGet().thenApplyAsync(response -> {
 
-            JsonArray bodyArray = response.bodyArray(GSON_CONVERTER);
+            JsonArray bodyArray = response.bodyArray(ShopApi.getInstance().getGsonConverter());
             for (JsonElement element : bodyArray) {
                 Shop shop = fromBodyElement(element, false);
 
@@ -181,10 +174,22 @@ public class ServerShop implements Shop {
     }
 
     /**
-     * Creates a shop in the database
+     * Returns a shop by the body json element
+     *
+     * @param bodyElement the body json element
      *
      * @return the shop
      */
+    private static Shop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
+        JsonObject dataObject = bodyElement.getAsJsonObject();
+
+        System.out.println("dataObject = " + dataObject.toString());
+
+        Shop shop = ShopApi.getInstance().getGsonConverter().fromJson(dataObject.toString(), Shop.class);
+        System.out.println("shop = " + shop);
+        return shop;
+    }
+
     @Override
     public CompletableFuture<Shop> create() {
         System.out.println("Creating shop");
@@ -195,7 +200,7 @@ public class ServerShop implements Shop {
                 .build();
 
         return request.executePost().thenApplyAsync(response -> {
-            Shop newShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop newShop = fromBodyElement(response.bodyElement(ShopApi.getInstance().getGsonConverter()), true);
 
             if (newShop == null) {
                 System.out.println("newShop = " + null);
@@ -215,11 +220,7 @@ public class ServerShop implements Shop {
         });
     }
 
-    /**
-     * Updates the shop in the database
-     *
-     * @return the shop
-     */
+    @Override
     public CompletableFuture<Shop> update() {
         String url = String.format(API.SHOP, uuid.toString());
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
@@ -227,7 +228,7 @@ public class ServerShop implements Shop {
         System.out.println("Updating shop");
         return request.executePut().thenApplyAsync(response -> {
             System.out.println("response = " + response.body());
-            Shop updatedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop updatedShop = fromBodyElement(response.bodyElement(ShopApi.getInstance().getGsonConverter()), true);
 
             if (updatedShop == null) {
                 System.out.println("updatedShop = " + null);
@@ -245,11 +246,7 @@ public class ServerShop implements Shop {
         });
     }
 
-    /**
-     * Deletes the shop in the database
-     *
-     * @return the shop
-     */
+    @Override
     public CompletableFuture<Shop> delete() {
         deleting = true;
 
@@ -257,7 +254,7 @@ public class ServerShop implements Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executeDelete().thenApplyAsync(response -> {
-            Shop deletedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop deletedShop = fromBodyElement(response.bodyElement(ShopApi.getInstance().getGsonConverter()), true);
 
             if (deletedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
@@ -277,21 +274,36 @@ public class ServerShop implements Shop {
         });
     }
 
+    @Override
+    public CompletableFuture<ShopTransactionResult> decreaseAmount(UUID remover, int amount) {
+        return ShopApi.getInstance().createShopTransaction(this, remover, amount).create();
+    }
+
+    @Override
+    public CompletableFuture<ShopTransactionResult> increaseAmount(UUID adder, int amount) {
+        return ShopApi.getInstance().createShopTransaction(this, adder, amount).create();
+    }
+
+    @Override
+    public List<ShopTransaction> getTransactions() {
+        return transactions;
+    }
+
     /**
      * Creates a parameter map
      *
      * @return the parameter map
      */
     private Map<String, Object> toParameters() {
+        GsonConverter GSON_CONVERTER = ShopApi.getInstance().getGsonConverter();
         Map<String, Object> parameters = new HashMap<>();
 
         parameters.put("uuid", uuid.toString());
         parameters.put("owner_uuid", ownerUuid.toString());
-        parameters.put("shop_itemstack", GSON_CONVERTER.toJson(itemStack));
+        parameters.put("shop_itemstack", GSON_CONVERTER);
         parameters.put("shop_amount", String.valueOf(amount));
         parameters.put("currency_id", String.valueOf(currency.getId()));
         parameters.put("description", GSON_CONVERTER.toJson(description));
-
 
         parameters.put("location_world", worldUUID.toString());
         parameters.put("location_x", String.valueOf(x));
@@ -303,31 +315,10 @@ public class ServerShop implements Shop {
         parameters.put("buy_limit", String.valueOf(buyLimit));
         parameters.put("buy_price", String.valueOf(buyPrice));
 
-
         return parameters;
     }
 
-    /**
-     * Returns a shop by the body json element
-     *
-     * @param bodyElement the body json element
-     * @return the shop
-     */
-    private static Shop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
-        JsonObject dataObject = bodyElement.getAsJsonObject();
-
-        System.out.println("dataObject = " + dataObject.toString());
-
-        Shop shop = GSON_CONVERTER.fromJson(dataObject.toString(), Shop.class);
-        System.out.println("shop = " + shop);
-        return shop;
-    }
-
-    /**
-     * Returns the shop lines
-     *
-     * @return the shop lines
-     */
+    @Override
     public List<Component> getShopLines() {
         List<Component> lines = new ArrayList<>();
 
@@ -363,20 +354,6 @@ public class ServerShop implements Shop {
     }
 
     @Override
-    public int amount() {
-        return amount;
-    }
-
-    @Override
-    public CompletableFuture<Shop> amount(int amount) {
-        this.amount = amount;
-
-        return update();
-    }
-
-    /**
-     * @return the id
-     */
     public long getId() {
         return id;
     }
@@ -398,38 +375,23 @@ public class ServerShop implements Shop {
         return update();
     }
 
-    /**
-     * @return the owner
-     */
     @Override
     public UUID getOwnerUUID() {
         checkState(!adminShop, "shop is an admin shop");
         return ownerUuid;
     }
 
-    /**
-     * Returns the owner
-     *
-     * @return the owner
-     */
+    @Override
     public OfflinePlayer getOwner() {
         checkState(!adminShop, "shop is an admin shop");
         return Bukkit.getOfflinePlayer(ownerUuid);
     }
 
-    /**
-     * @return the uuid
-     */
     @Override
     public UUID getUUID() {
         return uuid;
     }
 
-    /**
-     * Returns if the shop is empty
-     *
-     * @return if the shop is empty
-     */
     @Override
     public boolean isInventoryEmpty() {
         return amount() == 0;
@@ -455,24 +417,16 @@ public class ServerShop implements Shop {
         this.locked = locked;
     }
 
-    /**
-     * @return the members
-     */
     @Override
     public List<ShopMember> getMembers() {
         return members.stream().map(ShopMember::inter).toList();
     }
 
     @Override
-    public CompletableFuture<Shop> addMember(OfflinePlayer player) {
-        return addMember(player.getUniqueId());
-    }
+    public CompletableFuture<Shop> addMember(UUID uuid) {
+        checkState(!isMember(uuid), "player is already a member");
 
-    @Override
-    public CompletableFuture<Shop> addMember(UUID player) {
-        checkState(!isMember(player), "player is already a member");
-
-        final ServerShopMember memberToAdd = new ServerShopMember(this, player);
+        final ServerShopMember memberToAdd = new ServerShopMember(this, uuid);
         new ShopAddMemberEvent(this, memberToAdd, !Bukkit.isPrimaryThread()).callEvent();
 
         members.add(memberToAdd);
@@ -485,11 +439,11 @@ public class ServerShop implements Shop {
     }
 
     @Override
-    public CompletableFuture<Shop> removeMember(UUID player) {
-        checkState(isMember(player), "player is not a member");
+    public CompletableFuture<Shop> removeMember(UUID uuid) {
+        checkState(isMember(uuid), "player is not a member");
 
         members.removeIf(member -> {
-            final boolean equals = member.getUUID().equals(player);
+            final boolean equals = member.getUUID().equals(uuid);
 
             if (equals) {
                 new ShopRemoveMemberEvent(this, member, !Bukkit.isPrimaryThread()).callEvent();
@@ -587,63 +541,19 @@ public class ServerShop implements Shop {
         return Optional.ofNullable(Bukkit.getWorld(worldUUID));
     }
 
-    /**
-     * Locks the shop
-     *
-     * @param player the player
-     */
     @Override
     public void lock(Player player) {
         this.locked = true;
         this.lockedByPlayer = player;
     }
 
-    /**
-     * Unlocks the shop
-     */
     @Override
     public void unlock() {
         this.locked = false;
         this.lockedByPlayer = null;
     }
 
-    /**
-     * Returns if the player is the owner
-     *
-     * @param player the player
-     * @return if the player is the owner
-     */
-    public boolean isOwner(OfflinePlayer player) {
-        return isOwner(player.getUniqueId());
-    }
-
     @Override
-    public boolean isOwner(UUID player) {
-        return Objects.equals(ownerUuid, player);
-    }
-
-    /**
-     * Returns if the player is a member
-     *
-     * @param player the player
-     * @return if the player is a member
-     */
-    public boolean isMember(OfflinePlayer player) {
-        return isMember(player.getUniqueId());
-    }
-
-    @Override
-    public boolean isMember(UUID player) {
-        return members != null
-                && members.stream().anyMatch(member -> member.getUUID().equals(player));
-    }
-
-    /**
-     * Returns if the shop is currently deleting
-     *
-     * @return if the shop is currently deleting
-     * @since 1.0.0
-     */
     public boolean isDeleting() {
         return deleting;
     }
@@ -665,8 +575,11 @@ public class ServerShop implements Shop {
 
     @Override
     public CompletableFuture<Shop> description(Component description) {
-        final Component originDescription = description != null && !PLAIN_TEXT_COMPONENT_SERIALIZER.serialize(description).isEmpty() ? description : null;
-        final ShopChangeDescriptionEvent shopChangeDescriptionEvent = new ShopChangeDescriptionEvent(this, originDescription, !Bukkit.isPrimaryThread());
+        final Component originDescription =
+                description != null && !LEGACY_COMPONENT_SERIALIZER.serialize(description).isEmpty() ? description :
+                        null;
+        final ShopChangeDescriptionEvent shopChangeDescriptionEvent =
+                new ShopChangeDescriptionEvent(this, originDescription, !Bukkit.isPrimaryThread());
 
         this.description = shopChangeDescriptionEvent.getNewDescription().orElse(null);
         return update();
@@ -677,13 +590,6 @@ public class ServerShop implements Shop {
         return description(description.isEmpty() ? LEGACY_COMPONENT_SERIALIZER.deserialize(description) : null);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param player              {@inheritDoc}
-     * @param amountOfSellingItem {@inheritDoc}
-     * @return {@inheritDoc}
-     */
     @Override
     public CompletableFuture<Boolean> sell(Player player, int amountOfSellingItem) {
         checkNotNull(player, "player");
@@ -699,7 +605,8 @@ public class ServerShop implements Shop {
             return CompletableFuture.completedFuture(false);
         }
 
-        final ShopItemSellEvent event = new ShopItemSellEvent(this, player, itemStack, amountOfSellingItem, !Bukkit.isPrimaryThread());
+        final ShopItemSellEvent event =
+                new ShopItemSellEvent(this, player, itemStack, amountOfSellingItem, !Bukkit.isPrimaryThread());
 
         if (!event.callEvent()) {
             event.applyCancelled(player);
@@ -708,7 +615,8 @@ public class ServerShop implements Shop {
 
         final int finalAmount = event.getBoughtAmount();
         final int totalItems = finalAmount * stackSize;
-        final InventoryItemsTransfer itemTransfer = new InventoryItemsTransfer(item(), totalItems, player.getInventory());
+        final InventoryItemsTransfer itemTransfer =
+                new InventoryItemsTransfer(item(), totalItems, player.getInventory());
 
         List<ItemStack> leftOvers = itemTransfer.addItems();
         int leftOverAmount = leftOvers.stream().mapToInt(ItemStack::getAmount).sum();
@@ -735,9 +643,9 @@ public class ServerShop implements Shop {
                 return CompletableFuture.completedFuture(false);
             }
 
-            return decreaseAmount(totalItems).thenApplyAsync(shop -> {
+            return decreaseAmount(player.getUniqueId(), finalItemsToTransfer).thenApplyAsync(__ -> {
                 Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
-                    final ItemStack itemStack = shop.item();
+                    final ItemStack itemStack = item();
 
                     if (itemStack == null) {
                         return;
@@ -752,7 +660,8 @@ public class ServerShop implements Shop {
 
                     final Player owner = getOwner().getPlayer();
                     if (owner != null && owner.isConnected()) {
-                        owner.sendMessage(MessageManager.getShopBoughtAmountOwnerComponent(player, itemStack, totalItems));
+                        owner.sendMessage(
+                                MessageManager.getShopBoughtAmountOwnerComponent(player, itemStack, totalItems));
                     }
                 });
 
@@ -777,6 +686,7 @@ public class ServerShop implements Shop {
      *
      * @param buyFrom            {@inheritDoc}
      * @param amountOfBuyingItem {@inheritDoc}
+     *
      * @return {@inheritDoc}
      */
     @Override
@@ -794,20 +704,26 @@ public class ServerShop implements Shop {
 
     private CompletableFuture<TransactionAddResult> executeSellTransaction(Player buyer, double price) {
         final TransactionPlayer buyerTransactionPlayer = TransactionApi.getTransactionPlayer(buyer.getUniqueId(), true);
-        final Transaction buyerTransaction = TransactionApi.createTransaction(ownerUuid, buyerTransactionPlayer.uuid(), this.currency, BigDecimal.valueOf(-price));
+        final Transaction buyerTransaction =
+                TransactionApi.createTransaction(ownerUuid, buyerTransactionPlayer.uuid(), this.currency,
+                        BigDecimal.valueOf(-price));
 
         buyerTransaction.setTransactionData(new ShopTransactionData(this));
-        final CompletableFuture<TransactionAddResult> transactionResult = buyerTransactionPlayer.addTransaction(buyerTransaction);
+        final CompletableFuture<TransactionAddResult> transactionResult =
+                buyerTransactionPlayer.addTransaction(buyerTransaction);
 
         if (!adminShop) {
             final TransactionPlayer ownerTransactionPlayer = TransactionApi.getTransactionPlayer(ownerUuid, false);
-            final Transaction ownerTransaction = TransactionApi.createTransaction(buyer.getUniqueId(), ownerTransactionPlayer.uuid(), this.currency, BigDecimal.valueOf(price));
+            final Transaction ownerTransaction =
+                    TransactionApi.createTransaction(buyer.getUniqueId(), ownerTransactionPlayer.uuid(), this.currency,
+                            BigDecimal.valueOf(price));
 
             ownerTransaction.setTransactionData(new ShopTransactionData(this));
 
             transactionResult.thenComposeAsync(buyerTransactionResult -> {
                 if (buyerTransactionResult == TransactionAddResult.SUCCESS) {
-                    return ownerTransactionPlayer.addTransaction(ownerTransaction).thenApplyAsync(ownerTransactionResult -> buyerTransactionResult);
+                    return ownerTransactionPlayer.addTransaction(ownerTransaction)
+                            .thenApplyAsync(ownerTransactionResult -> buyerTransactionResult);
                 }
 
                 return CompletableFuture.completedFuture(buyerTransactionResult);
@@ -894,8 +810,10 @@ public class ServerShop implements Shop {
      * == signum(y.compareTo(z))}, for all {@code z}.
      *
      * @param o the object to be compared.
+     *
      * @return a negative integer, zero, or a positive integer as this object
      * is less than, equal to, or greater than the specified object.
+     *
      * @throws NullPointerException if the specified object is null
      * @throws ClassCastException   if the specified object's type prevents it
      *                              from being compared to this object.

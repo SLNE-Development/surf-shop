@@ -1,21 +1,24 @@
 package dev.slne.surf.shop.server.instance;
 
 import dev.slne.data.api.DataApi;
+import dev.slne.data.api.gson.GsonConverter;
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
 import dev.slne.surf.shop.server.BukkitMain;
+import dev.slne.surf.shop.server.api.BukkitGsonConverter;
 import dev.slne.surf.shop.server.command.BukkitCommandManager;
 import dev.slne.surf.shop.server.listener.BukkitListenerManager;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.ServerShopManager;
+import dev.slne.surf.shop.server.shop.transaction.ServerShopTransaction;
 import dev.slne.surf.shop.server.util.Permissions;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import dev.slne.surf.shop.server.util.UUIDDataType;
 import dev.slne.transaction.api.currency.Currency;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -29,7 +32,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class BukkitInstance implements ShopInstance {
 
@@ -37,6 +42,7 @@ public class BukkitInstance implements ShopInstance {
     private BukkitListenerManager listenerManager;
 
     private ServerShopManager shopManager;
+    private GsonConverter gsonConverter;
 
     /**
      * Called when the plugin is loaded
@@ -44,8 +50,10 @@ public class BukkitInstance implements ShopInstance {
     @Override
     public void onLoad() {
         new ShopApi(this);
+
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
+        gsonConverter = new BukkitGsonConverter();
 
         Permissions.invoke();
 
@@ -90,7 +98,8 @@ public class BukkitInstance implements ShopInstance {
     }
 
     @Override
-    public CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, ItemStack itemStack, @NotNull Location location) {
+    public CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, ItemStack itemStack,
+                                              @NotNull Location location) {
         checkNotNull(currency, "Currency cannot be null");
         checkNotNull(owner, "Owner cannot be null");
 
@@ -99,7 +108,6 @@ public class BukkitInstance implements ShopInstance {
         checkArgument(blockState instanceof Chest, "Location is not a chest");
 
         final ServerShop shop = new ServerShop(currency, owner.getUniqueId(), itemStack, location);
-
 
 
         return shop.create().thenComposeAsync(created -> {
@@ -112,7 +120,7 @@ public class BukkitInstance implements ShopInstance {
             ShopApi.getShopManager().makeShop(((Chest) blockState), shop);
 
             owner.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
-
+            
             return shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
@@ -159,7 +167,8 @@ public class BukkitInstance implements ShopInstance {
             return false;
         }
 
-        return itemStack.getItemMeta().getPersistentDataContainer().has(ServerShop.CREATION_ITEM_KEY, PersistentDataType.BYTE);
+        return itemStack.getItemMeta().getPersistentDataContainer()
+                .has(ServerShop.CREATION_ITEM_KEY, PersistentDataType.BYTE);
     }
 
     @Override
@@ -188,5 +197,19 @@ public class BukkitInstance implements ShopInstance {
     @Override
     public List<Currency> getOtherCurrencies() {
         return BukkitMain.getInstance().getOtherCurrencies();
+    }
+
+    @Override
+    public ShopTransaction createShopTransaction(Shop shop, UUID uuid, int amount) {
+        ShopTransaction transaction = new ServerShopTransaction(shop, uuid, amount);
+
+        shop.getTransactions().add(transaction);
+
+        return transaction;
+    }
+
+    @Override
+    public GsonConverter getGsonConverter() {
+        return gsonConverter;
     }
 }

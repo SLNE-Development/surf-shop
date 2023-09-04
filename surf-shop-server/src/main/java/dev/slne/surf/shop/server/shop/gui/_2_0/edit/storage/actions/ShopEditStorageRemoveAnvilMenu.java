@@ -43,6 +43,7 @@ public class ShopEditStorageRemoveAnvilMenu extends SurfShopAnvilGui {
      * Returns the requirements
      *
      * @param requirements the requirements
+     *
      * @return the requirements
      */
     @Override
@@ -70,7 +71,7 @@ public class ShopEditStorageRemoveAnvilMenu extends SurfShopAnvilGui {
         int leftOverAmount = leftOvers.stream().mapToInt(ItemStack::getAmount).sum();
         int itemsToTransfer = totalItems - leftOverAmount;
 
-        getShop().decreaseAmount(itemsToTransfer).thenAccept(__ -> {
+        getShop().decreaseAmount(player.getUniqueId(), itemsToTransfer).thenAccept(__ -> {
             new SyncTransferItems(player, itemsToTransfer, transfer).execute();
 
             player.sendMessage(MessageManager.removeItems(getShop(), itemsToTransfer));
