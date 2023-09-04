@@ -20,7 +20,7 @@ public class ServerShopTransaction implements ShopTransaction {
     @SerializedName("id")
     private long id;
 
-    @SerializedName("amount")
+    @SerializedName("transaction_amount")
     private int amount;
 
     @SerializedName("transaction_sender")
@@ -31,6 +31,9 @@ public class ServerShopTransaction implements ShopTransaction {
 
     @SerializedName("shop_uuid")
     private UUID shopUuid;
+
+    @SerializedName("reason")
+    private String reason;
 
     /**
      * Creates a new shop transaction
@@ -89,5 +92,20 @@ public class ServerShopTransaction implements ShopTransaction {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop transaction", throwable);
             return ShopTransactionResult.FAILED;
         });
+    }
+
+    @Override
+    public String getReason() {
+        return reason;
+    }
+
+    @Override
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    @Override
+    public long getId() {
+        return id;
     }
 }

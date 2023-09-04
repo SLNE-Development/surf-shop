@@ -47,10 +47,31 @@ public interface ShopTransaction {
     UUID getTransactionId();
 
     /**
+     * Get the id of the transaction.
+     *
+     * @return the id
+     */
+    long getId();
+
+    /**
      * Executes the transaction.
      *
      * @return a {@link CompletableFuture} that completes with the {@link ShopTransactionResult}.
      */
     CompletableFuture<ShopTransactionResult> create();
+
+    /**
+     * Gets the reason for the transaction.
+     *
+     * @return the reason
+     */
+    String getReason();
+
+    /**
+     * Sets the reason for the transaction.
+     *
+     * @param reason the reason
+     */
+    void setReason(String reason);
 
 }
