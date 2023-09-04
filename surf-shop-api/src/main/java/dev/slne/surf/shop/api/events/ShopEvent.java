@@ -3,11 +3,13 @@ package dev.slne.surf.shop.api.events;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.util.ApiUtils;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,16 +17,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @ApiStatus.Internal
-public abstract class ShopEvent extends Event implements Cancellable {
+public abstract class ShopEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final @Nullable Shop shop;
     private final Player player;
-
-    private boolean cancelled;
-    private Component cancelReason;
-    private Sound cancelSound;
 
     /**
      * Constructs a new shop event.
@@ -38,10 +36,6 @@ public abstract class ShopEvent extends Event implements Cancellable {
 
         this.shop = shop;
         this.player = player;
-
-        this.cancelled = false;
-        this.cancelReason = null;
-        this.cancelSound = null;
     }
 
     /**
@@ -77,60 +71,6 @@ public abstract class ShopEvent extends Event implements Cancellable {
         return HANDLER_LIST;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
-    }
-
-    /**
-     * @return the cancelReason
-     */
-    public Component getCancelReason() {
-        return cancelReason;
-    }
-
-    /**
-     * @return the cancelSound
-     */
-    public Sound getCancelSound() {
-        return cancelSound;
-    }
-
-    /**
-     * @param cancelReason the cancelReason to set
-     */
-    public void setCancelReason(Component cancelReason) {
-        this.cancelReason = cancelReason;
-    }
-
-    /**
-     * @param cancelSound the cancelSound to set
-     */
-    public void setCancelSound(Sound cancelSound) {
-        this.cancelSound = cancelSound;
-    }
-
-    /**
-     * Called when the event is cancelled.
-     *
-     * @param player The player.
-     */
-    @ApiStatus.Internal // Only for internal use
-    public void applyCancelled(Player player) {
-        if (cancelReason != null) {
-            player.sendMessage(cancelReason);
-        }
-
-        if (cancelSound != null) {
-            ApiUtils.playSound(cancelSound, player);
-        }
-    }
-
     /**
      * @return the player
      */
@@ -138,4 +78,10 @@ public abstract class ShopEvent extends Event implements Cancellable {
         return player;
     }
 
+    protected class SyncEventCall {
+
+        public void call() {
+
+        }
+    }
 }

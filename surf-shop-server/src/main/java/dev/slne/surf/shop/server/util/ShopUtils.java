@@ -17,6 +17,16 @@ import java.util.List;
 
 public final class ShopUtils {
 
+    public static final double MINIMUM_BUY_PRICE = 1.0;
+
+    public static final double MAXIMUM_BUY_PRICE = 1_000_000.0;
+
+    public static final double MINIMUM_SELL_PRICE = 1.0;
+
+    public static final double MAXIMUM_SELL_PRICE = 1_000_000.0;
+
+    public static final int MAX_DESCRIPTION_LENGTH = 64;
+
     /**
      * The surrounding block faces
      */

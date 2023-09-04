@@ -13,11 +13,9 @@ import java.util.UUID;
 public class ShopTransactionData implements TransactionData {
     private static final BukkitGsonConverter CONVERTER = new BukkitGsonConverter();
     private Shop shop;
-    private OfflinePlayer buyer;
 
-    public ShopTransactionData(Shop shop, OfflinePlayer buyer) {
+    public ShopTransactionData(Shop shop) {
         this.shop = shop;
-        this.buyer = buyer;
     }
 
     /**
@@ -29,10 +27,6 @@ public class ShopTransactionData implements TransactionData {
     public String toJson() {
         JsonObject object = new JsonObject();
 
-        object.addProperty("buyer_uuid", buyer.getUniqueId().toString());
-        object.addProperty("buyer_name", buyer.getName());
-        object.addProperty("owner_uuid", shop.getOwner().getUniqueId().toString());
-        object.addProperty("owner_name", shop.getOwner().getName());
         object.addProperty("shop", CONVERTER.toJson(shop));
 
         return CONVERTER.toJson(object);
@@ -51,14 +45,12 @@ public class ShopTransactionData implements TransactionData {
             return;
         }
 
-        final JsonElement buyerUuidElement = object.get("buyer_uuid");
         final JsonElement shopElement = object.get("shop");
 
-        if (buyerUuidElement == null || shopElement == null) {
+        if (shopElement == null) {
             return;
         }
 
         shop = CONVERTER.fromJson(shopElement.getAsString(), Shop.class);
-        buyer = Bukkit.getOfflinePlayer(UUID.fromString(buyerUuidElement.getAsString()));
     }
 }

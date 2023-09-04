@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.server.shop;
 
 import dev.slne.data.api.DataApi;
+import dev.slne.data.api.processor.__SubscribeProcessor;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.ShopManager;
 import dev.slne.surf.shop.server.BukkitMain;
@@ -9,6 +10,7 @@ import dev.slne.surf.shop.server.util.UUIDDataType;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +60,16 @@ public class ServerShopManager implements ShopManager {
             DataApi.getDataInstance().logError(getClass(), "Failed to fetch shops", throwable);
             return null;
         });
+    }
+
+    public CompletableFuture<Void> saveShops() {
+        final CompletableFuture<Void> future = new CompletableFuture<>();
+
+        for (Shop shop : shops) {
+            future.thenComposeAsync(__ -> shop.update());
+        }
+
+        return future;
     }
 
     /**

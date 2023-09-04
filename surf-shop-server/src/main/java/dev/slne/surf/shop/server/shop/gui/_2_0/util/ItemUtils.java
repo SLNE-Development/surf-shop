@@ -1,11 +1,15 @@
 package dev.slne.surf.shop.server.shop.gui._2_0.util;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -13,14 +17,31 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.*;
 
 public class ItemUtils {
+
+    private static final LoadingCache<URL, ItemStack> customHeadCache = Caffeine.newBuilder()
+            .build(key -> {
+                final PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+                final PlayerTextures textures = profile.getTextures();
+
+                textures.clear();
+                textures.setSkin(key);
+
+                final ItemStack head = new ItemStack(Material.PLAYER_HEAD, 1);
+                head.editMeta(SkullMeta.class, meta -> {
+                   meta.setPlayerProfile(profile);
+                });
+
+                return head;
+            });
 
     /**
      * Prevents instantiation.
@@ -39,7 +60,7 @@ public class ItemUtils {
      * @return The created item.
      */
     public static ItemStack item(Material material, int amount, int durability, Component displayName,
-            Component... lore) {
+                                 Component... lore) {
         ItemStack item = new ItemStack(material, amount);
         ItemMeta meta = item.getItemMeta();
 
@@ -67,14 +88,44 @@ public class ItemUtils {
     /**
      * Creates a skull item.
      *
-     * @param ownerUuid        The owner uuid of the skull.
-     * @param lore        The lore of the skull.
+     * @param ownerUuid The owner uuid of the skull.
+     * @param lore      The lore of the skull.
      * @return The created skull item.
      */
     public static ItemStack head(UUID ownerUuid, Component... lore) {
         OfflinePlayer owner = Bukkit.getOfflinePlayer(ownerUuid);
 
         return head(owner, Component.text(owner.getName(), NamedTextColor.GOLD), lore);
+    }
+
+    public static ItemStack head(String url, int amount, Component displayName, Component... lore) {
+
+        try {
+            final ItemStack head = customHeadCache.get(URI.create(url).toURL()).clone();
+
+            head.setAmount(amount);
+
+            if (displayName == null) {
+                displayName = Component.empty();
+            }
+
+            final Component finalDisplayName = displayName;
+            head.editMeta(meta -> {
+                meta.displayName(finalDisplayName.decoration(TextDecoration.ITALIC, false));
+
+                if (lore != null) {
+                    List<Component> loreList = Arrays.asList(lore);
+                    loreList.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
+
+                    meta.lore(loreList);
+                }
+            });
+
+            return head;
+        } catch (MalformedURLException e) {
+            ComponentLogger.logger(ItemUtils.class).error("Failed to create custom head", e);
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -99,15 +150,15 @@ public class ItemUtils {
      * @return the shop edit item
      */
     public static ItemStack editShopItem() {
-        return item(Material.WRITABLE_BOOK, 1, 0, Component.text("ServerShop bearbeiten", NamedTextColor.GOLD),
-                Component.empty(), Component.text("Öffnet das ServerShop Bearbeitungs Menü", NamedTextColor.GRAY),
+        return item(Material.WRITABLE_BOOK, 1, 0, Component.text("Shop bearbeiten", NamedTextColor.GOLD),
+                Component.empty(), Component.text("Öffnet das Shop Bearbeitungs Menü", NamedTextColor.GRAY),
                 Component.empty());
     }
 
     /**
-     * Returns the shop buy item
+     * Returns the shop sell item
      *
-     * @return the shop buy item
+     * @return the shop sell item
      */
     public static ItemStack buyItem() {
         return item(Material.RED_CONCRETE, 1, 0, Component.text("Ankauf", NamedTextColor.GOLD),
@@ -126,7 +177,7 @@ public class ItemUtils {
             toReturn = disabledItem();
         } else if (shop.item() != null && shop.isInventoryEmpty()) {
             toReturn = item(Material.BARRIER, 1, 0, Component.text("Leer", NamedTextColor.GOLD),
-                    Component.empty(), Component.text("Der ServerShop ist leer", NamedTextColor.GRAY),
+                    Component.empty(), Component.text("Der Shop ist leer", NamedTextColor.GRAY),
                     Component.empty());
         } else {
             toReturn = item(Material.GREEN_CONCRETE, 1, 0, Component.text("Verkauf", NamedTextColor.GOLD),
@@ -195,7 +246,7 @@ public class ItemUtils {
 
         assert name != null : "Owner name cannot be null, as the owner is required to create a shop";
 
-        return head(owner, Component.text("%s´s Shop", MessageManager.VARIABLE_VALUE));
+        return head(owner, Component.text("%s´s Shop".formatted(name), MessageManager.VARIABLE_VALUE));
     }
 
     /**
@@ -220,7 +271,7 @@ public class ItemUtils {
      * @return the increase/decrase item
      */
     private static ItemStack increaseDecreaseItem(Material material, int amount, boolean increase, int selectedAmount,
-            int maxAmount) {
+                                                  int maxAmount) {
         List<Component> lore = new ArrayList<>();
 
         lore.add(Component.empty());
@@ -330,11 +381,11 @@ public class ItemUtils {
     }
 
     /**
-     * Returns the buy item
+     * Returns the sell item
      *
      * @param selectedAmount the selected amount
      * @param maxAmount      the max amount
-     * @return the buy item
+     * @return the sell item
      */
     public static ItemStack buyItem(int selectedAmount, int maxAmount) {
         List<Component> lore = new ArrayList<>();
@@ -417,5 +468,259 @@ public class ItemUtils {
      */
     public static ItemStack confirmationQuestionItem(Component displayName, Component... lore) {
         return item(Material.ENCHANTED_BOOK, 1, 0, displayName, lore);
+    }
+
+    public static ItemStack editSellPrice(Shop shop) {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+
+        if (shop.isSelling()) {
+            lore.add(Component.text("Aktueller Verkaufspreis: ", MessageManager.VARIABLE_KEY)
+                    .append(shop.renderSellPrice()));
+        } else {
+            lore.add(Component.text("Der Verkauf ist aktuell ", NamedTextColor.GRAY)
+                    .append(Component.text("Deaktiviert", NamedTextColor.RED)));
+        }
+
+        lore.add(Component.empty());
+
+        if (shop.isSelling()) {
+            lore.add(Component.text("Klicke um den Verkaufspreis zu ändern.", MessageManager.INFO));
+        } else {
+            lore.add(Component.text("Klicke um den Verkauf zu aktivieren.", MessageManager.INFO));
+        }
+
+        lore.add(Component.empty());
+
+        if (shop.isSelling()) {
+            lore.add(Component.text("Gib einen 0 ein um den Verkauf zu deaktivieren.", NamedTextColor.GRAY, TextDecoration.ITALIC));
+            lore.add(Component.empty());
+        }
+
+
+        return item(
+                Material.GOLD_INGOT,
+                1,
+                0,
+                Component.text("Verkaufspreis", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack editBuyPrice(Shop shop) {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+
+        if (shop.isBuying()) {
+            lore.add(Component.text("Aktueller Ankaufspreis: ", MessageManager.VARIABLE_KEY)
+                    .append(shop.renderBuyPrice()));
+        } else {
+            lore.add(Component.text("Der Ankauf ist aktuell ", NamedTextColor.GRAY)
+                    .append(Component.text("Deaktiviert", NamedTextColor.RED)));
+        }
+
+        lore.add(Component.empty());
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um den Ankaufspreis zu %s".formatted((shop.isBuying()) ? "ändern" : "aktivieren"), MessageManager.INFO));
+        lore.add(Component.empty());
+
+        if (shop.isBuying()) {
+            lore.add(Component.text("Gib einen 0 ein um den Ankaufs zu deaktivieren.", NamedTextColor.GRAY, TextDecoration.ITALIC));
+            lore.add(Component.empty());
+        }
+
+        return item(
+                Material.EMERALD,
+                1,
+                0,
+                Component.text("Ankaufspreis", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack editAmount(Shop shop) {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+
+        lore.add(Component.text("Aktuelle Stückzahl: ", MessageManager.VARIABLE_KEY)
+                .append(Component.text(shop.quantity(), MessageManager.VARIABLE_VALUE)));
+
+        lore.add(Component.empty());
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um die Anzahl zu ändern", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return item(
+                Material.REDSTONE_TORCH,
+                1,
+                1,
+                Component.text("Stückzahl", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack editDescription(Shop shop) {
+        final Optional<Component> optionalDescription = shop.description();
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+
+        if (optionalDescription.isEmpty()) {
+            lore.add(Component.text("Aktuell ist keine Beschreibung gesetzt", MessageManager.INFO));
+        } else {
+            lore.add(Component.text("Aktuelle Beschreibung: ", MessageManager.VARIABLE_KEY)
+                    .append(optionalDescription.get()));
+        }
+
+        lore.add(Component.empty());
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um die Beschreibung zu ändern", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return item(
+                Material.WRITABLE_BOOK,
+                1,
+                0,
+                Component.text("Beschreibung", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack editMembers() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um die Mitglieder zu bearbeiten", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return item(
+                Material.PLAYER_HEAD,
+                1,
+                0,
+                Component.text("Mitglieder", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack addMemberItem() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um eine Mitglied hinzuzufügen", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return head(
+                /* Green plus */
+                "https://textures.minecraft.net/texture/5ff31431d64587ff6ef98c0675810681f8c13bf96f51d9cb07ed7852b2ffd1",
+                1,
+                Component.text("Mitglied hinzufügen", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack removeMemberItem() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um eine Mitglied zu entfernen", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return head(
+                /* Red minus */
+                "https://textures.minecraft.net/texture/4e4b8b8d2362c864e062301487d94d3272a6b570afbf80c2c5b148c954579d46",
+                1,
+                Component.text("Mitglied entfernen", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack listMembersItem() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um dir alle Mitglieder anzuzeigen", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return head(
+                /* Box of Infinite Books*/
+                "https://textures.minecraft.net/texture/b2bcddc5e30285132b18ffbc3c11f52f4047726a45d042465bf14bdd900739e7",
+                1,
+                Component.text("Mitgliederliste", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack editStorage(Shop shop) {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um das Lager zu bearbeiten", MessageManager.INFO));
+        lore.add(Component.empty());
+        lore.add(Component.text("Aktueller Bestand: ", MessageManager.VARIABLE_KEY)
+                .append(Component.text(shop.amount(), MessageManager.VARIABLE_VALUE)));
+        lore.add(Component.empty());
+
+
+        return item(
+                Material.CHEST_MINECART,
+                1,
+                0,
+                Component.text("Lager", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack addStorageItem() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um Items zum Lager hinzuzufügen", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return head(
+                /* Green plus */
+                "https://textures.minecraft.net/texture/5ff31431d64587ff6ef98c0675810681f8c13bf96f51d9cb07ed7852b2ffd1",
+                1,
+                Component.text("Items hinzufügen", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack removeStorageItem() {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Klicke um Items aus dem Lager zu entnehmen", MessageManager.INFO));
+        lore.add(Component.empty());
+
+        return head(
+                /* Red minus */
+                "https://textures.minecraft.net/texture/4e4b8b8d2362c864e062301487d94d3272a6b570afbf80c2c5b148c954579d46",
+                1,
+                Component.text("Items entnehmen", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
+    }
+
+    public static ItemStack shopStorageInfoItem(Shop shop) {
+        final List<Component> lore = new ArrayList<>();
+
+        lore.add(Component.empty());
+        lore.add(Component.text("Aktueller Bestand: ", MessageManager.VARIABLE_KEY)
+                .append(Component.text(shop.amount(), MessageManager.VARIABLE_VALUE))
+                .append(Component.text("x ", MessageManager.VARIABLE_VALUE))
+                .append(shop.renderItem()));
+        lore.add(Component.empty());
+
+        return item(
+                Material.CHEST_MINECART,
+                1,
+                0,
+                Component.text("Lagerbestand", MessageManager.VARIABLE_VALUE),
+                lore.toArray(Component[]::new)
+        );
     }
 }

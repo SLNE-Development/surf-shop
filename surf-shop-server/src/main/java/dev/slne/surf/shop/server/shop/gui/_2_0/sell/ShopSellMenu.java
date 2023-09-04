@@ -6,24 +6,20 @@ import dev.slne.gui.api.SurfGui;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.ShopGui;
+import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
 import dev.slne.surf.shop.server.shop.gui._2_0.confirmation.ConfirmationGui;
-import dev.slne.surf.shop.server.shop.gui._2_0.inventory.CouldNotAddAllItemsToInventoryException;
-import dev.slne.surf.shop.server.shop.gui._2_0.inventory.PlayerInventoryItemsTransfer;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiSound;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiUtils;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.ItemUtils;
 import dev.slne.surf.shop.server.util.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ShopSellMenu extends ShopGui {
 
@@ -31,7 +27,7 @@ public class ShopSellMenu extends ShopGui {
     private StaticPane shopPane;
     private int selectedAmount;
 
-    public ShopSellMenu(@NotNull Shop shop, @NotNull SurfGui parent, Player viewingPlayer) {
+    public ShopSellMenu(@NotNull Shop shop, @NotNull SurfShopGui parent, Player viewingPlayer) {
         super(shop, parent, 6, Component.text("Shop - Kaufen"));
 
         this.viewingPlayer = viewingPlayer;
@@ -215,7 +211,7 @@ public class ShopSellMenu extends ShopGui {
 
         final List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Bist du dir sicher, dass du", NamedTextColor.GRAY));
-        lore.add(Component.text(selectedAmount * getShop().sellAmount() + "x", MessageManager.VARIABLE_VALUE).append(Component.text(" "))
+        lore.add(Component.text(selectedAmount * getShop().quantity() + "x", MessageManager.VARIABLE_VALUE).append(Component.text(" "))
                 .append(displayName));
         lore.add(Component.text("kaufen möchtest?", NamedTextColor.GRAY));
 
@@ -242,47 +238,7 @@ public class ShopSellMenu extends ShopGui {
     }
 
     /**
-     * Tries to transfer the items to the player.
-     *
-     * @param gui    the gui
-     * @param player the player
-     * @param amount the amount of items to transfer
-     * @return whether the transfer was successful
-     */
-    private boolean transferItems(ConfirmationGui gui, @NotNull Player player, int amount) {
-        final PlayerInventoryItemsTransfer itemTransfer = new PlayerInventoryItemsTransfer(
-                getShop().item(),
-                amount,
-                player.getInventory()
-        );
-
-        try {
-            if (!itemTransfer.transferItems()) {
-                player.sendMessage(MessageManager.getInventoryCannotAcceptNItemsComponent(amount));
-                GuiUtils.playGuiSound(GuiSound.DENY_ACTION, player);
-                gui.backToParent(player);
-                return false;
-            }
-
-        } catch (CouldNotAddAllItemsToInventoryException exception) {
-            final Location playerLocation = player.getLocation();
-            final World playerWorld = player.getWorld();
-
-            for (Map.Entry<Integer, ItemStack> leftOver : exception.getLeftOver().entrySet()) {
-                playerWorld.dropItem(playerLocation, leftOver.getValue(), item ->  {
-                    item.setOwner(player.getUniqueId());
-                    item.setThrower(player.getUniqueId());
-                });
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Handles the buy confirm.
+     * Handles the sell confirm.
      *
      * @param gui the gui
      */
@@ -295,7 +251,7 @@ public class ShopSellMenu extends ShopGui {
         }
 
         getShop().lock(viewingPlayer);
-        getShop().buy(viewingPlayer, selectedAmount).thenAcceptAsync(success -> {
+        getShop().sell(viewingPlayer, selectedAmount).thenAcceptAsync(success -> {
             if (!success) {
                 viewingPlayer.sendMessage(MessageManager.getErrorComponent());
                 gui.backToParent(viewingPlayer);

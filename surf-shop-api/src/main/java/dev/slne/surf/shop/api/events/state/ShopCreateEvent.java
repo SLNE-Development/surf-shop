@@ -1,10 +1,11 @@
 package dev.slne.surf.shop.api.events.state;
 
+import dev.slne.surf.shop.api.events.CancellableShopEvent;
 import dev.slne.surf.shop.api.events.ShopEvent;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public final class ShopCreateEvent extends ShopEvent {
+public final class ShopCreateEvent extends CancellableShopEvent {
 
     private final Block block;
 
@@ -14,7 +15,7 @@ public final class ShopCreateEvent extends ShopEvent {
      * @param block  The block.
      * @param player The player.
      */
-    public ShopCreateEvent(Block block, Player player) {
+    public ShopCreateEvent(Block block, Player player, boolean async) {
         super(null, player);
 
         this.block = block;

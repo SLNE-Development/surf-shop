@@ -47,7 +47,7 @@ public class ShopBreakListener implements Listener {
             return;
         }
 
-        final ShopRemoveEvent shopRemoveEvent = new ShopRemoveEvent(shop, player);
+        final ShopRemoveEvent shopRemoveEvent = new ShopRemoveEvent(shop, player, event.isAsynchronous());
 
         if (!shopRemoveEvent.callEvent()) {
             shopRemoveEvent.applyCancelled(event.getPlayer());

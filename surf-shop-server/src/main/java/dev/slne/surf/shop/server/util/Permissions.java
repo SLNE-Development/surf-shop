@@ -35,7 +35,7 @@ public class Permissions {
     public static final String MENU_SHOP_ITEM;
 
     /**
-     * Allows the player to buy items from the shop.
+     * Allows the player to sell items from the shop.
      */
     public static final String MENU_BUY;
 
@@ -64,6 +64,36 @@ public class Permissions {
     public static final String INCREASE_100;
 
     public static final String INCREASE_1000;
+
+    public static final String SHOP_EDIT_SELL_PRICE;
+
+    public static final String SHOP_EDIT_BUY_PRICE;
+
+    public static final String SHOP_EDIT_AMOUNT;
+
+    public static final String SHOP_EDIT_MEMBERS;
+
+    public static final String SHOP_EDIT_STORAGE;
+
+    public static final String SHOP_EDIT_DESCRIPTION;
+
+    public static final String SHOP_EDIT_GLOBAL_LIMITS;
+
+    public static final String SHOP_EDIT_PLAYER_LIMITS;
+
+    public static final String SHOP_EDIT_BLOCK_PLAYER;
+
+    public static final String SHOP_MENU_EDIT_MEMBERS_ADD;
+
+    public static final String SHOP_MENU_EDIT_MEMBERS_REMOVE;
+
+    public static final String SHOP_MENU_EDIT_MEMBERS_LIST;
+
+    public static final String SHOP_MENU_EDIT_STORAGE_ADD;
+
+    public static final String SHOP_MENU_EDIT_STORAGE_REMOVE;
+
+    public static final String SHOP_MENU_EDIT_STORAGE_LIST;
 
     /**
      * Parent permissions
@@ -150,5 +180,20 @@ public class Permissions {
         INCREASE_10 = register("surf.shop.item.sell-menu.increase-10");
         INCREASE_100 = register("surf.shop.item.sell-menu.increase-100");
         INCREASE_1000 = register("surf.shop.item.sell-menu.increase-1000");
+        SHOP_EDIT_SELL_PRICE = register("surf.shop.item.edit-menu.sell-price");
+        SHOP_EDIT_BUY_PRICE = register("surf.shop.item.edit-menu.buy-price");
+        SHOP_EDIT_AMOUNT = register("surf.shop.item.edit-menu.amount");
+        SHOP_EDIT_MEMBERS = register("surf.shop.item.edit-menu.members");
+        SHOP_EDIT_STORAGE = register("surf.shop.item.edit-menu.storage");
+        SHOP_EDIT_DESCRIPTION = register("surf.shop.item.edit-menu.description");
+        SHOP_EDIT_GLOBAL_LIMITS = register("surf.shop.item.edit-menu.global-limits");
+        SHOP_EDIT_PLAYER_LIMITS = register("surf.shop.item.edit-menu.player-limits");
+        SHOP_EDIT_BLOCK_PLAYER = register("surf.shop.item.edit-menu.block-player");
+        SHOP_MENU_EDIT_MEMBERS_ADD = register("surf.shop.item.edit-menu.members.add");
+        SHOP_MENU_EDIT_MEMBERS_REMOVE = register("surf.shop.item.edit-menu.members.remove");
+        SHOP_MENU_EDIT_MEMBERS_LIST = register("surf.shop.item.edit-menu.members.list");
+        SHOP_MENU_EDIT_STORAGE_ADD = register("surf.shop.item.edit-menu.storage.add");
+        SHOP_MENU_EDIT_STORAGE_REMOVE = register("surf.shop.item.edit-menu.storage.remove");
+        SHOP_MENU_EDIT_STORAGE_LIST = register("surf.shop.item.edit-menu.storage.list");
     }
 }

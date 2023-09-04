@@ -1,7 +1,5 @@
 package dev.slne.surf.shop.server.shop.gui._2_0;
 
-import com.google.common.base.Preconditions;
-import dev.slne.gui.api.SurfGui;
 import dev.slne.gui.api.chest.SurfChestGui;
 import dev.slne.surf.shop.api.shop.Shop;
 import net.kyori.adventure.text.Component;
@@ -9,16 +7,16 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Consumer;
+import static com.google.common.base.Preconditions.*;
 
-public abstract class ShopGui extends SurfChestGui {
+public abstract class ShopGui extends SurfChestGui implements SurfShopGui {
 
-    private final Shop shop;
+    private Shop shop;
 
-    protected ShopGui(@NotNull Shop shop, @Nullable SurfGui parent, int rows, @NotNull Component title) {
+    protected ShopGui(@NotNull Shop shop, @Nullable SurfShopGui parent, int rows, @NotNull Component title) {
         super(parent, rows, title);
 
-        Preconditions.checkNotNull(shop, "Shop cannot be null");
+        checkNotNull(shop, "Shop cannot be null");
 
         this.shop = shop;
 
@@ -31,12 +29,14 @@ public abstract class ShopGui extends SurfChestGui {
         });
     }
 
-    /**
-     * @return The shop that this gui is for
-     */
+    @Override
     public Shop getShop() {
         return shop;
     }
 
-
+    @Override
+    public void setShop(Shop shop) {
+        checkNotNull(shop, "Shop cannot be null");
+        this.shop = shop;
+    }
 }

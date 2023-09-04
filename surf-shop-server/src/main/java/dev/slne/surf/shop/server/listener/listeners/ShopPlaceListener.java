@@ -5,6 +5,7 @@ import dev.slne.surf.shop.api.events.state.ShopCreateEvent;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.util.ShopUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -53,7 +54,7 @@ public class ShopPlaceListener implements Listener {
                 return;
             }
 
-            final ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player);
+            final ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player, event.isAsynchronous());
 
             if (!shopCreateEvent.callEvent()) {
                 shopCreateEvent.applyCancelled(event.getPlayer());

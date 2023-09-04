@@ -1,17 +1,23 @@
 package dev.slne.surf.shop.server.message;
 
+import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.shop.member.ShopMember;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class MessageManager {
 
@@ -242,7 +248,7 @@ public class MessageManager {
      * @param itemStack the itemstack
      * @return the component
      */
-    private static Component getItemStackComponent(ItemStack itemStack) {
+    public static Component getItemStackComponent(ItemStack itemStack) {
         Component name = itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()
                 ? itemStack.getItemMeta().displayName()
                 : Component.text(itemStack.getType().name());
@@ -285,6 +291,10 @@ public class MessageManager {
         return prefix().append(Component.text("Der Shop verkauft aktuell nichts.", ERROR));
     }
 
+    public static Component getShopNotBuyingComponent() {
+        return prefix().append(Component.text("Der Shop kauft aktuell nichts an.", ERROR));
+    }
+
     public static Component getNotEnoughMoneyComponent() {
         return prefix().append(Component.text("Du hast nicht genug Geld.", ERROR));
     }
@@ -295,5 +305,91 @@ public class MessageManager {
 
     public static Component getErrorComponent() {
         return prefix().append(Component.text("Es ist ein Fehler aufgetreten.", ERROR));
+    }
+
+    public static Component changeSellPrice(Shop shop) {
+        if (shop.isSelling()) {
+            return prefix()
+                    .append(Component.text("Du hast den Verkaufspreis auf ", MessageManager.SUCCESS))
+                    .append(shop.renderSellPrice())
+                    .append(Component.text(" gesetzt.", MessageManager.SUCCESS));
+        } else {
+            return prefix()
+                    .append(Component.text("Du hast den Verkaufspreis ", MessageManager.SUCCESS))
+                    .append(Component.text("deaktiviert.", NamedTextColor.RED));
+        }
+    }
+
+    public static Component changeBuyPrice(Shop shop) {
+        if (shop.isBuying()) {
+            return prefix()
+                    .append(Component.text("Du hast den Ankaufspreis auf ", MessageManager.SUCCESS))
+                    .append(shop.renderBuyPrice())
+                    .append(Component.text(" gesetzt.", MessageManager.SUCCESS));
+        } else {
+            return prefix()
+                    .append(Component.text("Du hast den Ankaufspreis ", MessageManager.SUCCESS))
+                    .append(Component.text("deaktiviert.", NamedTextColor.RED));
+        }
+    }
+
+    public static Component changeQuantity(Shop shop) {
+        return prefix()
+                .append(Component.text("Die Stückzahl wurde auf ", MessageManager.SUCCESS))
+                .append(Component.text(shop.quantity(), MessageManager.VARIABLE_VALUE))
+                .append(Component.text(" gesetzt.", MessageManager.SUCCESS));
+    }
+
+    public static Component changeDescription(Shop shop) {
+        return shop.description().map(component -> prefix() // If the description is present
+                        .append(Component.text("Die Beschreibung wurde auf '", MessageManager.SUCCESS))
+                        .append(component)
+                        .append(Component.text("' gesetzt.", MessageManager.SUCCESS)))
+
+                .orElseGet(() -> prefix() // If the description is not present
+                        .append(Component.text("Die Beschreibung wurde ", MessageManager.SUCCESS))
+                        .append(Component.text("deaktiviert.", NamedTextColor.RED)));
+
+    }
+
+    public static Component addMember(OfflinePlayer player) {
+        return prefix()
+                .append(Component.text("Du hast ", MessageManager.SUCCESS))
+                .append(Component.text(Objects.requireNonNull(player.getName()), MessageManager.VARIABLE_VALUE))
+                .append(Component.text(" als Mitglied hinzugefügt.", MessageManager.SUCCESS));
+    }
+
+    public static Component removeMember(OfflinePlayer player) {
+        return prefix()
+                .append(Component.text("Du hast ", MessageManager.SUCCESS))
+                .append(Component.text(Objects.requireNonNull(player.getName()), MessageManager.VARIABLE_VALUE))
+                .append(Component.text(" als Mitglied entfernt.", MessageManager.SUCCESS));
+    }
+
+    public static Component addItems(Shop shop, int addAmount) {
+        return prefix()
+                .append(Component.text("Du hast ", MessageManager.SUCCESS))
+                .append(Component.text(addAmount, MessageManager.VARIABLE_VALUE))
+                .append(Component.text("x ", MessageManager.SUCCESS))
+                .append(getItemStackComponent(shop.item()))
+                .append(Component.text(" hinzugefügt.", MessageManager.SUCCESS));
+    }
+
+    public static Component removeItems(Shop shop, int removeAmount) {
+        return prefix()
+                .append(Component.text("Du hast ", MessageManager.SUCCESS))
+                .append(Component.text(removeAmount, MessageManager.VARIABLE_VALUE))
+                .append(Component.text("x ", MessageManager.SUCCESS))
+                .append(getItemStackComponent(shop.item()))
+                .append(Component.text(" entfernt.", MessageManager.SUCCESS));
+    }
+
+    public static Component getShopBuyLimitComponent(Shop shop) {
+        return prefix()
+                .append(Component.text("Du kannst maximal ", MessageManager.ERROR))
+                .append(Component.text(shop.buyLimit(), MessageManager.VARIABLE_VALUE))
+                .append(Component.text("x ", MessageManager.ERROR))
+                .append(shop.renderItem())
+                .append(Component.text(" verkaufen.", MessageManager.ERROR));
     }
 }
