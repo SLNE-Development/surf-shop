@@ -3,7 +3,7 @@ package dev.slne.surf.shop.server.shop;
 import com.google.common.base.MoreObjects;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonNull;
 import com.google.gson.annotations.SerializedName;
 import dev.slne.data.api.DataApi;
 import dev.slne.data.api.web.WebRequest;
@@ -88,7 +88,7 @@ public class ServerShop implements Shop {
     @SerializedName("location_z")
     private int z;
 
-    @SerializedName("stack_size") 
+    @SerializedName("stack_size")
     private int stackSize;
 
     @SerializedName("sell_price")
@@ -107,13 +107,14 @@ public class ServerShop implements Shop {
     private Currency currency;
 
     @SerializedName("description")
-    private @Nullable Component description;
+    @Nullable
+    private Component description;
 
-    private boolean locked;
-    private Player lockedByPlayer;
+    private transient boolean locked;
+    private transient Player lockedByPlayer;
 
-    private boolean deleting = false;
-    private final boolean adminShop = false;
+    private transient boolean deleting = false;
+    private transient final boolean adminShop = false;
 
     @Deprecated
     public ServerShop() {
@@ -162,9 +163,11 @@ public class ServerShop implements Shop {
 
         return request.executeGet().thenApplyAsync(response -> {
 
+            System.err.println("response = " + response.body());
+
             JsonArray bodyArray = response.bodyArray(GSON_CONVERTER);
             for (JsonElement element : bodyArray) {
-                Shop shop = fromBodyElement(element, false);
+                Shop shop = GSON_CONVERTER.fromJson(element.toString(), ServerShop.class);
 
                 if (shop == null) {
                     continue;
@@ -195,7 +198,7 @@ public class ServerShop implements Shop {
                 .build();
 
         return request.executePost().thenApplyAsync(response -> {
-            Shop newShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop newShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
 
             if (newShop == null) {
                 System.out.println("newShop = " + null);
@@ -207,6 +210,8 @@ public class ServerShop implements Shop {
 
             id = newShop.getId();
 
+
+            System.err.println("newShop = " + newShop);
             return this.inter();
         }).exceptionally(exception -> {
             exception.printStackTrace();
@@ -227,7 +232,7 @@ public class ServerShop implements Shop {
         System.out.println("Updating shop");
         return request.executePut().thenApplyAsync(response -> {
             System.out.println("response = " + response.body());
-            Shop updatedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop updatedShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
 
             if (updatedShop == null) {
                 System.out.println("updatedShop = " + null);
@@ -257,7 +262,7 @@ public class ServerShop implements Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executeDelete().thenApplyAsync(response -> {
-            Shop deletedShop = fromBodyElement(response.bodyElement(GSON_CONVERTER), true);
+            Shop deletedShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
 
             if (deletedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
@@ -287,10 +292,10 @@ public class ServerShop implements Shop {
 
         parameters.put("uuid", uuid.toString());
         parameters.put("owner_uuid", ownerUuid.toString());
-        parameters.put("shop_itemstack", GSON_CONVERTER.toJson(itemStack));
+        parameters.put("shop_itemstack", GSON_CONVERTER.toJsonElement(itemStack).getAsString());
         parameters.put("shop_amount", String.valueOf(amount));
         parameters.put("currency_id", String.valueOf(currency.getId()));
-        parameters.put("description", GSON_CONVERTER.toJson(description));
+        parameters.put("description", description != null ? GSON_CONVERTER.toJsonElement(description).getAsString() : JsonNull.INSTANCE);
 
 
         parameters.put("location_world", worldUUID.toString());
@@ -305,22 +310,6 @@ public class ServerShop implements Shop {
 
 
         return parameters;
-    }
-
-    /**
-     * Returns a shop by the body json element
-     *
-     * @param bodyElement the body json element
-     * @return the shop
-     */
-    private static Shop fromBodyElement(JsonElement bodyElement, boolean isRootElement) {
-        JsonObject dataObject = bodyElement.getAsJsonObject();
-
-        System.out.println("dataObject = " + dataObject.toString());
-
-        Shop shop = GSON_CONVERTER.fromJson(dataObject.toString(), Shop.class);
-        System.out.println("shop = " + shop);
-        return shop;
     }
 
     /**

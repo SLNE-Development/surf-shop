@@ -20,12 +20,13 @@ public class BukkitGsonConverter extends GsonConverter {
     public BukkitGsonConverter() {
         super();
 
-        builder.registerTypeAdapter(ItemStack.class, new ItemStackGsonAdapter());
+        builder.registerTypeHierarchyAdapter(ItemStack.class, new ItemStackGsonAdapter());
+        builder.registerTypeAdapter(Currency.class, TransactionApi.getTransactionInstance().getCurrencyInstanceCreator());
         builder.registerTypeAdapter(Shop.class, (InstanceCreator<Shop>) type -> {
             System.out.println("Creating new shop");
 
             return new ServerShop();
         });
-        builder.registerTypeAdapter(Currency.class, TransactionApi.getTransactionInstance().getCurrencyInstanceCreator());
+
     }
 }
