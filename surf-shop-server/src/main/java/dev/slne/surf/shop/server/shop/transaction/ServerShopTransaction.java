@@ -71,6 +71,10 @@ public class ServerShopTransaction implements ShopTransaction {
 
     @Override
     public CompletableFuture<ShopTransactionResult> create() {
+        if (getShop().amount() + getAmount() < 0) {
+            return CompletableFuture.completedFuture(ShopTransactionResult.FAILED);
+        }
+
         WebRequest request = WebRequest.builder().url(API.SHOP_TRANSACTIONS).json(true).build();
 
         ShopItemTransactionAddedEvent event = new ShopItemTransactionAddedEvent(getShop(), this);
