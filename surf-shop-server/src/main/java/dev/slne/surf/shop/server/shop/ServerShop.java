@@ -106,7 +106,9 @@ public class ServerShop implements Shop {
     private transient Player lockedByPlayer;
     private transient boolean deleting = false;
 
-    @Deprecated
+    /**
+     * A new {@link ServerShop} instance used by gson
+     */
     public ServerShop() {
         this.members = new ArrayList<>();
         this.transactions = new ArrayList<>();
@@ -175,7 +177,6 @@ public class ServerShop implements Shop {
 
     @Override
     public CompletableFuture<Shop> create() {
-        System.out.println("Creating shop");
         WebRequest request = WebRequest.builder()
                 .json(true)
                 .parameters(toParameters())
@@ -188,8 +189,6 @@ public class ServerShop implements Shop {
                             ServerShop.class);
 
             if (newShop == null) {
-                System.out.println("newShop = " + null);
-
                 BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
                 BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
@@ -209,21 +208,17 @@ public class ServerShop implements Shop {
         String url = String.format(API.SHOP, uuid.toString());
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
-        System.out.println("Updating shop");
         return request.executePut().thenApplyAsync(response -> {
-            System.out.println("response = " + response.body());
             Shop updatedShop = ShopApi.getInstance().getGsonConverter()
                     .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
                             ServerShop.class);
 
             if (updatedShop == null) {
-                System.out.println("updatedShop = " + null);
                 BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
                 BukkitMain.getInstance().getLogger().severe(response.body().toString());
                 return null;
             }
 
-            System.out.println("updatedShop = " + updatedShop);
             return updatedShop;
         }).exceptionally(exception -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to update shop: " + uuid.toString(), exception);

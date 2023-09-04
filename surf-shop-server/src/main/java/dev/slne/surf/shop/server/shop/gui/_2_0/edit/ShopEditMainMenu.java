@@ -2,7 +2,6 @@ package dev.slne.surf.shop.server.shop.gui._2_0.edit;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
-import dev.slne.gui.api.SurfGui;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.message.MessageManager;
@@ -91,35 +90,41 @@ public class ShopEditMainMenu extends ShopGui {
     }
 
     private GuiItem sellPriceItem() {
-        return new GuiItem(ItemUtils.editSellPrice(getShop()), event -> new EditSellPriceAnvilGui(this, getShop()).show(event.getWhoClicked()));
+        return new GuiItem(ItemUtils.editSellPrice(getShop()),
+                event -> new EditSellPriceAnvilGui(this, getShop()).show(event.getWhoClicked()));
     }
 
     private GuiItem buyPriceItem() {
-        return new GuiItem(ItemUtils.editBuyPrice(getShop()), event -> new EditBuyPriceAnvilGui(this, getShop()).show(event.getWhoClicked()));
+        return new GuiItem(ItemUtils.editBuyPrice(getShop()),
+                event -> new EditBuyPriceAnvilGui(this, getShop()).show(event.getWhoClicked()));
     }
 
     private GuiItem amountItem() {
         Shop shop = getShop();
-        System.out.println("Shop null? (amountItem) " + (shop == null));
+
         assert shop != null;
         return new GuiItem(ItemUtils.editAmount(shop), event -> {
             Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
-                assert shop != null;
                 new EditQuantityAnvilGui(ShopEditMainMenu.this, shop).show(event.getWhoClicked());
             });
         });
     }
 
     private GuiItem membersItem() {
-        return new GuiItem(ItemUtils.editMembers(), event -> new ShopEditMembersMainMenu(getShop(), this, event.getWhoClicked()).show(event.getWhoClicked()));
+        return new GuiItem(ItemUtils.editMembers(),
+                event -> new ShopEditMembersMainMenu(getShop(), this, event.getWhoClicked()).show(
+                        event.getWhoClicked()));
     }
 
     private GuiItem storageItem() {
-        return new GuiItem(ItemUtils.editStorage(getShop()), event -> new ShopEditStorageMainMenu(getShop(), this, event.getWhoClicked()).show(event.getWhoClicked()));
+        return new GuiItem(ItemUtils.editStorage(getShop()),
+                event -> new ShopEditStorageMainMenu(getShop(), this, event.getWhoClicked()).show(
+                        event.getWhoClicked()));
     }
 
     private GuiItem descriptionItem() {
-        return new GuiItem(ItemUtils.editDescription(getShop()), event -> new EditDescriptionAnvilGui(this, getShop()).show(event.getWhoClicked()));
+        return new GuiItem(ItemUtils.editDescription(getShop()),
+                event -> new EditDescriptionAnvilGui(this, getShop()).show(event.getWhoClicked()));
     }
 
     /*
