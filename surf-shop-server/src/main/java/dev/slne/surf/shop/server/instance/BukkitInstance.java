@@ -120,8 +120,8 @@ public class BukkitInstance implements ShopInstance {
             ShopApi.getShopManager().makeShop(((Chest) blockState), shop);
 
             owner.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
-            
-            return shop.amount(100_000); // TODO: 26.08.2023 remove this line when finished with testing
+
+            return shop.item(new ItemStack(Material.DIAMOND)).thenComposeAsync(shop1 -> shop.amount(100_000)); // TODO: 26.08.2023 remove this line when finished with testing
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
             owner.sendMessage(MessageManager.getShopCreatedFailureComponent());

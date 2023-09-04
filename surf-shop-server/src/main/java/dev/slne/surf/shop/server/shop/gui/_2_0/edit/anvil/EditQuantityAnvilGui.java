@@ -7,6 +7,7 @@ import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilOnlyNumberRequirement;
+import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilQuantityRequirement;
 import net.kyori.adventure.text.Component;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
@@ -47,7 +48,7 @@ public class EditQuantityAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilRequirement> getRequirements(List<AnvilRequirement> requirements) {
-        requirements.add(new AnvilOnlyNumberRequirement<>(1, getShop().item().getMaxStackSize()));
+        requirements.add(new AnvilQuantityRequirement(getShop().item().getMaxStackSize()));
         return requirements;
     }
 

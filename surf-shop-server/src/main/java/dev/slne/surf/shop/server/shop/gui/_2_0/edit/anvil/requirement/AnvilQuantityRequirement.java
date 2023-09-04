@@ -30,6 +30,8 @@ public class AnvilQuantityRequirement implements AnvilRequirement {
         description.add(Component.text("Die Eingabe darf nur aus gültigen Ganzzahlen bestehen.", stateColor));
         description.add(Component.text("Die Eingabe darf nicht größer als ", stateColor)
                 .append(Component.text(maxStackSize, MessageManager.VARIABLE_VALUE))
+                .append(Component.text(" und nicht kleiner als ", stateColor))
+                .append(Component.text(0, MessageManager.VARIABLE_VALUE))
                 .append(Component.text(" sein.", stateColor)));
 
         return description;
