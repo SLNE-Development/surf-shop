@@ -19,6 +19,7 @@ import dev.slne.surf.shop.server.util.ShopUtils;
 import dev.slne.surf.shop.server.util.UUIDDataType;
 import dev.slne.transaction.api.currency.Currency;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -121,7 +122,11 @@ public class BukkitInstance implements ShopInstance {
 
             owner.sendMessage(MessageManager.getShopCreatedSuccessfullyComponent());
 
-            return shop.item(new ItemStack(Material.DIAMOND)).thenComposeAsync(shop1 -> shop.amount(100_000)); // TODO: 26.08.2023 remove this line when finished with testing
+            return shop.item(new ItemStack(Material.DIAMOND)).thenComposeAsync(
+                    shop1 -> shop.increaseAmount(owner.getUniqueId(), 100_000)
+                            .thenApplyAsync(result -> shop.inter())); // TODO: 26.08.2023 remove this
+            // line when finished with
+            // testing
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
             owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
