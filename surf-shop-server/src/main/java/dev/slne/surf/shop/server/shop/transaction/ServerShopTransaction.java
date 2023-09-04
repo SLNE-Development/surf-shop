@@ -87,6 +87,8 @@ public class ServerShopTransaction implements ShopTransaction {
                 return ShopTransactionResult.FAILED;
             }
 
+            this.id = dataObject.get("id").getAsLong();
+
             return ShopTransactionResult.SUCCESS;
         }).exceptionally(throwable -> {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop transaction", throwable);
