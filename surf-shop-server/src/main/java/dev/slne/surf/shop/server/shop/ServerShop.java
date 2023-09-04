@@ -4,7 +4,6 @@ import com.google.common.base.MoreObjects;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import dev.slne.data.api.DataApi;
 import dev.slne.data.api.gson.GsonConverter;
@@ -67,7 +66,7 @@ public class ServerShop implements Shop {
             .character('&')
             .extractUrls()
             .build();
-    
+    private transient final boolean adminShop = false;
     @SerializedName("id")
     private long id;
     @SerializedName("uuid")
@@ -86,7 +85,6 @@ public class ServerShop implements Shop {
     private int y;
     @SerializedName("location_z")
     private int z;
-
     @SerializedName("stack_size")
     private int stackSize;
     @SerializedName("sell_price")
@@ -104,12 +102,9 @@ public class ServerShop implements Shop {
     private Component description;
     @SerializedName("transactions")
     private List<ShopTransaction> transactions;
-
     private transient boolean locked;
     private transient Player lockedByPlayer;
-
     private transient boolean deleting = false;
-    private transient final boolean adminShop = false;
 
     @Deprecated
     public ServerShop() {
@@ -162,7 +157,7 @@ public class ServerShop implements Shop {
 
             JsonArray bodyArray = response.bodyArray(ShopApi.getInstance().getGsonConverter());
             for (JsonElement element : bodyArray) {
-                Shop shop = GSON_CONVERTER.fromJson(element.toString(), ServerShop.class);
+                Shop shop = ShopApi.getInstance().getGsonConverter().fromJson(element.toString(), ServerShop.class);
 
                 if (shop == null) {
                     continue;
@@ -188,7 +183,9 @@ public class ServerShop implements Shop {
                 .build();
 
         return request.executePost().thenApplyAsync(response -> {
-            Shop newShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
+            Shop newShop = ShopApi.getInstance().getGsonConverter()
+                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
+                            ServerShop.class);
 
             if (newShop == null) {
                 System.out.println("newShop = " + null);
@@ -202,7 +199,6 @@ public class ServerShop implements Shop {
 
             return this.inter();
         }).exceptionally(exception -> {
-            exception.printStackTrace();
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop: " + uuid.toString(), exception);
             return null;
         });
@@ -216,7 +212,9 @@ public class ServerShop implements Shop {
         System.out.println("Updating shop");
         return request.executePut().thenApplyAsync(response -> {
             System.out.println("response = " + response.body());
-            Shop updatedShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
+            Shop updatedShop = ShopApi.getInstance().getGsonConverter()
+                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
+                            ServerShop.class);
 
             if (updatedShop == null) {
                 System.out.println("updatedShop = " + null);
@@ -228,7 +226,6 @@ public class ServerShop implements Shop {
             System.out.println("updatedShop = " + updatedShop);
             return updatedShop;
         }).exceptionally(exception -> {
-            exception.printStackTrace();
             DataApi.getDataInstance().logError(getClass(), "Failed to update shop: " + uuid.toString(), exception);
             return null;
         });
@@ -242,7 +239,9 @@ public class ServerShop implements Shop {
         WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
 
         return request.executeDelete().thenApplyAsync(response -> {
-            Shop deletedShop = GSON_CONVERTER.fromJson(response.bodyElement(GSON_CONVERTER).toString(), ServerShop.class);
+            Shop deletedShop = ShopApi.getInstance().getGsonConverter()
+                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
+                            ServerShop.class);
 
             if (deletedShop == null) {
                 BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
@@ -291,7 +290,8 @@ public class ServerShop implements Shop {
         parameters.put("shop_itemstack", GSON_CONVERTER.toJsonElement(itemStack).getAsString());
         parameters.put("shop_amount", String.valueOf(amount));
         parameters.put("currency_id", String.valueOf(currency.getId()));
-        parameters.put("description", description != null ? GSON_CONVERTER.toJsonElement(description).getAsString() : JsonNull.INSTANCE);
+        parameters.put("description",
+                description != null ? GSON_CONVERTER.toJsonElement(description).getAsString() : JsonNull.INSTANCE);
 
         parameters.put("location_world", worldUUID.toString());
         parameters.put("location_x", String.valueOf(x));
