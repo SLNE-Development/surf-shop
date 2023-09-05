@@ -77,7 +77,7 @@ public class ServerShopTransaction implements ShopTransaction {
 
         WebRequest request = WebRequest.builder().url(API.SHOP_TRANSACTIONS).json(true).build();
 
-        ShopItemTransactionAddedEvent event = new ShopItemTransactionAddedEvent(getShop(), this);
+        ShopItemTransactionAddedEvent event = new ShopItemTransactionAddedEvent(getShop(), this, !Bukkit.isPrimaryThread());
         Bukkit.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

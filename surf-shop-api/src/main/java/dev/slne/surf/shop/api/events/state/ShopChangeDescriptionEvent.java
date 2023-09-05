@@ -18,7 +18,7 @@ public class ShopChangeDescriptionEvent extends ShopEvent {
      * @param newDescription the new description
      */
     public ShopChangeDescriptionEvent(@Nullable Shop shop, @Nullable Component newDescription, boolean async) {
-        super(shop, null);
+        super(shop, null, async);
         this.newDescription = newDescription;
     }
 

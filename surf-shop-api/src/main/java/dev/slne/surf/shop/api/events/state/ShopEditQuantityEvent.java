@@ -15,7 +15,7 @@ public class ShopEditQuantityEvent extends ShopEvent {
      * @param newQuantity the new quantity
      */
     public ShopEditQuantityEvent(@Nullable Shop shop, int newQuantity, boolean async) {
-        super(shop, null);
+        super(shop, null, async);
         this.newQuantity = newQuantity;
     }
 

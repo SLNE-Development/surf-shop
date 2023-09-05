@@ -19,7 +19,7 @@ public final class ShopItemBuyEvent extends CancellableShopEvent {
      * @param player The player.
      */
     public ShopItemBuyEvent(Shop shop, Player player, double price, boolean async) {
-        super(shop, player);
+        super(shop, player, async);
         this.price = price;
     }
 

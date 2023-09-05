@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.api.events;
 
 import dev.slne.surf.shop.api.shop.Shop;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -39,7 +40,7 @@ public abstract class ShopEvent extends Event {
      * @param player the player
      */
     public ShopEvent(@Nullable Shop shop, OfflinePlayer player) {
-        this(shop, player, false);
+        this(shop, player, !Bukkit.isPrimaryThread());
     }
 
     /**

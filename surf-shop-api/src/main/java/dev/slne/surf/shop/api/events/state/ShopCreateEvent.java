@@ -16,7 +16,7 @@ public final class ShopCreateEvent extends CancellableShopEvent {
      * @param player The player.
      */
     public ShopCreateEvent(Block block, Player player, boolean async) {
-        super(null, player);
+        super(null, player, async);
 
         this.block = block;
 

@@ -24,7 +24,7 @@ public final class ShopItemSellEvent extends CancellableShopEvent {
      * @param boughtAmount    The amount of the stack bought. (not the total item amount - the amount of the stack)
      */
     public ShopItemSellEvent(Shop shop, Player player, ItemStack boughtItemStack, int boughtAmount, boolean async) {
-        super(shop, player);
+        super(shop, player, async);
 
         this.boughtItemStack = boughtItemStack;
         this.boughtAmount = boughtAmount;
