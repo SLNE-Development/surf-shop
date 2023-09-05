@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.server.shop;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -261,7 +262,7 @@ public class ServerShop implements Shop {
 
     @Override
     public List<ShopTransaction> getTransactions() {
-        return transactions;
+        return ImmutableList.copyOf(transactions);
     }
 
     /**
@@ -337,6 +338,16 @@ public class ServerShop implements Shop {
         return lines;
     }
 
+    /**
+     * Gets the amount of items that are in the shop
+     *
+     * @return the amount of items
+     */
+    @Override
+    public int amount() {
+        return transactions.stream().mapToInt(ShopTransaction::getAmount).sum();
+    }
+
     @Override
     public long getId() {
         return id;
@@ -404,6 +415,17 @@ public class ServerShop implements Shop {
     @Override
     public List<ShopMember> getMembers() {
         return members.stream().map(ShopMember::inter).toList();
+    }
+
+    /**
+     * Adds a member to this shop
+     *
+     * @param player the player
+     * @return the shop
+     */
+    @Override
+    public CompletableFuture<Shop> addMember(OfflinePlayer player) {
+        return addMember(player.getUniqueId());
     }
 
     @Override
@@ -535,6 +557,50 @@ public class ServerShop implements Shop {
     public void unlock() {
         this.locked = false;
         this.lockedByPlayer = null;
+    }
+
+    /**
+     * Returns if the given player is the owner of this shop
+     *
+     * @param player the player
+     * @return true if owner
+     */
+    @Override
+    public boolean isOwner(OfflinePlayer player) {
+        return isOwner(player.getUniqueId());
+    }
+
+    /**
+     * Returns if the given uuid is the owner of this shop
+     *
+     * @param uuid the uuid
+     * @return true if owner
+     */
+    @Override
+    public boolean isOwner(UUID uuid) {
+        return Objects.equals(ownerUuid, uuid);
+    }
+
+    /**
+     * Returns if the given player is a member of this shop
+     *
+     * @param player the player
+     * @return true if member
+     */
+    @Override
+    public boolean isMember(OfflinePlayer player) {
+        return isMember(player.getUniqueId());
+    }
+
+    /**
+     * Returns if the given uuid is a member of this shop
+     *
+     * @param uuid the uuid
+     * @return true if member
+     */
+    @Override
+    public boolean isMember(UUID uuid) {
+        return getMembers().stream().anyMatch(member -> Objects.equals(member.getUUID(),uuid));
     }
 
     @Override

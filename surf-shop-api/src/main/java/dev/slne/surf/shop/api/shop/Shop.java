@@ -71,9 +71,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the amount of items
      */
-    default int amount() {
-        return getTransactions().stream().mapToInt(ShopTransaction::getAmount).sum();
-    }
+    int amount();
 
     /**
      * Decreases the amount of items in the shop
@@ -161,9 +159,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the shop
      */
-    default CompletableFuture<Shop> addMember(OfflinePlayer player) {
-        return addMember(player.getUniqueId());
-    }
+    CompletableFuture<Shop> addMember(OfflinePlayer player);
 
     /**
      * Adds a member to this shop
@@ -181,9 +177,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the shop
      */
-    default CompletableFuture<Shop> removeMember(OfflinePlayer player) {
-        return removeMember(player.getUniqueId());
-    }
+    CompletableFuture<Shop> removeMember(OfflinePlayer player);
 
     /**
      * Removes a member from this shop
@@ -199,6 +193,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the quantity
      */
+    @Range(from = 1, to = 64)
     int quantity();
 
     /**
@@ -341,9 +336,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return true if owner
      */
-    default boolean isOwner(OfflinePlayer player) {
-        return isOwner(player.getUniqueId());
-    }
+    boolean isOwner(OfflinePlayer player);
 
     /**
      * Returns if the given uuid is the owner of this shop
@@ -352,9 +345,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return true if owner
      */
-    default boolean isOwner(UUID uuid) {
-        return getOwnerUUID().equals(uuid);
-    }
+    boolean isOwner(UUID uuid);
 
     /**
      * Returns if the given player is a member of this shop
@@ -363,9 +354,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return true if member
      */
-    default boolean isMember(OfflinePlayer player) {
-        return isMember(player.getUniqueId());
-    }
+    boolean isMember(OfflinePlayer player);
 
     /**
      * Returns if the given uuid is a member of this shop
@@ -374,9 +363,7 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return true if member
      */
-    default boolean isMember(UUID uuid) {
-        return getMembers().stream().anyMatch(member -> member.getUUID().equals(uuid));
-    }
+    boolean isMember(UUID uuid);
 
     /**
      * Returns if the shop is deleting
@@ -415,16 +402,14 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the shop
      */
-    default CompletableFuture<Shop> description(String description) {
-        return description(
-                LegacyComponentSerializer.builder().hexColors().character('&').build().deserialize(description));
-    }
+    CompletableFuture<Shop> description(String description);
 
     /**
      * Gets the transactions of this shop
      *
      * @return the transactions
      */
+    @Unmodifiable
     List<ShopTransaction> getTransactions();
 
     /**

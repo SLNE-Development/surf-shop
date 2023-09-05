@@ -11,6 +11,7 @@ import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.server.api.API;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -76,6 +77,16 @@ public class ServerShopTransaction implements ShopTransaction {
     @Override
     public UUID getTransactionSenderUuid() {
         return this.transactionSender;
+    }
+
+    /**
+     * Get the sender of the transaction.
+     *
+     * @return the sender
+     */
+    @Override
+    public OfflinePlayer getTransactionSender() {
+        return transactionSender != null ? Bukkit.getOfflinePlayer(transactionSender) : null;
     }
 
     @Override

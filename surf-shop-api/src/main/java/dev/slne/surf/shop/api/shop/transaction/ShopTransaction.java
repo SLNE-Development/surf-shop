@@ -35,9 +35,7 @@ public interface ShopTransaction {
      *
      * @return the sender
      */
-    default OfflinePlayer getTransactionSender() {
-        return Bukkit.getOfflinePlayer(getTransactionSenderUuid());
-    }
+    OfflinePlayer getTransactionSender();
 
     /**
      * Get the id of the transaction.
