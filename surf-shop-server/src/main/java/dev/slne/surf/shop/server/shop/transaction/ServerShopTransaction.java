@@ -11,7 +11,12 @@ import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.server.api.API;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,6 +39,15 @@ public class ServerShopTransaction implements ShopTransaction {
 
     @SerializedName("reason")
     private String reason;
+
+    /**
+     * Creates a new shop transaction
+     *
+     * @deprecated For deserialization only
+     */
+    @Deprecated // For deserialization only
+    public ServerShopTransaction() {
+    }
 
     /**
      * Creates a new shop transaction
@@ -75,7 +89,11 @@ public class ServerShopTransaction implements ShopTransaction {
             return CompletableFuture.completedFuture(ShopTransactionResult.FAILED);
         }
 
-        WebRequest request = WebRequest.builder().url(API.SHOP_TRANSACTIONS).json(true).build();
+        WebRequest request = WebRequest.builder()
+                .url(String.format(API.SHOP_TRANSACTIONS, getShop().getUUID()))
+                .parameters(toParameters())
+                .json(true)
+                .build();
 
         ShopItemTransactionAddedEvent event = new ShopItemTransactionAddedEvent(getShop(), this, !Bukkit.isPrimaryThread());
         Bukkit.getPluginManager().callEvent(event);
@@ -85,7 +103,7 @@ public class ServerShopTransaction implements ShopTransaction {
         }
 
         return request.executePost().thenApplyAsync(response -> {
-            JsonObject dataObject = response.bodyObject(ShopApi.getInstance().getGsonConverter());
+            JsonObject dataObject = response.bodyObject(ShopApi.getInstance().getGsonConverter()).getAsJsonObject();
 
             if (dataObject == null) {
                 return ShopTransactionResult.FAILED;
@@ -98,6 +116,23 @@ public class ServerShopTransaction implements ShopTransaction {
             DataApi.getDataInstance().logError(getClass(), "Failed to create shop transaction", throwable);
             return ShopTransactionResult.FAILED;
         });
+    }
+
+    @Contract(" -> new")
+    private @NotNull Map<String, Object> toParameters() {
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("transaction_id", getTransactionId().toString());
+        parameters.put("transaction_amount", String.valueOf(getAmount()));
+
+        if (getTransactionSender() != null) {
+            parameters.put("transaction_sender", getTransactionSender().getUniqueId().toString());
+        }
+
+        if (getReason() != null) {
+            parameters.put("reason", getReason());
+        }
+
+        return parameters;
     }
 
     @Override

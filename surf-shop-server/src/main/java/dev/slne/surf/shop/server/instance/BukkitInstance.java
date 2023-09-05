@@ -43,7 +43,7 @@ public class BukkitInstance implements ShopInstance {
     private BukkitListenerManager listenerManager;
 
     private ServerShopManager shopManager;
-    private GsonConverter gsonConverter;
+    private BukkitGsonConverter gsonConverter;
 
     /**
      * Called when the plugin is loaded
