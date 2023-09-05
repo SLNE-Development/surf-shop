@@ -178,7 +178,7 @@ public class ShopSellMenu extends ShopGui {
      * @param amount the amount to increase or decrease by
      */
     private void increaseDecreaseAmount(int amount) {
-        this.selectedAmount += amount;
+        this.selectedAmount += (amount * getShop().quantity());
         int maxAmount = getShop().amount();
 
         if (this.selectedAmount <= 0) {

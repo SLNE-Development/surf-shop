@@ -1,7 +1,6 @@
 package dev.slne.surf.shop.server.shop;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -60,45 +59,64 @@ public class ServerShop implements Shop {
             .character('&')
             .extractUrls()
             .build();
-    private transient final boolean adminShop = false;
+
+
     @SerializedName("id")
     private long id;
+
     @SerializedName("uuid")
     private UUID uuid;
+
     @SerializedName("owner_uuid")
     private UUID ownerUuid;
+
     @SerializedName("shop_itemstack")
     private ItemStack itemStack;
+
     @SerializedName("shop_amount")
     private int amount;
+
     @SerializedName("location_world")
     private UUID worldUUID;
+
     @SerializedName("location_x")
     private int x;
+
     @SerializedName("location_y")
     private int y;
+
     @SerializedName("location_z")
     private int z;
+
     @SerializedName("stack_size")
     private int stackSize;
+
     @SerializedName("sell_price")
     private double sellPrice;
+
     @SerializedName("buy_limit")
     private int buyLimit;
+
     @SerializedName("buy_price")
     private double buyPrice;
+
     @SerializedName("members")
     private List<ServerShopMember> members;
+
     @SerializedName("currency")
     private Currency currency;
+
     @SerializedName("description")
     @Nullable
     private Component description;
+
     @SerializedName("transactions")
     private List<ShopTransaction> transactions;
-    private transient boolean locked;
+
     private transient Player lockedByPlayer;
     private transient boolean deleting = false;
+    private transient boolean locked = false;
+    private transient final boolean adminShop = false;
 
     /**
      * A new {@link ServerShop} instance used by gson
@@ -178,6 +196,7 @@ public class ServerShop implements Shop {
                 .build();
 
         return request.executePost().thenApplyAsync(response -> {
+            System.err.println(response.body().toString());
             Shop newShop = ShopApi.getInstance().getGsonConverter()
                     .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
                             ServerShop.class);
@@ -262,7 +281,7 @@ public class ServerShop implements Shop {
 
     @Override
     public List<ShopTransaction> getTransactions() {
-        return ImmutableList.copyOf(transactions);
+        return transactions;
     }
 
     /**
@@ -485,6 +504,8 @@ public class ServerShop implements Shop {
 
     @Override
     public Component renderSellPrice() {
+        System.err.println(currency);
+
         return Component.text(sellPrice, MessageManager.VARIABLE_VALUE)
                 .append(Component.space())
                 .append(currency.getDisplayName());

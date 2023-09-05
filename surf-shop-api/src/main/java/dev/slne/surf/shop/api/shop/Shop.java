@@ -409,7 +409,6 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      *
      * @return the transactions
      */
-    @Unmodifiable
     List<ShopTransaction> getTransactions();
 
     /**
