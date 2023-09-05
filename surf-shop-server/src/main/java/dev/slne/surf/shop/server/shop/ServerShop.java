@@ -47,17 +47,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 public class ServerShop implements Shop {
 
@@ -277,16 +270,24 @@ public class ServerShop implements Shop {
      * @return the parameter map
      */
     private Map<String, Object> toParameters() {
-        GsonConverter GSON_CONVERTER = ShopApi.getInstance().getGsonConverter();
-        Map<String, Object> parameters = new HashMap<>();
+        final GsonConverter gsonConverter = ShopApi.getInstance().getGsonConverter();
+        final Map<String, Object> parameters = new HashMap<>();
+
+        final JsonElement descriptionElement = gsonConverter.toJsonElement(description);
+        final JsonElement shopItemstackElement = gsonConverter.toJsonElement(itemStack);
 
         parameters.put("uuid", uuid.toString());
         parameters.put("owner_uuid", ownerUuid.toString());
-        parameters.put("shop_itemstack", GSON_CONVERTER.toJsonElement(itemStack).getAsString());
         parameters.put("shop_amount", String.valueOf(amount));
         parameters.put("currency_id", String.valueOf(currency.getId()));
-        parameters.put("description",
-                description != null ? GSON_CONVERTER.toJsonElement(description).getAsString() : JsonNull.INSTANCE);
+
+        if (itemStack != null) {
+            parameters.put("shop_itemstack", shopItemstackElement.isJsonNull() ? JsonNull.INSTANCE.toString() : shopItemstackElement.getAsString());
+        }
+
+        if (description != null) {
+            parameters.put("description", descriptionElement.isJsonNull() ? JsonNull.INSTANCE.toString() : descriptionElement.getAsString());
+        }
 
         parameters.put("location_world", worldUUID.toString());
         parameters.put("location_x", String.valueOf(x));
@@ -669,7 +670,6 @@ public class ServerShop implements Shop {
      *
      * @param buyFrom            {@inheritDoc}
      * @param amountOfBuyingItem {@inheritDoc}
-     *
      * @return {@inheritDoc}
      */
     @Override
@@ -793,10 +793,8 @@ public class ServerShop implements Shop {
      * == signum(y.compareTo(z))}, for all {@code z}.
      *
      * @param o the object to be compared.
-     *
      * @return a negative integer, zero, or a positive integer as this object
      * is less than, equal to, or greater than the specified object.
-     *
      * @throws NullPointerException if the specified object is null
      * @throws ClassCastException   if the specified object's type prevents it
      *                              from being compared to this object.
