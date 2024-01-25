@@ -1,5 +1,9 @@
 package dev.slne.surf.shop.server.api;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
+@ApiStatus.NonExtendable
 public class API {
 
     private static final String API_ENDPOINT = "https://admin.slne.dev/api/v1/";
@@ -9,6 +13,7 @@ public class API {
     public static final String SHOP_TRANSACTION = API_ENDPOINT + "shop/%s/transactions/%s";
     public static final String SHOP_MEMBERS = API_ENDPOINT + "shop/%s/members";
     public static final String SHOP_MEMBER = API_ENDPOINT + "shop/%s/members/%s";
+
     /**
      * Private constructor to hide the implicit public one
      */

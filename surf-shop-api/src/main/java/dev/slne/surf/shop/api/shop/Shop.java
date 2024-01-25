@@ -9,7 +9,6 @@ import dev.slne.surf.shop.api.util.ApiUtils;
 import dev.slne.surf.shop.api.util.Interable;
 import dev.slne.transaction.api.currency.Currency;
 import io.papermc.paper.math.BlockPosition;
-import io.papermc.paper.math.FinePosition;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
@@ -21,7 +20,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -509,8 +507,8 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      * @param amountOfBuyingItem the amount of the buying item <b>not</b> the total amount of items.
      *                           <p>
      *                           <b>EXAMPLE:</b> If the {@link #quantity()} is 2 and the
-     *                           {@code amountOfBuyingItem} is 3 then the player will become 6
-     *                           items in total
+     *                           {@code amountOfBuyingItem} is 3 then the player will sell 6
+     *                           items in total to the shop
      *                           </p>
      * @return {@code true} if everything went fine and the player has received the money
      *
@@ -567,79 +565,6 @@ public interface Shop extends BlockPosition, Comparable<Shop>, Interable<Shop> {
      */
     @Override
     int blockZ();
-
-    /**
-     * Gets the x value for this shop
-     *
-     * @return the x value
-     */
-    @Override
-    default double x() {
-        return blockX();
-    }
-
-    /**
-     * Gets the y value for this shop
-     *
-     * @return the y value
-     */
-    @Override
-    default double y() {
-        return blockY();
-    }
-
-    /**
-     * Gets the z value for this shop
-     *
-     * @return the z value
-     */
-    @Override
-    default double z() {
-        return blockZ();
-    }
-
-
-    /**
-     * Checks if this position represents a {@link FinePosition}
-     *
-     * @return true if fine
-     */
-    @Override
-    default boolean isFine() {
-        return false;
-    }
-
-    /**
-     * Returns the block position of this shop
-     * or itself if it already is a block position
-     *
-     * @return the block position
-     */
-    @Override
-    default @NotNull BlockPosition toBlock() {
-        return this;
-    }
-
-    /**
-     * Converts this position to a vector
-     *
-     * @return a new vector
-     */
-    @Override
-    default @NotNull Vector toVector() {
-        return new Vector(this.x(), this.y(), this.z());
-    }
-
-    /**
-     * Creates a new location object at this position with the specified world
-     *
-     * @param world the world for the location object
-     * @return a new location
-     */
-    @Override
-    default @NotNull Location toLocation(@NotNull World world) {
-        return new Location(world, this.x(), this.y(), this.z());
-    }
 
     /**
      * Gets the location of this shop or null if the world is not loaded

@@ -2,9 +2,10 @@ package dev.slne.surf.shop.api.events.state.price;
 
 import dev.slne.surf.shop.api.events.ShopEvent;
 import dev.slne.surf.shop.api.shop.Shop;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-public class ShopChangeSellPriceEvent extends ShopEvent {
+public final class ShopChangeSellPriceEvent extends ShopEvent {
     private double newPrice;
 
     /**
@@ -13,6 +14,7 @@ public class ShopChangeSellPriceEvent extends ShopEvent {
      * @param shop     The shop.
      * @param newPrice the new price
      */
+    @ApiStatus.Internal
     public ShopChangeSellPriceEvent(@NotNull Shop shop, double newPrice, boolean async) {
         super(shop, null, async);
         this.newPrice = newPrice;

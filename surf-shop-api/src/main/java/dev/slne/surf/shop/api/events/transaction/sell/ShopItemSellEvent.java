@@ -4,6 +4,7 @@ import dev.slne.surf.shop.api.events.CancellableShopEvent;
 import dev.slne.surf.shop.api.shop.Shop;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Called when a shop sells an item to a player.
@@ -22,6 +23,7 @@ public final class ShopItemSellEvent extends CancellableShopEvent {
      * @param boughtItemStack The item stack bought.
      * @param boughtAmount    The amount of the stack bought. (not the total item amount - the amount of the stack)
      */
+    @ApiStatus.Internal
     public ShopItemSellEvent(Shop shop, Player player, ItemStack boughtItemStack, int boughtAmount) {
         super(shop, player);
 

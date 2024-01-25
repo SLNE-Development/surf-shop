@@ -24,7 +24,7 @@ public interface ShopTransaction extends Interable<ShopTransaction> {
      *
      * @return the amount
      */
-    @Range(from = 0, to = Integer.MAX_VALUE)
+    @Range(from = 0, to = Integer.MAX_VALUE) // TODO: 25.01.2024 21:28 - transaction can be negative I guess
     int getTransactionAmount();
 
     /**

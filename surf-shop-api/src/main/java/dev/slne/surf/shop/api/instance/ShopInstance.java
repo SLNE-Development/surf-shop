@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.api.instance;
 
-import dev.slne.data.api.gson.GsonConverter;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.ShopManager;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
@@ -11,6 +10,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -24,16 +24,19 @@ public interface ShopInstance {
     /**
      * Called when the plugin is loaded
      */
+    @ApiStatus.Internal
     void onLoad();
 
     /**
      * Called when the plugin is enabled
      */
+    @ApiStatus.Internal
     void onEnable();
 
     /**
      * Called when the plugin is disabled
      */
+    @ApiStatus.Internal
     void onDisable();
 
     /**
@@ -197,13 +200,6 @@ public interface ShopInstance {
      * @return the visualizer settings
      */
     VisualizerSettings getVisualizerSettings();
-
-    /**
-     * Gets the gson converter
-     *
-     * @return the gson converter
-     */
-    GsonConverter getGsonConverter();
 
     ConfigurableApplicationContext getContext();
 }

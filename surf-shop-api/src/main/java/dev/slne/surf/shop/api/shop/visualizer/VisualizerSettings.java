@@ -4,11 +4,13 @@ import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.shop.visualizer.settings.Alignment;
 import dev.slne.surf.shop.api.shop.visualizer.settings.BillboardConstraint;
 import dev.slne.surf.shop.api.shop.visualizer.settings.DisplayType;
+import dev.slne.surf.surfapi.core.api.packet.entity.BillboardConstraints;
+import dev.slne.surf.surfapi.core.api.packet.entity.ItemDisplayTransform;
 import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
-public interface VisualizerSettings {
+public interface VisualizerSettings { // TODO: 25.01.2024 21:31 - use surf api
 
     /**
      * Gets the height of the visualizer (in blocks) above the shop (default: 1.25)
@@ -114,7 +116,7 @@ public interface VisualizerSettings {
          * @return the display type
          * @see BillboardConstraint
          */
-        BillboardConstraint getBillboardConstraint();
+        BillboardConstraints getBillboardConstraint();
 
         /**
          * Sets how the material will rotate to the player
@@ -123,14 +125,14 @@ public interface VisualizerSettings {
          * @return this
          * @see BillboardConstraint
          */
-        MaterialSettings setBillboardConstraint(@NotNull BillboardConstraint constraint);
+        MaterialSettings setBillboardConstraint(@NotNull BillboardConstraints constraint);
 
         /**
          * Gets how the material will be displayed (default: {@link DisplayType#FIXED})
          *
          * @return the display type
          */
-        DisplayType getDisplayType();
+        ItemDisplayTransform getDisplayType();
 
         /**
          * Sets how the material will be displayed
@@ -183,7 +185,7 @@ public interface VisualizerSettings {
          * @return the display type
          * @see BillboardConstraint
          */
-        BillboardConstraint getBillboardConstraint();
+        BillboardConstraints getBillboardConstraint();
 
         /**
          * Sets how the lines will rotate to the player
@@ -192,7 +194,7 @@ public interface VisualizerSettings {
          * @return this
          * @see BillboardConstraint
          */
-        LineSettings setBillboardConstraint(@NotNull BillboardConstraint constraint);
+        LineSettings setBillboardConstraint(@NotNull BillboardConstraints constraint);
 
         /**
          * Gets the width of the lines (default: 200)

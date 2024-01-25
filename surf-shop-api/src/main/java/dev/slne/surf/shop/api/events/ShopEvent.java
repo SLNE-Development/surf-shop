@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @ApiStatus.Internal
+@ApiStatus.NonExtendable
 public abstract class ShopEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -46,7 +47,6 @@ public abstract class ShopEvent extends Event {
     /**
      * @return the handlerList
      */
-    @SuppressWarnings("java:S4144")
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
@@ -61,7 +61,6 @@ public abstract class ShopEvent extends Event {
     }
 
     @Override
-    @SuppressWarnings("java:S4144")
     public @NotNull HandlerList getHandlers() {
         return HANDLER_LIST;
     }

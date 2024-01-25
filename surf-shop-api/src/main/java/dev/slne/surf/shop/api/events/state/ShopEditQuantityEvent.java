@@ -2,12 +2,13 @@ package dev.slne.surf.shop.api.events.state;
 
 import dev.slne.surf.shop.api.events.ShopEvent;
 import dev.slne.surf.shop.api.shop.Shop;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 import static com.google.common.base.Preconditions.*;
 
-public class ShopEditQuantityEvent extends ShopEvent {
+public final class ShopEditQuantityEvent extends ShopEvent {
 
     private int newQuantity;
 
@@ -17,6 +18,7 @@ public class ShopEditQuantityEvent extends ShopEvent {
      * @param shop        The shop.
      * @param newQuantity the new quantity
      */
+    @ApiStatus.Internal
     public ShopEditQuantityEvent(@Nullable Shop shop, int newQuantity, boolean async) {
         super(shop, null, async);
         this.newQuantity = newQuantity;

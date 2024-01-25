@@ -8,6 +8,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public final class ShopApi {
      *
      * @param instance the instance
      */
+    @ApiStatus.Internal
     public ShopApi(ShopInstance instance) {
         checkNotNull(instance, "instance cannot be null");
         checkState(ShopApi.instance == null, "Cannot execute a new instance of the api");

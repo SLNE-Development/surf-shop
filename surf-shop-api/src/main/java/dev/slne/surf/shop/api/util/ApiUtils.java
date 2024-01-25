@@ -6,10 +6,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+@ApiStatus.Internal
+@ApiStatus.NonExtendable
 public class ApiUtils {
 
     /**
@@ -19,10 +22,7 @@ public class ApiUtils {
      * @param player The player to play the sound to.
      */
     public static void playSound(org.bukkit.Sound toPlay, Player player) {
-        Sound sound = Sound.sound().type(toPlay.getKey()).volume(0.5f).pitch(1f).source(Sound.Source.MASTER).build();
-        Sound.Emitter emitter = Sound.Emitter.self();
-
-        player.playSound(sound, emitter);
+        player.playSound(Sound.sound(toPlay.key(), Sound.Source.MASTER, 0.5f, 1f), Sound.Emitter.self());
     }
 
     public static Component getOfflineDisplayName(OfflinePlayer offlinePlayer) {

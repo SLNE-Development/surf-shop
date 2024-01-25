@@ -11,7 +11,7 @@ import dev.slne.transaction.api.TransactionApi;
 import dev.slne.transaction.api.currency.Currency;
 import org.bukkit.inventory.ItemStack;
 
-public class BukkitGsonConverter extends GsonConverter {
+public class BukkitGsonConverter extends GsonConverter { // TODO: 25.01.2024 21:16 - remove
 
     /**
      * A new {@link BukkitGsonConverter} instance

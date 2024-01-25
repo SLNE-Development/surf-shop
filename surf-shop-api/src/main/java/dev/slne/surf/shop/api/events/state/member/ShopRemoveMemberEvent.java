@@ -3,12 +3,13 @@ package dev.slne.surf.shop.api.events.state.member;
 import dev.slne.surf.shop.api.events.ShopEvent;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.member.ShopMember;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * An event that is called before a member is removed from a shop.
  */
-public class ShopRemoveMemberEvent extends ShopEvent {
+public final class ShopRemoveMemberEvent extends ShopEvent {
 
     private final ShopMember memberToRemove;
 
@@ -18,6 +19,7 @@ public class ShopRemoveMemberEvent extends ShopEvent {
      * @param shop           The shop.
      * @param memberToRemove the member to remove
      */
+    @ApiStatus.Internal
     public ShopRemoveMemberEvent(@NotNull Shop shop, ShopMember memberToRemove, boolean async) {
         super(shop, null, async);
         this.memberToRemove = memberToRemove;

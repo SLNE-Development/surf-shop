@@ -4,6 +4,7 @@ import dev.slne.surf.shop.api.events.CancellableShopEvent;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.ApiStatus;
 
 public final class ShopCreateEvent extends CancellableShopEvent {
 
@@ -16,6 +17,7 @@ public final class ShopCreateEvent extends CancellableShopEvent {
      * @param block  The block.
      * @param player The player.
      */
+    @ApiStatus.Internal
     public ShopCreateEvent(Block block, Chest chest, Player player, boolean async) {
         super(null, player, async);
 
