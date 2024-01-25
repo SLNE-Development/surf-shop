@@ -1,13 +1,7 @@
 package dev.slne.surf.shop.server.shop;
 
-import com.google.common.base.MoreObjects;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.annotations.SerializedName;
 import dev.slne.data.api.DataApi;
-import dev.slne.data.api.gson.GsonConverter;
-import dev.slne.data.api.web.WebRequest;
+import dev.slne.data.api.spring.converter.ComponentConverter;
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.events.state.ShopChangeDescriptionEvent;
 import dev.slne.surf.shop.api.events.state.ShopEditQuantityEvent;
@@ -21,20 +15,28 @@ import dev.slne.surf.shop.api.shop.member.ShopMember;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransactionResult;
 import dev.slne.surf.shop.server.BukkitMain;
-import dev.slne.surf.shop.server.api.API;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.inventory.InventoryItemsTransfer;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiSound;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.GuiUtils;
 import dev.slne.surf.shop.server.shop.member.ServerShopMember;
+import dev.slne.surf.shop.server.shop.transaction.ServerShopTransaction;
+import dev.slne.surf.shop.server.spring.converter.CurrencyConverter;
+import dev.slne.surf.shop.server.spring.converter.ItemStackConverter;
+import dev.slne.surf.shop.server.spring.converter.LocationConverter;
+import dev.slne.surf.shop.server.spring.repository.jpa.ShopRepository;
+import dev.slne.surf.shop.server.util.ShopUtils;
 import dev.slne.transaction.api.TransactionApi;
 import dev.slne.transaction.api.currency.Currency;
 import dev.slne.transaction.api.player.TransactionPlayer;
 import dev.slne.transaction.api.transaction.Transaction;
+import dev.slne.transaction.api.transaction.fee.TransactionFee;
 import dev.slne.transaction.api.transaction.result.TransactionAddResult;
+import jakarta.persistence.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -42,120 +44,200 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
+import static org.springframework.util.Assert.hasText;
 
+@Entity(name = "Shop")
+@Table(name = "shops")
 public class ServerShop implements Shop {
 
-    private static final LegacyComponentSerializer LEGACY_COMPONENT_SERIALIZER = LegacyComponentSerializer.builder()
-            .hexColors()
-            .character('&')
-            .extractUrls()
-            .build();
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    @JdbcTypeCode(SqlTypes.BIGINT)
+    private Long id = -1L;
 
-
-    @SerializedName("id")
-    private long id;
-
-    @SerializedName("uuid")
+    @Column(name = "uuid", nullable = false, unique = true, length = 36)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @NotNull
     private UUID uuid;
 
-    @SerializedName("owner_uuid")
-    private UUID ownerUuid;
-
-    @SerializedName("shop_itemstack")
-    private ItemStack itemStack;
-
-    @SerializedName("shop_amount")
-    private int amount;
-
-    @SerializedName("location_world")
-    private UUID worldUUID;
-
-    @SerializedName("location_x")
-    private int x;
-
-    @SerializedName("location_y")
-    private int y;
-
-    @SerializedName("location_z")
-    private int z;
-
-    @SerializedName("stack_size")
-    private int stackSize;
-
-    @SerializedName("sell_price")
-    private double sellPrice;
-
-    @SerializedName("buy_limit")
-    private int buyLimit;
-
-    @SerializedName("buy_price")
-    private double buyPrice;
-
-    @SerializedName("members")
-    private List<ServerShopMember> members;
-
-    @SerializedName("currency")
+    @Convert(converter = CurrencyConverter.class)
+    @Column(name = "currency_id", nullable = false)
+    @JdbcTypeCode(SqlTypes.BIGINT)
+    @NotNull
     private Currency currency;
 
-    @SerializedName("description")
+    @Column(name = "admin_shop", nullable = false, length = 1)
+    @JdbcTypeCode(SqlTypes.BIT)
+    private boolean adminShop = false;
+
+    @Column(name = "owner_uuid")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Nullable
+    private UUID ownerUuid;
+
+    @Column(name = "shop_itemstack")
+    @Lob
+    @JdbcTypeCode(SqlTypes.BLOB)
+    @Convert(converter = ItemStackConverter.class)
+    @Nullable
+    private ItemStack shopItemstack;
+
+    @Column(name = "stack_size", nullable = false, length = 2)
+    @JdbcTypeCode(SqlTypes.INTEGER)
+    @Range(from = 1, to = 64)
+    private int stackSize = 1;
+
+    @Column(name = "location")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Convert(converter = LocationConverter.class)
+    @NotNull
+    private Location location;
+
+    @Column(name = "server")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @NotNull
+    private String server;
+
+    @Column(name = "sell_price", nullable = false)
+    @JdbcTypeCode(SqlTypes.DOUBLE)
+    @Range(from = 0, to = (long) Shop.MAX_SELL_PRICE)
+    private double sellPrice = -1;
+
+    @Column(name = "buy_limit", nullable = false)
+    @JdbcTypeCode(SqlTypes.INTEGER)
+    private int buyLimit = 0;
+
+    @Column(name = "buy_price", nullable = false)
+    @JdbcTypeCode(SqlTypes.DOUBLE)
+    private double buyPrice = -1;
+
+    @Convert(converter = ComponentConverter.class)
+    @Column(name = "description")
+    @JdbcTypeCode(SqlTypes.LONGNVARCHAR)
     @Nullable
     private Component description;
 
-    @SerializedName("transactions")
-    private List<ShopTransaction> transactions;
+    @OneToMany(mappedBy = "serverShop", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<ServerShopMember> members = new LinkedHashSet<>();
 
-    private transient Player lockedByPlayer;
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ServerShopTransaction> transactions = new LinkedHashSet<>();
+
+    private transient @Nullable Player lockedByPlayer;
     private transient boolean deleting = false;
+    private transient boolean deleted = false;
     private transient boolean locked = false;
-    private transient final boolean adminShop = false;
 
-    /**
-     * A new {@link ServerShop} instance used by gson
-     */
-    public ServerShop() {
-        this.members = new ArrayList<>();
-        this.transactions = new ArrayList<>();
+    public boolean getAdminShop() {
+        return adminShop;
+    }
+
+    protected ServerShop() {
+        // JPA
     }
 
     /**
-     * A new {@link ServerShop} instance
+     * A new {@link ServerShop} with an owner
      *
+     * @param currency  the currency
+     * @param owner     the owner
+     * @param itemStack the itemstack
+     * @param location  the location
+     * @param server    the server
+     */
+    public ServerShop(@NotNull Currency currency,
+                      @NotNull UUID owner,
+                      @Nullable ItemStack itemStack,
+                      @NotNull Location location,
+                      @NotNull String server) {
+
+        checkNotNull(currency, "currency");
+        checkNotNull(owner, "owner");
+        checkNotNull(server, "server");
+        checkNotNull(location, "location");
+        hasText(server, "server cannot be empty");
+
+        this.ownerUuid = owner;
+        this.currency = currency;
+        this.shopItemstack = itemStack;
+        this.location = location;
+        this.server = server;
+
+        this.uuid = UUID.randomUUID();
+        this.locked = false;
+    }
+
+    /**
+     * A new {@link ServerShop} with an owner and the current server where the instance is created on
+     *
+     * @param currency  the currency
      * @param owner     the owner
      * @param itemStack the itemstack
      * @param location  the location
      */
-    public ServerShop(@NotNull Currency currency, @NotNull UUID owner, @Nullable ItemStack itemStack,
-                      @Nullable Location location) {
-        this();
+    public ServerShop(@NotNull Currency currency,
+                      @NotNull UUID owner,
+                      @Nullable ItemStack itemStack,
+                      @NotNull Location location) {
+
+        this(currency, owner, itemStack, location, DataApi.getDataInstance().getServerName());
+    }
+
+    /**
+     * A new {@link ServerShop} with no owner (also known as an admin shop)
+     *
+     * @param currency  the currency
+     * @param itemStack the itemstack
+     * @param location  the location
+     * @param server    the server
+     */
+    public ServerShop(@NotNull Currency currency,
+                      @Nullable ItemStack itemStack,
+                      @NotNull Location location,
+                      @NotNull String server) {
 
         checkNotNull(currency, "currency");
-        checkNotNull(owner, "owner");
+        checkNotNull(location, "location");
+        checkNotNull(server, "server");
 
-        this.ownerUuid = owner;
         this.currency = currency;
-
-        if (itemStack != null) {
-            this.itemStack = itemStack;
-        }
-
-        if (location != null) {
-            this.worldUUID = location.getWorld().getUID();
-            this.x = location.getBlockX();
-            this.y = location.getBlockY();
-            this.z = location.getBlockZ();
-        }
+        this.shopItemstack = itemStack;
+        this.location = location;
+        this.server = server;
 
         this.uuid = UUID.randomUUID();
         this.locked = false;
+        this.adminShop = true;
+    }
+
+    /**
+     * A new {@link ServerShop} with no owner (also known as an admin shop) and the current server where the instance is
+     * created on
+     *
+     * @param currency  the currency
+     * @param itemStack the itemstack
+     * @param location  the location
+     */
+    public ServerShop(@NotNull Currency currency,
+                      @Nullable ItemStack itemStack,
+                      @Nullable Location location) {
+
+        this(currency, itemStack, location, DataApi.getDataInstance().getServerName());
     }
 
     /**
@@ -164,193 +246,100 @@ public class ServerShop implements Shop {
      * @return the shops
      */
     public static CompletableFuture<List<Shop>> shops() {
-        WebRequest request = WebRequest.builder().json(true).url(API.SHOPS).build();
-        List<Shop> shops = new ArrayList<>();
+        return CompletableFuture.supplyAsync(() -> {
+            final List<ServerShop> all = ShopApi.getContext().getBean(ShopRepository.class).findAll();
 
-        return request.executeGet().thenApplyAsync(response -> {
-
-            JsonArray bodyArray = response.bodyArray(ShopApi.getInstance().getGsonConverter());
-            for (JsonElement element : bodyArray) {
-                Shop shop = ShopApi.getInstance().getGsonConverter().fromJson(element.toString(), ServerShop.class);
-
-                if (shop == null) {
-                    continue;
-                }
-
-                shops.add(shop);
-            }
-
-            return shops;
+            return all.stream()
+                    .filter(serverShop -> serverShop.server.equals(DataApi.getDataInstance().getServerName()))
+                    .map(ServerShop::inter)
+                    .collect(Collectors.toList());
         }).exceptionally(exception -> {
             DataApi.getDataInstance().logError(ServerShop.class, "Failed to fetch shops", exception);
             return null;
         });
     }
 
-    @Override
-    public CompletableFuture<Shop> create() {
-        WebRequest request = WebRequest.builder()
-                .json(true)
-                .parameters(toParameters())
-                .url(API.SHOPS)
-                .build();
-
-        return request.executePost().thenApplyAsync(response -> {
-            System.err.println(response.body().toString());
-            Shop newShop = ShopApi.getInstance().getGsonConverter()
-                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
-                            ServerShop.class);
-
-            if (newShop == null) {
-                BukkitMain.getInstance().getLogger().severe("Failed to create shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.body().toString());
-                return null;
-            }
-
-            id = newShop.getId();
-
-            return this.inter();
-        }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(getClass(), "Failed to create shop: " + uuid.toString(), exception);
-            return null;
-        });
-    }
 
     @Override
-    public CompletableFuture<Shop> update() {
-        String url = String.format(API.SHOP, uuid.toString());
-        WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
-
-        return request.executePut().thenApplyAsync(response -> {
-            Shop updatedShop = ShopApi.getInstance().getGsonConverter()
-                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
-                            ServerShop.class);
-
-            if (updatedShop == null) {
-                BukkitMain.getInstance().getLogger().severe("Failed to update shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.body().toString());
-                return null;
-            }
-
-            return updatedShop;
-        }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(getClass(), "Failed to update shop: " + uuid.toString(), exception);
-            return null;
-        });
+    public CompletableFuture<Shop> save() {
+        checkNotDeleted();
+        return CompletableFuture.supplyAsync(() -> ShopApi.getContext().getBean(ShopRepository.class).save(this).inter())
+                .exceptionally(exception -> {
+                    DataApi.getDataInstance().logError(getClass(), "Failed to save shop: " + uuid.toString(), exception);
+                    return null;
+                });
     }
 
     @Override
     public CompletableFuture<Shop> delete() {
+        checkNotDeleted();
+        checkState(!deleting, "shop is already deleting");
+
         deleting = true;
 
-        String url = String.format(API.SHOP, uuid.toString());
-        WebRequest request = WebRequest.builder().json(true).parameters(toParameters()).url(url).build();
+        return CompletableFuture.supplyAsync(() -> {
+                    ShopApi.getContext().getBean(ShopRepository.class).delete(this);
+                    deleting = false;
+                    deleted = true;
 
-        return request.executeDelete().thenApplyAsync(response -> {
-            Shop deletedShop = ShopApi.getInstance().getGsonConverter()
-                    .fromJson(response.bodyElement(ShopApi.getInstance().getGsonConverter()).toString(),
-                            ServerShop.class);
-
-            if (deletedShop == null) {
-                BukkitMain.getInstance().getLogger().severe("Failed to delete shop: " + uuid.toString());
-                BukkitMain.getInstance().getLogger().severe(response.body().toString());
-
-                deleting = false;
-                return null;
-            }
-
-            deleting = false;
-            return this.inter();
-        }).exceptionally(exception -> {
-            DataApi.getDataInstance().logError(getClass(), "Failed to delete shop: " + uuid.toString(), exception);
-
-            deleting = false;
-            return null;
-        });
+                    return this.inter();
+                })
+                .exceptionally(exception -> {
+                    DataApi.getDataInstance().logError(getClass(), "Failed to delete shop: " + uuid.toString(), exception);
+                    deleting = false;
+                    return null;
+                });
     }
 
     @Override
-    public CompletableFuture<ShopTransactionResult> decreaseAmount(UUID remover, int amount) {
-        return ShopApi.getInstance().createShopTransaction(this, remover, amount).create();
+    public CompletableFuture<ShopTransactionResult> decreaseAmount(@Nullable UUID remover, int amount) {
+        checkNotDeleted();
+        checkArgument(amount > 0, "amount must be greater than 0");
+
+        return ShopApi.getInstance().createShopTransaction(this, remover, -amount).execute();
     }
 
     @Override
-    public CompletableFuture<ShopTransactionResult> increaseAmount(UUID adder, int amount) {
-        return ShopApi.getInstance().createShopTransaction(this, adder, amount).create();
+    public CompletableFuture<ShopTransactionResult> increaseAmount(@Nullable UUID adder, int amount) {
+        checkNotDeleted();
+        checkArgument(amount > 0, "amount must be greater than 0");
+
+        return ShopApi.getInstance().createShopTransaction(this, adder, amount).execute();
     }
 
     @Override
-    public List<ShopTransaction> getTransactions() {
-        return transactions;
-    }
-
-    /**
-     * Creates a parameter map
-     *
-     * @return the parameter map
-     */
-    private Map<String, Object> toParameters() {
-        final GsonConverter gsonConverter = ShopApi.getInstance().getGsonConverter();
-        final Map<String, Object> parameters = new HashMap<>();
-
-        final JsonElement descriptionElement = gsonConverter.toJsonElement(description);
-        final JsonElement shopItemstackElement = gsonConverter.toJsonElement(itemStack);
-
-        parameters.put("uuid", uuid.toString());
-        parameters.put("owner_uuid", ownerUuid.toString());
-        parameters.put("shop_amount", String.valueOf(amount));
-        parameters.put("currency_id", String.valueOf(currency.getId()));
-
-        if (itemStack != null) {
-            parameters.put("shop_itemstack", shopItemstackElement.isJsonNull() ? JsonNull.INSTANCE.toString() : shopItemstackElement.getAsString());
-        }
-
-        if (description != null) {
-            parameters.put("description", descriptionElement.isJsonNull() ? JsonNull.INSTANCE.toString() : descriptionElement.getAsString());
-        }
-
-        parameters.put("location_world", worldUUID.toString());
-        parameters.put("location_x", String.valueOf(x));
-        parameters.put("location_y", String.valueOf(y));
-        parameters.put("location_z", String.valueOf(z));
-
-        parameters.put("stack_size", String.valueOf(stackSize));
-        parameters.put("sell_price", String.valueOf(sellPrice));
-        parameters.put("buy_limit", String.valueOf(buyLimit));
-        parameters.put("buy_price", String.valueOf(buyPrice));
-
-        return parameters;
+    public Set<ShopTransaction> getTransactions() {
+        return transactions.stream().map(ShopTransaction::inter).collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
     public List<Component> getShopLines() {
-        List<Component> lines = new ArrayList<>();
+        final List<Component> lines = new ArrayList<>();
 
-        OfflinePlayer owner = getOwner();
+        if (!adminShop) {
+            final OfflinePlayer owner = getOwner();
 
-        if (owner.getName() != null) {
-            lines.add(Component.text(owner.getName(), MessageManager.VARIABLE_VALUE));
-        }
-
-        if (itemStack != null) {
-            TextComponent.Builder builder = Component.text();
-            ItemMeta itemMeta = itemStack.clone().getItemMeta();
-
-            builder.append(Component.text(amount + "x", MessageManager.VARIABLE_VALUE));
-
-            if (itemMeta != null) {
-                if (itemMeta.hasDisplayName()) {
-                    final Component displayName = itemMeta.displayName();
-                    assert displayName != null : "What is happening???";
-
-                    builder.append(displayName.colorIfAbsent(MessageManager.VARIABLE_VALUE));
-                } else {
-                    builder.append(Component.text(itemStack.getType().name(), MessageManager.VARIABLE_VALUE));
-                }
+            if (owner.getName() != null) {
+                lines.add(ShopUtils.getOfflineDisplayName(owner));
             }
         }
 
-        if (description != null) {
+        if (shopItemstack != null) {
+            final TextComponent.Builder builder = Component.text();
+
+            if (adminShop) {
+                builder.append(Component.text(INFINITE_CHAR, MessageManager.VARIABLE_VALUE));
+            } else {
+                builder.append(Component.text(amount() + "x", MessageManager.VARIABLE_VALUE));
+            }
+
+            builder.appendSpace();
+            builder.append(shopItemstack.displayName().colorIfAbsent(MessageManager.VARIABLE_VALUE));
+
+            lines.add(builder.build());
+        }
+
+        if (description != null && ShopUtils.hasComponentText(description)) {
             lines.add(description);
         }
 
@@ -364,45 +353,84 @@ public class ServerShop implements Shop {
      */
     @Override
     public int amount() {
-        return transactions.stream().mapToInt(ShopTransaction::getAmount).sum();
+        return transactions.stream().mapToInt(ShopTransaction::getTransactionAmount).sum();
+    }
+
+    /**
+     * Gets the currency of this shop
+     *
+     * @return the currency
+     */
+    @Override
+    public Currency currency() {
+        return currency;
+    }
+
+    /**
+     * Sets the currency of this shop
+     *
+     * @param currency the currency
+     * @return the shop
+     */
+    @Override
+    public CompletableFuture<Shop> currency(@NotNull Currency currency) {
+        checkNotDeleted();
+        checkNotNull(currency, "currency");
+
+        this.currency = currency;
+        return save();
     }
 
     @Override
     public long getId() {
+        checkNotDeleted();
+
         return id;
     }
 
     @Override
-    public ItemStack item() {
-        return itemStack;
+    public Optional<ItemStack> item() {
+        return Optional.ofNullable(shopItemstack).map(ItemStack::clone);
     }
 
     @Override
     public Component renderItem() {
-        return MessageManager.getItemStackComponent(itemStack);
+        return item().map(MessageManager::getItemStackComponent).orElse(Component.empty());
+    }
+
+    @Override
+    public Component renderItemDisplayName() {
+        return item().map(ItemStack::displayName).orElse(Component.empty());
     }
 
     @Override
     public CompletableFuture<Shop> item(ItemStack item) {
-        this.itemStack = item;
+        checkNotDeleted();
 
-        return update();
+        this.shopItemstack = item;
+
+        return save();
     }
 
     @Override
     public UUID getOwnerUUID() {
         checkState(!adminShop, "shop is an admin shop");
+
         return ownerUuid;
     }
 
     @Override
     public OfflinePlayer getOwner() {
         checkState(!adminShop, "shop is an admin shop");
+        assert ownerUuid != null : "This shop is not an admin shop therefore it must have an owner";
+
         return Bukkit.getOfflinePlayer(ownerUuid);
     }
 
     @Override
-    public UUID getUUID() {
+    public UUID getUuid() {
+        checkNotDeleted();
+
         return uuid;
     }
 
@@ -413,11 +441,15 @@ public class ServerShop implements Shop {
 
     @Override
     public Optional<Player> getLockedBy() {
+        checkNotDeleted();
+
         return Optional.ofNullable(lockedByPlayer);
     }
 
     @Override
     public void setLockedBy(Player player) {
+        checkNotDeleted();
+
         this.lockedByPlayer = player;
     }
 
@@ -428,12 +460,18 @@ public class ServerShop implements Shop {
 
     @Override
     public void locked(boolean locked) {
+        checkNotDeleted();
+
         this.locked = locked;
     }
 
     @Override
     public List<ShopMember> getMembers() {
         return members.stream().map(ShopMember::inter).toList();
+    }
+
+    public ServerShopMember getMember(UUID uuid) {
+        return members.stream().filter(member -> member.getUuid().equals(uuid)).findFirst().orElse(null);
     }
 
     /**
@@ -444,40 +482,37 @@ public class ServerShop implements Shop {
      */
     @Override
     public CompletableFuture<Shop> addMember(OfflinePlayer player) {
+        checkNotDeleted();
+
         return addMember(player.getUniqueId());
     }
 
     @Override
     public CompletableFuture<Shop> addMember(UUID uuid) {
+        checkNotDeleted();
         checkState(!isMember(uuid), "player is already a member");
 
         final ServerShopMember memberToAdd = new ServerShopMember(this, uuid);
-        new ShopAddMemberEvent(this, memberToAdd, !Bukkit.isPrimaryThread()).callEvent();
+        new ShopAddMemberEvent(this, memberToAdd).callEvent();
 
-        members.add(memberToAdd);
-        return update();
+        return memberToAdd.save().thenApplyAsync(__ -> this); // TODO: 02.11.2023 Do we need to add the member to the list?
     }
 
     @Override
     public CompletableFuture<Shop> removeMember(OfflinePlayer player) {
+        checkNotDeleted();
+
         return removeMember(player.getUniqueId());
     }
 
     @Override
     public CompletableFuture<Shop> removeMember(UUID uuid) {
+        checkNotDeleted();
         checkState(isMember(uuid), "player is not a member");
+        final ServerShopMember shopMember = getMember(uuid);
+        new ShopRemoveMemberEvent(this, shopMember, !Bukkit.isPrimaryThread()).callEvent();
 
-        members.removeIf(member -> {
-            final boolean equals = member.getUUID().equals(uuid);
-
-            if (equals) {
-                new ShopRemoveMemberEvent(this, member, !Bukkit.isPrimaryThread()).callEvent();
-            }
-
-            return equals;
-        });
-
-        return update();
+        return shopMember.delete().thenApplyAsync(__ -> this); // TODO: 02.11.2023 Do we need to remove the member from the list?
     }
 
     @Override
@@ -489,7 +524,7 @@ public class ServerShop implements Shop {
         event.callEvent();
 
         this.stackSize = event.getNewQuantity();
-        return update();
+        return save();
     }
 
     @Override
@@ -513,13 +548,14 @@ public class ServerShop implements Shop {
 
     @Override
     public CompletableFuture<Shop> sellPrice(double price) {
-        checkArgument(price > 0, "price must be greater than 0");
+        checkArgument(price >= -1, "price must be greater than -1");
+        checkArgument(price <= MAX_SELL_PRICE, "price must be less than or equal to " + MAX_SELL_PRICE);
 
         final ShopChangeSellPriceEvent event = new ShopChangeSellPriceEvent(this, price, !Bukkit.isPrimaryThread());
         event.callEvent();
 
         this.sellPrice = price;
-        return update();
+        return save();
     }
 
     @Override
@@ -536,13 +572,14 @@ public class ServerShop implements Shop {
 
     @Override
     public CompletableFuture<Shop> buyPrice(double price) {
-        checkArgument(price > 0, "price must be greater than 0");
+        checkArgument(price >= -1, "price must be greater than -1");
+        checkArgument(price <= MAX_BUY_PRICE, "price must be less than or equal to " + MAX_BUY_PRICE);
 
         final ShopChangeBuyPriceEvent event = new ShopChangeBuyPriceEvent(this, price, !Bukkit.isPrimaryThread());
         event.callEvent();
 
         this.buyPrice = event.getNewPrice();
-        return update();
+        return save();
     }
 
     @Override
@@ -555,17 +592,17 @@ public class ServerShop implements Shop {
         checkArgument(limit > 0, "limit must be greater than 0");
 
         this.buyLimit = limit;
-        return update();
+        return save();
     }
 
     @Override
     public UUID getWorldUUID() {
-        return worldUUID;
+        return location.getWorld().getUID();
     }
 
     @Override
     public Optional<World> getWorld() {
-        return Optional.ofNullable(Bukkit.getWorld(worldUUID));
+        return Optional.ofNullable(Bukkit.getWorld(getWorldUUID()));
     }
 
     @Override
@@ -621,7 +658,7 @@ public class ServerShop implements Shop {
      */
     @Override
     public boolean isMember(UUID uuid) {
-        return getMembers().stream().anyMatch(member -> Objects.equals(member.getUUID(),uuid));
+        return getMembers().stream().anyMatch(member -> Objects.equals(member.getUuid(), uuid));
     }
 
     @Override
@@ -646,23 +683,21 @@ public class ServerShop implements Shop {
 
     @Override
     public CompletableFuture<Shop> description(Component description) {
-        final Component originDescription =
-                description != null && !LEGACY_COMPONENT_SERIALIZER.serialize(description).isEmpty() ? description :
-                        null;
-        final ShopChangeDescriptionEvent shopChangeDescriptionEvent =
-                new ShopChangeDescriptionEvent(this, originDescription, !Bukkit.isPrimaryThread());
+        final Component originDescription = description != null && ShopUtils.hasComponentText(description) ? description : null;
+        final ShopChangeDescriptionEvent shopChangeDescriptionEvent = new ShopChangeDescriptionEvent(this, originDescription);
 
-        this.description = shopChangeDescriptionEvent.getNewDescription().orElse(null);
-        return update();
+        this.description = shopChangeDescriptionEvent.getNewDescription().filter(ShopUtils::hasComponentText).orElse(null);
+        return save();
     }
 
     @Override
     public CompletableFuture<Shop> description(String description) {
-        return description(description.isEmpty() ? LEGACY_COMPONENT_SERIALIZER.deserialize(description) : null);
+        return description(StringUtils.hasText(description) ? getMiniMessage().deserialize(description) : null);
     }
 
     @Override
     public CompletableFuture<Boolean> sell(Player player, int amountOfSellingItem) {
+        checkNotDeleted();
         checkNotNull(player, "player");
         checkArgument(amountOfSellingItem > 0, "amountOfSellingItem must be greater than 0");
         checkState(!isDeleting(), "shop is currently deleting");
@@ -672,12 +707,15 @@ public class ServerShop implements Shop {
             return CompletableFuture.completedFuture(false);
         }
 
-        if (amount < (amountOfSellingItem * stackSize)) {
+        if (!canSell(amountOfSellingItem)) {
             return CompletableFuture.completedFuture(false);
         }
 
-        final ShopItemSellEvent event =
-                new ShopItemSellEvent(this, player, itemStack, amountOfSellingItem, !Bukkit.isPrimaryThread());
+        if (shopItemstack == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        final ShopItemSellEvent event = new ShopItemSellEvent(this, player, shopItemstack, amountOfSellingItem);
 
         if (!event.callEvent()) {
             event.applyCancelled(player);
@@ -686,16 +724,15 @@ public class ServerShop implements Shop {
 
         final int finalAmount = event.getBoughtAmount();
         final int totalItems = finalAmount * stackSize;
-        final InventoryItemsTransfer itemTransfer =
-                new InventoryItemsTransfer(item(), totalItems, player.getInventory());
+        final InventoryItemsTransfer itemTransfer = new InventoryItemsTransfer(shopItemstack.clone(), totalItems, player.getInventory());
 
-        List<ItemStack> leftOvers = itemTransfer.addItems();
-        int leftOverAmount = leftOvers.stream().mapToInt(ItemStack::getAmount).sum();
+        final List<ItemStack> leftOvers = itemTransfer.addItems();
+        final int leftOverAmount = leftOvers.stream().mapToInt(ItemStack::getAmount).sum();
         int itemsToTransfer = totalItems - leftOverAmount;
+        final int leftOverModulo = leftOverAmount % stackSize;
 
         // Items to transfer now equals the addable amount - the left over amount which could not be added including the stack size of the item
-        if (itemsToTransfer % stackSize != 0) {
-            int leftOverModulo = itemsToTransfer % stackSize;
+        if (leftOverModulo != 0) {
             itemsToTransfer = itemsToTransfer - leftOverModulo;
         }
 
@@ -716,9 +753,7 @@ public class ServerShop implements Shop {
 
             return decreaseAmount(player.getUniqueId(), finalItemsToTransfer).thenApplyAsync(__ -> {
                 Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
-                    final ItemStack itemStack = item();
-
-                    if (itemStack == null) {
+                    if (shopItemstack == null) {
                         return;
                     }
 
@@ -726,13 +761,12 @@ public class ServerShop implements Shop {
 
                     if (playerNow != null) {
                         playerNow.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
-                        playerNow.sendMessage(MessageManager.getShopBoughtAmountBuyerComponent(itemStack, totalItems));
+                        playerNow.sendMessage(MessageManager.getShopBoughtAmountBuyerComponent(shopItemstack, totalItems));
                     }
 
                     final Player owner = getOwner().getPlayer();
-                    if (owner != null && owner.isConnected()) {
-                        owner.sendMessage(
-                                MessageManager.getShopBoughtAmountOwnerComponent(player, itemStack, totalItems));
+                    if (owner != null && owner.isOnline()) {
+                        owner.sendMessage(MessageManager.getShopBoughtAmountOwnerComponent(player, shopItemstack, totalItems));
                     }
                 });
 
@@ -750,6 +784,27 @@ public class ServerShop implements Shop {
                 return true;
             });
         });
+    }
+
+    /**
+     * Tests if the shop can sell the specified amount of items
+     *
+     * @param amountOfSellingItem the amount of items
+     * @return true if the shop can sell the items (has enough items in stock) otherwise false
+     */
+    @Override
+    public boolean canSell(int amountOfSellingItem) {
+        checkArgument(amountOfSellingItem > 0, "amountOfSellingItem must be greater than 0");
+
+        if (!isSelling()) {
+            return false;
+        }
+
+        if (isAdminShop()) {
+            return true;
+        }
+
+        return amount() >= (amountOfSellingItem * stackSize);
     }
 
     /**
@@ -772,15 +827,31 @@ public class ServerShop implements Shop {
         return CompletableFuture.completedFuture(false); // TODO: Implement
     }
 
+    /**
+     * Tests if the shop can buy the specified amount of items
+     *
+     * @param amountOfBuyingItem the amount of items
+     * @return true if the shop can buy the items (has enough money) otherwise false
+     */
+    @Override
+    public boolean canBuy(int amountOfBuyingItem) {
+        checkArgument(amountOfBuyingItem > 0, "amountOfBuyingItem must be greater than 0");
+
+        if (!isBuying()) {
+            return false;
+        }
+
+        return true; // TODO: Implement
+    }
+
     private CompletableFuture<TransactionAddResult> executeSellTransaction(Player buyer, double price) {
         final TransactionPlayer buyerTransactionPlayer = TransactionApi.getTransactionPlayer(buyer.getUniqueId(), true);
         final Transaction buyerTransaction =
-                TransactionApi.createTransaction(ownerUuid, buyerTransactionPlayer.uuid(), this.currency,
+                TransactionApi.getTransactionInstance().createTransaction(ownerUuid, buyerTransactionPlayer.uuid(), this.currency,
                         BigDecimal.valueOf(-price));
 
         buyerTransaction.setTransactionData(new ShopTransactionData(this));
-        final CompletableFuture<TransactionAddResult> transactionResult =
-                buyerTransactionPlayer.addTransaction(buyerTransaction);
+        final CompletableFuture<TransactionAddResult> transactionResult = buyerTransactionPlayer.addTransaction(buyerTransaction);
 
         if (!adminShop) {
             final TransactionPlayer ownerTransactionPlayer = TransactionApi.getTransactionPlayer(ownerUuid, false);
@@ -788,6 +859,7 @@ public class ServerShop implements Shop {
                     TransactionApi.createTransaction(buyer.getUniqueId(), ownerTransactionPlayer.uuid(), this.currency,
                             BigDecimal.valueOf(price));
 
+            ownerTransaction.setTransactionFeeAmountPercentage(TransactionFee.SHOP_PURCHASE.getFeePercentage()); // TODO: 03.11.2023
             ownerTransaction.setTransactionData(new ShopTransactionData(this));
 
             transactionResult.thenComposeAsync(buyerTransactionResult -> {
@@ -804,13 +876,29 @@ public class ServerShop implements Shop {
     }
 
     /**
+     * Returns the mini message instance
+     *
+     * @return the mini message
+     */
+    @Override
+    public MiniMessage getMiniMessage() {
+        return ShopUtils.DEFAULT_MINI_MESSAGE_BUILDER
+                .editTags(builder ->
+                        ReflectionUtils.doWithFields( // Get all fields of ShopTags
+                                ShopTags.class,
+                                field -> ((ShopTags.ShopTag) field.get(null)).resolve(builder, this), // Resolve the tag
+                                field -> field.getType().isAssignableFrom(ShopTags.ShopTag.class))) // Filter all fields which are assignable from ShopTag
+                .build();
+    }
+
+    /**
      * Gets the block x value for this shop
      *
      * @return the block x value
      */
     @Override
     public int blockX() {
-        return x;
+        return location.blockX();
     }
 
     /**
@@ -820,7 +908,7 @@ public class ServerShop implements Shop {
      */
     @Override
     public int blockY() {
-        return y;
+        return location.blockY();
     }
 
     /**
@@ -830,34 +918,12 @@ public class ServerShop implements Shop {
      */
     @Override
     public int blockZ() {
-        return z;
+        return location.blockZ();
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("uuid", uuid)
-                .add("ownerUuid", ownerUuid)
-                .add("itemStack", itemStack)
-                .add("amount", amount)
-                .add("worldUUID", worldUUID)
-                .add("x", x)
-                .add("y", y)
-                .add("z", z)
-                .add("quantity", stackSize)
-                .add("quantity", sellPrice)
-                .add("members", members)
-                .add("locked", locked)
-                .add("lockedByPlayer", lockedByPlayer)
-                .add("deleting", deleting)
-                .add("isAdminShop", adminShop)
-                .add("buyAmount", buyLimit)
-                .add("buyPrice", buyPrice)
-                .add("currency", currency)
-                .add("description", description)
-                .add("deleting", deleting)
-                .toString();
+        return ToStringBuilder.reflectionToString(this);
     }
 
     /**
@@ -894,7 +960,7 @@ public class ServerShop implements Shop {
      */
     @Override
     public int compareTo(@NotNull Shop o) {
-        return uuid.compareTo(o.getUUID());
+        return Integer.compare(amount(), o.amount());
     }
 
     @Override
@@ -910,5 +976,9 @@ public class ServerShop implements Shop {
     @Override
     public boolean isAdminShop() {
         return adminShop;
+    }
+
+    private void checkNotDeleted() {
+        checkState(!deleted, "shop is deleted");
     }
 }

@@ -10,5 +10,4 @@ public class BukkitCommandManager {
     public void registerCommands() {
         new ShopCommand();
     }
-
 }

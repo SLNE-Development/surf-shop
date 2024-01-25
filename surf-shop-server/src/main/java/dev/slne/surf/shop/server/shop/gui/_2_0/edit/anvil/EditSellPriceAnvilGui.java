@@ -1,18 +1,16 @@
 package dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil;
 
-import dev.slne.gui.api.SurfGui;
 import dev.slne.gui.api.anvil.SurfAnvilGui;
 import dev.slne.gui.api.anvil.requirement.AnvilRequirement;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
-import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilOnlyNumberRequirement;
-import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilPriceRequirement;
-import dev.slne.surf.shop.server.util.ShopUtils;
+import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilSellRequirement;
 import net.kyori.adventure.text.Component;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.util.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +22,7 @@ public class EditSellPriceAnvilGui extends SurfShopAnvilGui {
     /**
      * Creates a new anvil gui.
      *
-     * @param parent       the parent gui
+     * @param parent the parent gui
      */
     public EditSellPriceAnvilGui(@Nullable SurfShopGui parent, Shop shop) {
         super(shop, parent, String.valueOf(shop.sellPrice()), Component.text("Verkaufspreis bearbeiten", MessageManager.PRIMARY));
@@ -49,7 +47,7 @@ public class EditSellPriceAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilRequirement> getRequirements(List<AnvilRequirement> requirements) {
-        requirements.add(new AnvilPriceRequirement(0, ShopUtils.MAXIMUM_SELL_PRICE));
+        requirements.add(new AnvilSellRequirement(Shop.MAX_SELL_PRICE));
 
         return requirements;
     }
@@ -62,7 +60,7 @@ public class EditSellPriceAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilGUI.ResponseAction> onSubmit(Player player, String input) {
-        double sellPrice = Double.parseDouble(input);
+        double sellPrice = NumberUtils.parseNumber(input, double.class);
 
         shop.sellPrice(sellPrice).thenAcceptAsync(updatedShop -> {
             player.sendMessage(MessageManager.changeSellPrice(shop)); // TODO: change to updatedShop

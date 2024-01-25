@@ -4,6 +4,7 @@ import dev.slne.data.api.gson.GsonConverter;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.ShopManager;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
+import dev.slne.surf.shop.api.shop.visualizer.VisualizerSettings;
 import dev.slne.transaction.api.currency.Currency;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -11,6 +12,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,22 +53,74 @@ public interface ShopInstance {
      * @param owner     The owner of the shop.
      * @param itemStack The item stack of the shop.
      * @param location  The location of the shop.
-     *
      * @return A {@link CompletableFuture} that completes with the created shop.
      */
-    CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, ItemStack itemStack,
-                                       Location location);
+    CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, @Nullable ItemStack itemStack, @Nullable Location location);
 
     /**
-     * Creates a shop transaction
+     * Creates a shop with the specified owner, item stack, and location.
+     * <p>
+     * <b>IMPORTANT:</b> This method requires that the {@link BlockState}
+     * at the specified location is a {@link org.bukkit.block.Chest}. If
+     * it is not, this method will throw an {@link IllegalArgumentException}.
      *
-     * @param shop   the shop
-     * @param uuid   the uuid
-     * @param amount the amount
+     * @param owner     The owner of the shop.
+     * @param itemStack The item stack of the shop.
+     * @param location  The location of the shop.
+     * @param server    The server of the shop.
+     * @return A {@link CompletableFuture} that completes with the created shop.
+     */
+    CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, @Nullable ItemStack itemStack, @Nullable Location location, @NotNull String server);
+
+    /**
+     * Creates an admin shop with the specified item stack and location.
+     * <p>
+     * <b>IMPORTANT:</b> This method requires that the {@link BlockState}
+     * at the specified location is a {@link org.bukkit.block.Chest}. If
+     * it is not, this method will throw an {@link IllegalArgumentException}.
      *
+     * @param currency  The currency of the shop.
+     * @param itemStack The item stack of the shop.
+     * @param location  The location of the shop.
+     * @return A {@link CompletableFuture} that completes with the created shop.
+     */
+    CompletableFuture<Shop> createAdminShop(@NotNull Currency currency, @NotNull ItemStack itemStack, @NotNull Location location);
+
+    /**
+     * Creates an admin shop with the specified item stack and location.
+     * <p>
+     * <b>IMPORTANT:</b> This method requires that the {@link BlockState}
+     * at the specified location is a {@link org.bukkit.block.Chest}. If
+     * it is not, this method will throw an {@link IllegalArgumentException}.
+     *
+     * @param currency  The currency of the shop.
+     * @param itemStack The item stack of the shop.
+     * @param location  The location of the shop.
+     * @param server    The server of the shop.
+     * @return A {@link CompletableFuture} that completes with the created shop.
+     */
+    CompletableFuture<Shop> createAdminShop(@NotNull Currency currency, @NotNull ItemStack itemStack, @NotNull Location location, @NotNull String server);
+
+    /**
+     * Creates a shop transaction with a reason but does not execute it use {@link ShopTransaction#execute()}
+     *
+     * @param shop   the shop to create the transaction for
+     * @param uuid   the sender of the transaction (can be null)
+     * @param amount the amount of the transaction
+     * @param reason the reason for the transaction (can be null)
      * @return a {@link CompletableFuture} that completes with the created shop transaction
      */
-    ShopTransaction createShopTransaction(Shop shop, UUID uuid, int amount);
+    ShopTransaction createShopTransaction(@NotNull Shop shop, @Nullable UUID uuid, int amount, @Nullable String reason);
+
+    /**
+     * Creates a shop transaction but does not execute it use {@link ShopTransaction#execute()}
+     *
+     * @param shop   the shop to create the transaction for
+     * @param uuid   the sender of the transaction (can be null)
+     * @param amount the amount of the transaction
+     * @return a {@link CompletableFuture} that completes with the created shop transaction
+     */
+    ShopTransaction createShopTransaction(@NotNull Shop shop, @Nullable UUID uuid, int amount);
 
     /**
      * Constructs the creation item
@@ -78,7 +133,6 @@ public interface ShopInstance {
      * Gets the shop at the specified location.
      *
      * @param location the location
-     *
      * @return the shop
      */
     boolean isShop(Location location);
@@ -87,7 +141,6 @@ public interface ShopInstance {
      * Checks if the specified block is a shop
      *
      * @param block the block
-     *
      * @return true if the block is a shop
      */
     boolean isShop(Block block);
@@ -96,7 +149,6 @@ public interface ShopInstance {
      * Checks if the specified block state is a shop
      *
      * @param blockState the block state
-     *
      * @return true if the block state is a shop
      */
     boolean isShop(BlockState blockState);
@@ -105,16 +157,14 @@ public interface ShopInstance {
      * Checks if the specified item stack is a shop item
      *
      * @param itemStack the item stack
-     *
      * @return true if the item stack is a shop item
      */
-    boolean isShopItem(ItemStack itemStack);
+    boolean isShop(ItemStack itemStack);
 
     /**
      * Gets the shop at the specified location
      *
      * @param location the location
-     *
      * @return the shop
      */
     Shop getShop(Location location);
@@ -123,7 +173,6 @@ public interface ShopInstance {
      * Gets the shop at the specified block
      *
      * @param block the block
-     *
      * @return the shop
      */
     Shop getShop(Block block);
@@ -143,9 +192,18 @@ public interface ShopInstance {
     List<Currency> getOtherCurrencies();
 
     /**
+     * Gets the visualizer settings
+     *
+     * @return the visualizer settings
+     */
+    VisualizerSettings getVisualizerSettings();
+
+    /**
      * Gets the gson converter
      *
      * @return the gson converter
      */
     GsonConverter getGsonConverter();
+
+    ConfigurableApplicationContext getContext();
 }

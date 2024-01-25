@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.util.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +43,15 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
     }
 
     private static int similarItems(Shop shop, @NotNull HumanEntity clickedHuman) {
+        final ItemStack shopStack = shop.item().orElse(null);
+
+        if (shopStack == null) {
+            return 0;
+        }
+
         return Arrays.stream(clickedHuman.getInventory().getContents())
                 .filter(Objects::nonNull)
-                .filter(itemStack -> itemStack.isSimilar(shop.item()))
+                .filter(itemStack -> itemStack.isSimilar(shopStack))
                 .mapToInt(ItemStack::getAmount)
                 .sum();
     }
@@ -63,7 +70,6 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
      * Returns the requirements
      *
      * @param requirements the requirements
-     *
      * @return the requirements
      */
     @Override
@@ -80,9 +86,9 @@ public class ShopEditStorageAddAnvilMenu extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilGUI.ResponseAction> onSubmit(Player player, @NotNull String input) {
-        final int amount = Integer.parseInt(input.trim().replace(" ", ""));
+        final int amount = NumberUtils.parseNumber(input, int.class);
 
-        shop.increaseAmount(player.getUniqueId(), amount).thenAcceptAsync(result -> {
+        shop.increaseAmount(player.getUniqueId(), amount).thenAcceptAsync(result -> { // TODO: 04.11.2023 remove items from player
             if (result == ShopTransactionResult.SUCCESS) {
                 player.sendMessage(MessageManager.addItems(shop, amount));
                 backToParent(player, shop);

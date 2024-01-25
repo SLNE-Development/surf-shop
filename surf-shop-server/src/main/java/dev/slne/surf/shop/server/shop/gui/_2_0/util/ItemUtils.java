@@ -37,7 +37,7 @@ public class ItemUtils {
 
                 final ItemStack head = new ItemStack(Material.PLAYER_HEAD, 1);
                 head.editMeta(SkullMeta.class, meta -> {
-                   meta.setPlayerProfile(profile);
+                    meta.setPlayerProfile(profile);
                 });
 
                 return head;
@@ -123,7 +123,7 @@ public class ItemUtils {
 
             return head;
         } catch (MalformedURLException e) {
-            ComponentLogger.logger(ItemUtils.class).error("Failed to create custom head", e);
+            ComponentLogger.logger(ItemUtils.class).error("Failed to execute custom head", e);
             throw new RuntimeException(e);
         }
     }
@@ -206,7 +206,7 @@ public class ItemUtils {
         lore.add(Component.empty());
 
         lore.add(Component.text("ServerShop UUID: ", MessageManager.VARIABLE_KEY));
-        lore.add(Component.text(space + shop.getUUID().toString(), MessageManager.VARIABLE_VALUE));
+        lore.add(Component.text(space + shop.getUuid().toString(), MessageManager.VARIABLE_VALUE));
 
         lore.add(Component.empty());
 
@@ -221,17 +221,12 @@ public class ItemUtils {
      * @return the shop item
      */
     public static ItemStack shopItem(Shop shop) {
-        ItemStack toShow = shop.item();
 
-        if (toShow == null) {
-            toShow = ItemUtils.item(Material.BARRIER, 1, 0, Component.text("Nicht eingerichtet", NamedTextColor.GOLD),
-                    Component.empty(), Component.text("Dieser Shop ist nicht eingerichtet", NamedTextColor.GRAY),
-                    Component.empty());
-        } else {
-            toShow = toShow.clone();
-        }
-
-        return toShow;
+        return shop.item().map(ItemStack::clone)
+                .orElseGet(() -> ItemUtils.item(Material.BARRIER, 1, 0, Component.text("Nicht eingerichtet", NamedTextColor.GOLD),
+                        Component.empty(),
+                        Component.text("Dieser Shop ist nicht eingerichtet", NamedTextColor.GRAY),
+                        Component.empty()));
     }
 
     /**
@@ -244,7 +239,7 @@ public class ItemUtils {
         final OfflinePlayer owner = Bukkit.getOfflinePlayer(shop.getOwnerUUID());
         final String name = owner.getName();
 
-        assert name != null : "Owner name cannot be null, as the owner is required to create a shop";
+        assert name != null : "Owner name cannot be null, as the owner is required to execute a shop";
 
         return head(owner, Component.text("%s´s Shop".formatted(name), MessageManager.VARIABLE_VALUE));
     }

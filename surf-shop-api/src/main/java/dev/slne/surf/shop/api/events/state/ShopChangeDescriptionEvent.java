@@ -22,6 +22,11 @@ public class ShopChangeDescriptionEvent extends ShopEvent {
         this.newDescription = newDescription;
     }
 
+    public ShopChangeDescriptionEvent(Shop shop, @Nullable Component originDescription) {
+        super(shop, null);
+        this.newDescription = originDescription;
+    }
+
     public Optional<Component> getNewDescription() {
         return Optional.ofNullable(newDescription);
     }

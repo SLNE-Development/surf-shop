@@ -27,7 +27,7 @@ public class BukkitMain extends JavaPlugin {
     @SuppressWarnings({"java:S3252", "java:S2696"})
     public void onLoad() {
         instance = this;
-        bukkitInstance = new BukkitInstance();
+        bukkitInstance = new BukkitInstance(getClassLoader());
         BukkitApi.setInstance(bukkitInstance);
 
         random = new Random();

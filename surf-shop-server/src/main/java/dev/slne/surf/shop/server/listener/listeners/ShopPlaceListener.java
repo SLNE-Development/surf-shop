@@ -5,7 +5,6 @@ import dev.slne.surf.shop.api.events.state.ShopCreateEvent;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.util.ShopUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -19,17 +18,15 @@ import org.bukkit.inventory.ItemStack;
 public class ShopPlaceListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    @SuppressWarnings("java:S3776")
     public void onBlockPlace(BlockPlaceEvent event) {
         final Player player = event.getPlayer();
         final Block block = event.getBlock();
 
-        if (!(block.getState() instanceof Chest)) {
+        if (!(block.getState() instanceof Chest chest)) {
             return;
         }
 
         final ItemStack handItem = event.getItemInHand();
-
         boolean handItemIsShop = ShopApi.isShopItem(handItem);
         boolean nextToChest = false;
         boolean nextToShop = false;
@@ -54,7 +51,7 @@ public class ShopPlaceListener implements Listener {
                 return;
             }
 
-            final ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, player, event.isAsynchronous());
+            final ShopCreateEvent shopCreateEvent = new ShopCreateEvent(block, chest, player, event.isAsynchronous());
 
             if (!shopCreateEvent.callEvent()) {
                 shopCreateEvent.applyCancelled(event.getPlayer());

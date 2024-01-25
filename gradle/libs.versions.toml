@@ -1,0 +1,26 @@
+[versions]
+io-papermc-paper-api = "1.20.4-R0.1-SNAPSHOT"
+com-google-guava = "32.1.1-jre"
+org-jetbrains-annotations = "24.0.1"
+dev-slne-surf-transaction-api = "3.0.0-SNAPSHOT"
+dev-slne-surf-data-api = "5.2.0-SNAPSHOT"
+dev-slne-surf-gui-api = "2.0.0-SNAPSHOT"
+dev-slne-surf-api-bukkit-api = "1.0-SNAPSHOT"
+dev-jorel-commandapi-bukkit-core = "9.3.0"
+com-github-retrooper-packetevents-spigot = "2.2.0"
+com-github-ben-manes-caffeine = "3.1.8"
+org-projectlombok-lombok = "1.18.30"
+
+
+[libraries]
+io-papermc-paper-api = { module = "io.papermc.paper:paper-api", version.ref = "io-papermc-paper-api" }
+com-google-guava = { module = "com.google.guava:guava", version.ref = "com-google-guava" }
+org-jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "org-jetbrains-annotations" }
+dev-slne-surf-transaction-api = { module = "dev.slne:surf-transaction-api", version.ref = "dev-slne-surf-transaction-api" }
+dev-slne-surf-data-api = { module = "dev.slne:surf-data-api", version.ref = "dev-slne-surf-data-api" }
+dev-slne-surf-gui-api = { module = "dev.slne:surf-gui-api", version.ref = "dev-slne-surf-gui-api" }
+dev-slne-surf-api-bukkit-api = { module = "dev.slne.surf:surf-api-bukkit-api", version.ref = "dev-slne-surf-api-bukkit-api" }
+dev-jorel-commandapi-bukkit-core = { module = "dev.jorel:commandapi-bukkit-core", version.ref = "dev-jorel-commandapi-bukkit-core" }
+com-github-retrooper-packetevents-spigot = { module = "com.github.retrooper.packetevents:spigot", version.ref = "com-github-retrooper-packetevents-spigot" }
+com-github-ben-manes-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "com-github-ben-manes-caffeine" }
+org-projectlombok-lombok = { module = "org.projectlombok:lombok", version.ref = "org-projectlombok-lombok" }

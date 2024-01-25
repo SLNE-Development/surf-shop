@@ -1,11 +1,11 @@
 package dev.slne.surf.shop.server.instance;
 
 import dev.slne.data.api.DataApi;
-import dev.slne.data.api.gson.GsonConverter;
 import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.instance.ShopInstance;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.transaction.ShopTransaction;
+import dev.slne.surf.shop.api.shop.visualizer.VisualizerSettings;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.api.BukkitGsonConverter;
 import dev.slne.surf.shop.server.command.BukkitCommandManager;
@@ -14,10 +14,13 @@ import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.shop.ServerShopManager;
 import dev.slne.surf.shop.server.shop.transaction.ServerShopTransaction;
+import dev.slne.surf.shop.server.shop.visualizer.setting.VisualizerSettingsImpl;
+import dev.slne.surf.shop.server.spring.ShopApplication;
 import dev.slne.surf.shop.server.util.Permissions;
 import dev.slne.surf.shop.server.util.ShopUtils;
-import dev.slne.surf.shop.server.util.UUIDDataType;
+import dev.slne.surf.shop.server.util.UuidDataType;
 import dev.slne.transaction.api.currency.Currency;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -28,22 +31,41 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 public class BukkitInstance implements ShopInstance {
 
+    private final ClassLoader classLoader;
+    private final VisualizerSettings visualizerSettings;
+    @Getter
+    private ConfigurableApplicationContext context;
     private BukkitCommandManager commandManager;
+
+    /**
+     * The {@link BukkitListenerManager} instance
+     */
+    @Getter
     private BukkitListenerManager listenerManager;
 
+    /**
+     * The {@link ServerShopManager} instance
+     */
+    @Getter
     private ServerShopManager shopManager;
+    @Getter
     private BukkitGsonConverter gsonConverter;
+
+    public BukkitInstance(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+        this.visualizerSettings = new VisualizerSettingsImpl();
+    }
 
     /**
      * Called when the plugin is loaded
@@ -51,6 +73,8 @@ public class BukkitInstance implements ShopInstance {
     @Override
     public void onLoad() {
         new ShopApi(this);
+
+        context = ShopApplication.run(classLoader);
 
         commandManager = new BukkitCommandManager();
         listenerManager = new BukkitListenerManager();
@@ -80,26 +104,13 @@ public class BukkitInstance implements ShopInstance {
         listenerManager.unregisterListeners();
 
         shopManager.onDisable();
-    }
-
-    /**
-     * Returns the {@link BukkitListenerManager}
-     *
-     * @return the {@link BukkitListenerManager}
-     */
-    public BukkitListenerManager getListenerManager() {
-        return listenerManager;
-    }
-
-    /**
-     * @return the shopManager
-     */
-    public ServerShopManager getShopManager() {
-        return shopManager;
+        context.close();
     }
 
     @Override
-    public CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, ItemStack itemStack,
+    public CompletableFuture<Shop> createShop(@NotNull Currency currency,
+                                              @NotNull Player owner,
+                                              ItemStack itemStack,
                                               @NotNull Location location) {
         checkNotNull(currency, "Currency cannot be null");
         checkNotNull(owner, "Owner cannot be null");
@@ -128,10 +139,25 @@ public class BukkitInstance implements ShopInstance {
             // line when finished with
             // testing
         }).exceptionally(throwable -> {
-            DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
+            DataApi.getDataInstance().logError(getClass(), "Failed to execute shop", throwable);
             owner.sendMessage(MessageManager.getShopCreatedFailureComponent());
             return null;
         });
+    }
+
+    @Override
+    public CompletableFuture<Shop> createShop(@NotNull Currency currency, @NotNull Player owner, @Nullable ItemStack itemStack, @Nullable Location location, @NotNull String server) {
+
+    }
+
+    @Override
+    public CompletableFuture<Shop> createAdminShop(@NotNull Currency currency, @NotNull ItemStack itemStack, @NotNull Location location) {
+        ;
+    }
+
+    @Override
+    public CompletableFuture<Shop> createAdminShop(@NotNull Currency currency, @NotNull ItemStack itemStack, @NotNull Location location, @NotNull String server) {
+
     }
 
     @Override
@@ -159,11 +185,11 @@ public class BukkitInstance implements ShopInstance {
             return false;
         }
 
-        return chest.getPersistentDataContainer().has(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID);
+        return chest.getPersistentDataContainer().has(Shop.CREATED_SHOP_KEY, UuidDataType.UUID);
     }
 
     @Override
-    public boolean isShopItem(ItemStack itemStack) {
+    public boolean isShop(ItemStack itemStack) {
         if (itemStack == null) {
             return false;
         }
@@ -187,7 +213,7 @@ public class BukkitInstance implements ShopInstance {
 
         final Chest chest = (Chest) block.getState();
         final PersistentDataContainer dataContainer = chest.getPersistentDataContainer();
-        final UUID shopUuid = dataContainer.get(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID);
+        final UUID shopUuid = dataContainer.get(Shop.CREATED_SHOP_KEY, UuidDataType.UUID);
 
         checkState(shopUuid != null, "Block is not a shop");
 
@@ -205,16 +231,31 @@ public class BukkitInstance implements ShopInstance {
     }
 
     @Override
-    public ShopTransaction createShopTransaction(Shop shop, UUID uuid, int amount) {
-        ShopTransaction transaction = new ServerShopTransaction(shop, uuid, amount);
+    public VisualizerSettings getVisualizerSettings() {
+        return visualizerSettings;
+    }
 
-        shop.getTransactions().add(transaction);
+    /**
+     * Creates a shop transaction with a reason but does not execute it use {@link ShopTransaction#execute()}
+     *
+     * @param shop   the shop to create the transaction for
+     * @param uuid   the sender of the transaction (can be null)
+     * @param amount the amount of the transaction
+     * @param reason the reason for the transaction (can be null)
+     * @return a {@link CompletableFuture} that completes with the created shop transaction
+     */
+    @Override
+    public ShopTransaction createShopTransaction(@NotNull Shop shop, @Nullable UUID uuid, int amount, @Nullable String reason) {
+        checkNotNull(shop, "Shop cannot be null");
 
-        return transaction;
+        return new ServerShopTransaction(shop, uuid, amount, reason);
+//        shop.getTransactions().add(transaction); TODO: necessary?
     }
 
     @Override
-    public GsonConverter getGsonConverter() {
-        return gsonConverter;
+    public ShopTransaction createShopTransaction(@NotNull Shop shop, @Nullable UUID uuid, int amount) {
+        checkNotNull(shop, "Shop cannot be null");
+
+        return createShopTransaction(shop, uuid, amount, null);
     }
 }

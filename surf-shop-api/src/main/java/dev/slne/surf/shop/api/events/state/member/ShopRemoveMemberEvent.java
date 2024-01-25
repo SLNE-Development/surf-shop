@@ -5,6 +5,9 @@ import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.member.ShopMember;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * An event that is called before a member is removed from a shop.
+ */
 public class ShopRemoveMemberEvent extends ShopEvent {
 
     private final ShopMember memberToRemove;

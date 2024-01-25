@@ -6,6 +6,8 @@ import dev.slne.gui.api.SurfGui;
 import dev.slne.gui.api.chest.SurfChestGui;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.util.ItemUtils;
+import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.HumanEntity;
@@ -21,9 +23,15 @@ import java.util.function.Consumer;
 
 public class ConfirmationGui extends SurfChestGui { // TODO: Does this work with the locked shop?
 
+    @Getter
     private final Component questionLabel;
+    @Getter
     private final List<Component> questionLore;
+    @Getter
+    @Setter
     private @Nullable Consumer<InventoryClickEvent> onConfirm;
+    @Getter
+    @Setter
     private @Nullable Consumer<InventoryEvent> onCancel;
 
     public ConfirmationGui(
@@ -85,29 +93,5 @@ public class ConfirmationGui extends SurfChestGui { // TODO: Does this work with
         }
 
         backToParent(player);
-    }
-
-    public Component getQuestionLabel() {
-        return questionLabel;
-    }
-
-    public List<Component> getQuestionLore() {
-        return questionLore;
-    }
-
-    public @Nullable Consumer<InventoryClickEvent> getOnConfirm() {
-        return onConfirm;
-    }
-
-    public void setOnConfirm(@Nullable Consumer<InventoryClickEvent> onConfirm) {
-        this.onConfirm = onConfirm;
-    }
-
-    public @Nullable Consumer<InventoryEvent> getOnCancel() {
-        return onCancel;
-    }
-
-    public void setOnCancel(@Nullable Consumer<InventoryEvent> onCancel) {
-        this.onCancel = onCancel;
     }
 }

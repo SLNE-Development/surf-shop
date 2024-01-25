@@ -24,7 +24,7 @@ public class ShopMainMenu extends ShopGui {
         if (viewingPlayer.hasPermission(Permissions.MENU_SELL)) {
             shopPane.addItem(sellItem(), 1, 2);
 
-            if (shop.item() == null || shop.isInventoryEmpty()) {
+            if (shop.item().isEmpty() || shop.isInventoryEmpty()) {
                 shopPane.addItem(new GuiItem(ItemUtils.disabledItem()), 1, 3);
             }
         }
@@ -55,8 +55,8 @@ public class ShopMainMenu extends ShopGui {
 
     private GuiItem sellItem() {
         return new GuiItem(ItemUtils.sellItem(getShop()), event -> {
-            if (getShop().item() != null && !getShop().isInventoryEmpty()) {
-                new ShopSellMenu( getShop(), this, viewingPlayer).show(event.getWhoClicked());
+            if (getShop().item().isPresent() && !getShop().isInventoryEmpty()) {
+                new ShopSellMenu(getShop(), this, viewingPlayer).show(event.getWhoClicked());
             } else {
                 viewingPlayer.sendMessage(MessageManager.getShopNotSellingComponent());
             }

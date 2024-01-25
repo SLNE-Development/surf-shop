@@ -26,7 +26,7 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
      * @param shop   The shop.
      * @param player the player
      */
-    public CancellableShopEvent(@Nullable Shop shop, OfflinePlayer player) {
+    public CancellableShopEvent(@Nullable Shop shop, @Nullable OfflinePlayer player) {
         super(shop, player);
     }
 
@@ -37,7 +37,7 @@ public abstract class CancellableShopEvent extends ShopEvent implements Cancella
      * @param player the player
      * @param async  Whether the event is asynchronous.
      */
-    public CancellableShopEvent(@Nullable Shop shop, OfflinePlayer player, boolean async) {
+    public CancellableShopEvent(@Nullable Shop shop, @Nullable OfflinePlayer player, boolean async) {
         super(shop, player, async);
     }
 

@@ -8,11 +8,11 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class UUIDDataType implements PersistentDataType<byte[], UUID> {
-    public static final UUIDDataType UUID = new UUIDDataType();
+public class UuidDataType implements PersistentDataType<byte[], UUID> {
+    public static final UuidDataType UUID = new UuidDataType();
 
     @Contract(pure = true)
-    private UUIDDataType() {
+    private UuidDataType() {
     }
 
     @Override

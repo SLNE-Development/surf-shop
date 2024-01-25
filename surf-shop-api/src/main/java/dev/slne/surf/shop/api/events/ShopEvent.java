@@ -26,7 +26,7 @@ public abstract class ShopEvent extends Event {
      * @param player the player
      * @param async  Whether the event is asynchronous.
      */
-    public ShopEvent(@Nullable Shop shop, OfflinePlayer player, boolean async) {
+    public ShopEvent(@Nullable Shop shop, @Nullable OfflinePlayer player, boolean async) {
         super(async);
 
         this.shop = shop;
@@ -71,7 +71,7 @@ public abstract class ShopEvent extends Event {
      *
      * @return the player
      */
-    public OfflinePlayer getPlayer() {
-        return player;
+    public Optional<OfflinePlayer> getPlayer() {
+        return Optional.ofNullable(player);
     }
 }

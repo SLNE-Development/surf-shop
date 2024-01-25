@@ -4,6 +4,8 @@ import dev.slne.gui.api.anvil.requirement.AnvilRequirement;
 import dev.slne.surf.shop.server.message.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import org.springframework.util.NumberUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -45,20 +47,16 @@ public class AnvilQuantityRequirement implements AnvilRequirement {
      */
     @Override
     public CompletableFuture<Boolean> isMet(String input) {
-        if (input.isEmpty() || input.isBlank()) {
+        if (!StringUtils.hasText(input)) {
             return CompletableFuture.completedFuture(false);
         }
 
         try {
-            double parsed = Integer.parseInt(input.trim().replace(",", ".").replace(" ", ""));
+            final int parsed = NumberUtils.parseNumber(input, int.class);
 
-            if (parsed > maxStackSize) {
-                return CompletableFuture.completedFuture(false);
-            }
+            return CompletableFuture.completedFuture(parsed <= maxStackSize && parsed > 0);
         } catch (NumberFormatException exception) {
             return CompletableFuture.completedFuture(false);
         }
-
-        return CompletableFuture.completedFuture(true);
     }
 }

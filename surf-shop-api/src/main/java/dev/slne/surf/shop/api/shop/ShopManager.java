@@ -28,4 +28,6 @@ public interface ShopManager {
     void removeShop(Shop shop);
 
     void makeShop(Chest chest, Shop shop);
+
+    CompletableFuture<Shop> createShop(Shop shop);
 }

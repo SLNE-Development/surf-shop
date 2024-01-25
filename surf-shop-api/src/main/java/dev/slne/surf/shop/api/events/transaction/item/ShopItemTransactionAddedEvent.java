@@ -16,7 +16,7 @@ public class ShopItemTransactionAddedEvent extends CancellableShopEvent {
      * @param transaction the transaction
      */
     public ShopItemTransactionAddedEvent(@NotNull Shop shop, ShopTransaction transaction, boolean async) {
-        super(shop, transaction.getTransactionSender(), async);
+        super(shop, transaction.getTransactionSender().orElse(null), async);
 
         this.transaction = transaction;
     }

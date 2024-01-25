@@ -1,13 +1,11 @@
 package dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil;
 
-import dev.slne.gui.api.SurfGui;
 import dev.slne.gui.api.anvil.SurfAnvilGui;
 import dev.slne.gui.api.anvil.requirement.AnvilRequirement;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilOnlyNumberRequirement;
-import dev.slne.surf.shop.server.util.ShopUtils;
 import net.kyori.adventure.text.Component;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
@@ -47,7 +45,7 @@ public class EditBuyPriceAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilRequirement> getRequirements(List<AnvilRequirement> requirements) {
-        requirements.add(new AnvilOnlyNumberRequirement<>(0, ShopUtils.MAXIMUM_BUY_PRICE));
+        requirements.add(new AnvilOnlyNumberRequirement<>(0, Shop.MAX_BUY_PRICE));
 
         return requirements;
     }

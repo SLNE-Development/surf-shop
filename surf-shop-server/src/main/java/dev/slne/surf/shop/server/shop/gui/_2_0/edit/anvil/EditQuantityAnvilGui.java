@@ -1,22 +1,19 @@
 package dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil;
 
-import dev.slne.gui.api.SurfGui;
-import dev.slne.gui.api.anvil.SurfAnvilGui;
 import dev.slne.gui.api.anvil.requirement.AnvilRequirement;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.SurfShopGui;
-import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilOnlyNumberRequirement;
 import dev.slne.surf.shop.server.shop.gui._2_0.edit.anvil.requirement.AnvilQuantityRequirement;
 import net.kyori.adventure.text.Component;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.util.NumberUtils;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class EditQuantityAnvilGui extends SurfShopAnvilGui {
 
@@ -48,7 +45,7 @@ public class EditQuantityAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilRequirement> getRequirements(List<AnvilRequirement> requirements) {
-        requirements.add(new AnvilQuantityRequirement(getShop().item().getMaxStackSize()));
+        requirements.add(new AnvilQuantityRequirement(getShop().item().map(ItemStack::getMaxStackSize).orElse(1)));
         return requirements;
     }
 
@@ -60,7 +57,7 @@ public class EditQuantityAnvilGui extends SurfShopAnvilGui {
      */
     @Override
     public List<AnvilGUI.ResponseAction> onSubmit(Player player, String input) {
-        getShop().quantity(Integer.parseInt(input)).thenAcceptAsync(shop -> {
+        getShop().quantity(NumberUtils.parseNumber(input, int.class)).thenAcceptAsync(shop -> {
             player.sendMessage(MessageManager.changeQuantity(shop));
             backToParent(player, shop);
         });

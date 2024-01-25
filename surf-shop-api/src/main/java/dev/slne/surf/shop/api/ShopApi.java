@@ -8,12 +8,12 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.UUID;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 public final class ShopApi {
 
@@ -26,7 +26,7 @@ public final class ShopApi {
      */
     public ShopApi(ShopInstance instance) {
         checkNotNull(instance, "instance cannot be null");
-        checkState(ShopApi.instance == null, "Cannot create a new instance of the api");
+        checkState(ShopApi.instance == null, "Cannot execute a new instance of the api");
 
         ShopApi.instance = instance;
     }
@@ -53,7 +53,6 @@ public final class ShopApi {
      * Returns the shop with the specified uuid
      *
      * @param uuid the uuid
-     *
      * @return the shop
      */
     public static Shop getShop(UUID uuid) {
@@ -64,7 +63,6 @@ public final class ShopApi {
      * Returns the shop with the specified id
      *
      * @param id the id
-     *
      * @return the shop
      */
     public static Shop getShop(long id) {
@@ -84,7 +82,6 @@ public final class ShopApi {
      * Returns all the shops with the specified owner
      *
      * @param owner the owner
-     *
      * @return all the shops with the specified owner
      */
     public static List<Shop> getShopsByOwner(UUID owner) {
@@ -95,7 +92,6 @@ public final class ShopApi {
      * Returns all the shops with the specified owner
      *
      * @param owner the owner
-     *
      * @return all the shops with the specified owner
      */
     public static List<Shop> getShopsByOwner(OfflinePlayer owner) {
@@ -115,7 +111,6 @@ public final class ShopApi {
      * Returns the shop at the given block
      *
      * @param block the block
-     *
      * @return the shop
      */
     public static Shop getShop(Block block) {
@@ -126,7 +121,6 @@ public final class ShopApi {
      * Returns the shop at the given location
      *
      * @param location the location
-     *
      * @return the shop
      */
     public static Shop getShop(Location location) {
@@ -137,7 +131,6 @@ public final class ShopApi {
      * Returns if the given block is a shop
      *
      * @param block the block
-     *
      * @return if the given block is a shop
      */
     public static boolean isShop(Block block) {
@@ -148,7 +141,6 @@ public final class ShopApi {
      * Returns if the given location is a shop
      *
      * @param location the location
-     *
      * @return if the given location is a shop
      */
     public static boolean isShop(Location location) {
@@ -159,7 +151,6 @@ public final class ShopApi {
      * Returns if the given block state is a shop
      *
      * @param blockState the block state
-     *
      * @return if the given block state is a shop
      */
     public static boolean isShop(BlockState blockState) {
@@ -170,10 +161,18 @@ public final class ShopApi {
      * Returns if the given item stack is a shop item
      *
      * @param itemStack the item stack
-     *
      * @return if the given item stack is a shop item
      */
     public static boolean isShopItem(ItemStack itemStack) {
-        return instance.isShopItem(itemStack);
+        return instance.isShop(itemStack);
+    }
+
+    /**
+     * Returns the context
+     *
+     * @return the context
+     */
+    public static ConfigurableApplicationContext getContext() {
+        return instance.getContext();
     }
 }

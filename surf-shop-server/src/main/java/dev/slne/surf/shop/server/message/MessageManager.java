@@ -1,11 +1,12 @@
 package dev.slne.surf.shop.server.message;
 
 import dev.slne.surf.shop.api.shop.Shop;
+import dev.slne.surf.shop.api.util.Colors;
+import dev.slne.surf.shop.server.util.ShopUtils;
+import lombok.experimental.UtilityClass;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -16,36 +17,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class MessageManager {
-
-    public static final TextColor PRIMARY = TextColor.fromHexString("#3b92d1");
-    public static final TextColor SECONDARY = TextColor.fromHexString("#5b5b5b");
-
-    public static final TextColor INFO = TextColor.fromHexString("#40d1db");
-    public static final TextColor SUCCESS = TextColor.fromHexString("#65ff64");
-    public static final TextColor WARNING = TextColor.fromHexString("#f9c353");
-    public static final TextColor ERROR = TextColor.fromHexString("#ee3d51");
-
-    public static final TextColor VARIABLE_KEY = MessageManager.INFO;
-    public static final TextColor VARIABLE_VALUE = MessageManager.WARNING;
-    public static final TextColor SPACER = NamedTextColor.GRAY;
-    public static final TextColor DARK_SPACER = NamedTextColor.DARK_GRAY;
-
-    /**
-     * Utility class
-     */
-    private MessageManager() {
-        throw new IllegalStateException("Utility class");
-    }
+@UtilityClass
+public class MessageManager implements Colors {
 
     /**
      * Gets the prefix
      *
      * @return the prefix
      */
-    public static Component prefix() {
-        return Component.text(">> ", NamedTextColor.DARK_GRAY).append(Component.text("Shop", PRIMARY))
-                .append(Component.text(" | ", NamedTextColor.DARK_GRAY));
+    public Component prefix() {
+        return Component.text(">> ", DARK_SPACER)
+                .append(Component.text("Shop", PRIMARY))
+                .append(Component.text(" | ", DARK_SPACER));
     }
 
     /**
@@ -123,7 +106,7 @@ public class MessageManager {
      * @return the component
      */
     public static Component getPlayerNotOwningShopComponent() {
-        return prefix().append(Component.text("Dieser Shop gehört nicht dir.", ERROR));
+        return prefix().append(Component.text("Dieser Shop gehört dir nicht.", ERROR));
     }
 
     /**
@@ -142,7 +125,6 @@ public class MessageManager {
      * @param isOwner  whether the player is the owner
      * @param isMember whether the player is a member
      * @param closer   the player who closed the shop
-     *
      * @return the component
      */
     public static Component getClosedDueToEditorRequest(boolean isOwner, boolean isMember, Player closer) {
@@ -150,15 +132,15 @@ public class MessageManager {
 
         if (isOwner) {
             message = Component.text("Der Shop wurde durch den Besitzer ", INFO)
-                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(ShopUtils.getDisplayName(closer))
                     .append(Component.text(" geschlossen.", INFO));
         } else if (isMember) {
             message = Component.text("Der Shop wurde durch ein Mitglied ", INFO)
-                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(ShopUtils.getDisplayName(closer))
                     .append(Component.text(" geschlossen.", INFO));
         } else {
             message = Component.text("Der Shop wurde durch ", INFO)
-                    .append(closer.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(ShopUtils.getDisplayName(closer))
                     .append(Component.text(" geschlossen.", INFO));
         }
 
@@ -169,13 +151,12 @@ public class MessageManager {
      * Returns a component which tells the user that the shop is locked
      *
      * @param lockedBy the player who locked the shop
-     *
      * @return the component
      */
     public static @NotNull Component getShopIsLockedComponent(@Nullable Player lockedBy) {
         if (lockedBy != null) {
             return prefix().append(Component.text("Der Shop wird aktuell durch ", INFO))
-                    .append(lockedBy.displayName().colorIfAbsent(VARIABLE_VALUE))
+                    .append(ShopUtils.getDisplayName(lockedBy))
                     .append(Component.text(" verwendet.", INFO));
         }
 
@@ -196,7 +177,6 @@ public class MessageManager {
      *
      * @param boughtItemstack the itemstack bought
      * @param amount          the amount bought
-     *
      * @return the component
      */
     public static Component getShopBoughtAmountBuyerComponent(ItemStack boughtItemstack, int amount) {
@@ -219,16 +199,15 @@ public class MessageManager {
      * @param buyer           the player who bought the item
      * @param boughtItemStack the itemstack bought
      * @param amount          the amount bought
-     *
      * @return the component
      */
-    public static Component getShopBoughtAmountOwnerComponent(Player buyer, ItemStack boughtItemStack, int amount) {
+    public static @NotNull Component getShopBoughtAmountOwnerComponent(@Nullable Player buyer, ItemStack boughtItemStack, int amount) {
         TextComponent.Builder builder = Component.text();
 
         builder.append(prefix());
 
         if (buyer != null) {
-            builder.append(buyer.displayName().colorIfAbsent(VARIABLE_VALUE));
+            builder.append(ShopUtils.getDisplayName(buyer));
         } else {
             builder.append(Component.text("Jemand", VARIABLE_VALUE));
         }
@@ -247,10 +226,9 @@ public class MessageManager {
      * Returns an itemstack component
      *
      * @param itemStack the itemstack
-     *
      * @return the component
      */
-    public static Component getItemStackComponent(ItemStack itemStack) {
+    public static @NotNull Component getItemStackComponent(@NotNull ItemStack itemStack) {
         Component name = itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()
                 ? itemStack.getItemMeta().displayName()
                 : Component.text(itemStack.getType().name());
@@ -270,14 +248,14 @@ public class MessageManager {
             itemStackBuilder.append(loreComponent);
         }
 
-        return name.hoverEvent(HoverEvent.showText(itemStackBuilder.build()));
+//        return name.hoverEvent(HoverEvent.showText(itemStackBuilder.build()));
+        return itemStack.displayName().colorIfAbsent(VARIABLE_VALUE); // TODO: 04.11.2023 is this enough?
     }
 
     /**
      * Returns a component which tells the user that they cannot accept those items
      *
      * @param amount the amount tried to add
-     *
      * @return the component
      */
     public static Component getInventoryCannotAcceptNItemsComponent(int amount) {
@@ -299,7 +277,7 @@ public class MessageManager {
     }
 
     public static Component getNotEnoughMoneyComponent() {
-        return prefix().append(Component.text("Du hast nicht genug Geld.", ERROR));
+        return prefix().append(Component.text("Du besitzt nicht genügend Geld.", ERROR));
     }
 
     public static Component getTransactionErrorComponent() {
@@ -313,26 +291,28 @@ public class MessageManager {
     public static Component changeSellPrice(Shop shop) {
         if (shop.isSelling()) {
             return prefix()
-                    .append(Component.text("Du hast den Verkaufspreis auf ", MessageManager.SUCCESS))
+                    .append(Component.text("Du hast den Verkaufspreis auf ", SUCCESS))
                     .append(shop.renderSellPrice())
-                    .append(Component.text(" gesetzt.", MessageManager.SUCCESS));
+                    .append(Component.text(" gesetzt.", SUCCESS));
         } else {
             return prefix()
-                    .append(Component.text("Du hast den Verkaufspreis ", MessageManager.SUCCESS))
-                    .append(Component.text("deaktiviert.", NamedTextColor.RED));
+                    .append(Component.text("Du hast den Verkaufspreis ", SUCCESS))
+                    .append(Component.text("deaktiviert", VARIABLE_VALUE))
+                    .append(Component.text(".", SUCCESS));
         }
     }
 
     public static Component changeBuyPrice(Shop shop) {
         if (shop.isBuying()) {
             return prefix()
-                    .append(Component.text("Du hast den Ankaufspreis auf ", MessageManager.SUCCESS))
+                    .append(Component.text("Du hast den Ankaufspreis auf ", SUCCESS))
                     .append(shop.renderBuyPrice())
-                    .append(Component.text(" gesetzt.", MessageManager.SUCCESS));
+                    .append(Component.text(" gesetzt.", SUCCESS));
         } else {
             return prefix()
-                    .append(Component.text("Du hast den Ankaufspreis ", MessageManager.SUCCESS))
-                    .append(Component.text("deaktiviert.", NamedTextColor.RED));
+                    .append(Component.text("Du hast den Ankaufspreis ", SUCCESS))
+                    .append(Component.text("deaktiviert", VARIABLE_VALUE))
+                    .append(Component.text(".", SUCCESS));
         }
     }
 
@@ -345,14 +325,15 @@ public class MessageManager {
 
     public static Component changeDescription(Shop shop) {
         return shop.description().map(component -> prefix() // If the description is present
-                        .append(Component.text("Die Beschreibung wurde auf '", MessageManager.SUCCESS))
+                        .append(Component.text("Die Beschreibung wurde auf ", MessageManager.SUCCESS))
+                        .append(Component.text("[", MessageManager.VARIABLE_VALUE))
                         .append(component)
-                        .append(Component.text("' gesetzt.", MessageManager.SUCCESS)))
+                        .append(Component.text("]", MessageManager.VARIABLE_VALUE))
+                        .append(Component.text(" gesetzt.", MessageManager.SUCCESS)))
 
                 .orElseGet(() -> prefix() // If the description is not present
                         .append(Component.text("Die Beschreibung wurde ", MessageManager.SUCCESS))
                         .append(Component.text("deaktiviert.", NamedTextColor.RED)));
-
     }
 
     public static Component addMember(OfflinePlayer player) {
@@ -374,7 +355,7 @@ public class MessageManager {
                 .append(Component.text("Du hast ", MessageManager.SUCCESS))
                 .append(Component.text(addAmount, MessageManager.VARIABLE_VALUE))
                 .append(Component.text("x ", MessageManager.SUCCESS))
-                .append(getItemStackComponent(shop.item()))
+                .append(getItemStackComponent(Objects.requireNonNull(shop.item().orElse(null))))
                 .append(Component.text(" hinzugefügt.", MessageManager.SUCCESS));
     }
 
@@ -383,7 +364,7 @@ public class MessageManager {
                 .append(Component.text("Du hast ", MessageManager.SUCCESS))
                 .append(Component.text(removeAmount, MessageManager.VARIABLE_VALUE))
                 .append(Component.text("x ", MessageManager.SUCCESS))
-                .append(getItemStackComponent(shop.item()))
+                .append(getItemStackComponent(Objects.requireNonNull(shop.item().orElse(null))))
                 .append(Component.text(" entfernt.", MessageManager.SUCCESS));
     }
 
@@ -401,7 +382,6 @@ public class MessageManager {
      *
      * @param shop   the shop
      * @param amount the amount
-     *
      * @return the component
      */
     public static Component addItemsFailed(Shop shop, int amount) {
@@ -409,7 +389,7 @@ public class MessageManager {
                 .append(Component.text("Du konntest ", MessageManager.ERROR))
                 .append(Component.text(amount, MessageManager.VARIABLE_VALUE))
                 .append(Component.text("x ", MessageManager.ERROR))
-                .append(getItemStackComponent(shop.item()))
+                .append(getItemStackComponent(Objects.requireNonNull(shop.item().orElse(null))))
                 .append(Component.text(" nicht hinzufügen.", MessageManager.ERROR));
     }
 }

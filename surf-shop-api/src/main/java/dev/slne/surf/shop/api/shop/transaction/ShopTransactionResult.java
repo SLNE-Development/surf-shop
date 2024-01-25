@@ -8,6 +8,11 @@ public enum ShopTransactionResult {
     FAILED,
 
     /**
+     * The transaction failed due to insufficient funds.
+     */
+    FAILED_INSUFFICIENT_FUNDS,
+
+    /**
      * The transaction was cancelled.
      */
     CANCELLED,

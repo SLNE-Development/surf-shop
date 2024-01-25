@@ -43,7 +43,6 @@ public class ShopEditStorageRemoveAnvilMenu extends SurfShopAnvilGui {
      * Returns the requirements
      *
      * @param requirements the requirements
-     *
      * @return the requirements
      */
     @Override
@@ -61,7 +60,11 @@ public class ShopEditStorageRemoveAnvilMenu extends SurfShopAnvilGui {
     @Override
     public List<AnvilGUI.ResponseAction> onSubmit(Player player, String input) {
         final int totalItems = Integer.parseInt(input);
-        final ItemStack shopItem = getShop().item().clone();
+        final ItemStack shopItem = getShop().item().orElse(null);
+
+        if (shopItem == null) {
+            return new ArrayList<>();
+        }
 
         shopItem.setAmount(1);
 

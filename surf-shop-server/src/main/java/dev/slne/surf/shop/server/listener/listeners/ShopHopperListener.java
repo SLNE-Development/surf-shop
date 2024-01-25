@@ -1,7 +1,6 @@
 package dev.slne.surf.shop.server.listener.listeners;
 
 import dev.slne.surf.shop.api.ShopApi;
-import dev.slne.surf.shop.server.shop.ServerShop;
 import dev.slne.surf.shop.server.util.ShopUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,14 +17,11 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ShopHopperListener implements Listener {
 
@@ -37,17 +33,16 @@ public class ShopHopperListener implements Listener {
         final Chest sourceChest = getChest(source);
         final Chest destinationChest = getChest(destination);
 
-        if (sourceChest != null && handleChest(sourceChest)) {
+        if (sourceChest != null && ShopApi.isShop(sourceChest)) {
             event.setCancelled(true);
         }
 
-        if (destinationChest != null && handleChest(destinationChest)) {
+        if (destinationChest != null && ShopApi.isShop(destinationChest)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    @SuppressWarnings("java:S2583")
     public void onHopperPlace(BlockPlaceEvent event) {
         final Block block = event.getBlock();
 
@@ -68,11 +63,11 @@ public class ShopHopperListener implements Listener {
             return;
         }
 
-        if (!itemIsShopItem(event.getItemInHand())) {
+        if (!ShopApi.isShopItem(event.getItemInHand())) {
             return;
         }
 
-        if (!aroundIsHopper(block)) {
+        if (ShopUtils.getSurroundingBlockStates(block, Hopper.class).isEmpty()) { // no hoppers around
             return;
         }
 
@@ -89,15 +84,8 @@ public class ShopHopperListener implements Listener {
         event.setCancelled(handlePiston(event.getBlocks(), event.getDirection()));
     }
 
-    /**
-     * Checks if the item is a shop item
-     *
-     * @param itemStack the item stack
-     * @return true if the item is a shop item
-     */
-    private boolean itemIsShopItem(ItemStack itemStack) {
-        return ShopApi.isShopItem(itemStack);
-    }
+
+    // -- HELPER METHODS -- //
 
     /**
      * Handles the piston
@@ -107,11 +95,15 @@ public class ShopHopperListener implements Listener {
      * @return true if the piston is a shop
      */
     private boolean handlePiston(List<Block> blocks, BlockFace moveDirection) {
-        if (!containsHopper(blocks)) {
+        final List<Block> hopperBlocks = blocks.stream()
+                .filter(block -> block.getType().equals(Material.HOPPER))
+                .toList();
+
+        if (hopperBlocks.isEmpty()) {
             return false;
         }
 
-        return moveBlocksInDirection(moveDirection, blocks).stream()
+        return moveBlocksInDirection(moveDirection, hopperBlocks).stream()
                 .anyMatch(this::aroundIsShop);
     }
 
@@ -122,40 +114,16 @@ public class ShopHopperListener implements Listener {
      * @param blocks        the blocks
      * @return the moved blocks
      */
-    private List<Block> moveBlocksInDirection(BlockFace moveDirection, List<Block> blocks) {
+    private @NotNull List<Block> moveBlocksInDirection(BlockFace moveDirection, @NotNull List<Block> blocks) {
         final List<Block> movedBlocks = new ArrayList<>();
-        final Map<BlockFace, Vector> blockFaceMap = Map.of(
-                BlockFace.NORTH, new Vector(0, 0, -1),
-                BlockFace.EAST, new Vector(1, 0, 0),
-                BlockFace.SOUTH, new Vector(0, 0, 1),
-                BlockFace.WEST, new Vector(-1, 0, 0),
-                BlockFace.UP, new Vector(0, 1, 0),
-                BlockFace.DOWN, new Vector(0, -1, 0)
-        );
 
         for (Block block : blocks) {
             final Location location = block.getLocation();
-            final Vector move = blockFaceMap.get(moveDirection);
-
-            if (move == null) {
-                continue;
-            }
-
-            final Location newLocation = location.clone().add(move);
+            final Location newLocation = location.clone().add(moveDirection.getDirection());
             movedBlocks.add(location.getWorld().getBlockAt(newLocation));
         }
 
         return movedBlocks;
-    }
-
-    /**
-     * Checks if the blocks contains a hopper
-     *
-     * @param blocks the blocks
-     * @return true if the blocks contains a hopper
-     */
-    private boolean containsHopper(List<Block> blocks) {
-        return blocks.stream().anyMatch(block -> block.getType().equals(Material.HOPPER));
     }
 
     /**
@@ -165,23 +133,8 @@ public class ShopHopperListener implements Listener {
      * @return true if the block is a shop
      */
     private boolean aroundIsShop(Block block) {
-        for (Chest surroundingChests : ShopUtils.getSurroundingBlockStates(block, Chest.class)) {
-            if (handleChest(surroundingChests)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if a block next to the block is a hopper
-     *
-     * @param block the block
-     * @return true if the block is a hopper
-     */
-    private boolean aroundIsHopper(Block block) {
-        return !ShopUtils.getSurroundingBlockStates(block, Hopper.class).isEmpty();
+        return ShopUtils.getSurroundingBlockStates(block, Chest.class).stream()
+                .anyMatch(ShopApi::isShop);
     }
 
     /**
@@ -190,7 +143,7 @@ public class ShopHopperListener implements Listener {
      * @param inventory the inventory
      * @return the chest
      */
-    private Chest getChest(Inventory inventory) {
+    private @Nullable Chest getChest(@NotNull Inventory inventory) {
         final InventoryHolder holder = inventory.getHolder();
 
         if (holder instanceof Chest chest) {
@@ -199,15 +152,4 @@ public class ShopHopperListener implements Listener {
 
         return null;
     }
-
-    /**
-     * Handles the chest
-     *
-     * @param chest the chest
-     * @return true if the chest is a shop
-     */
-    private boolean handleChest(@NotNull Chest chest) {
-        return ShopApi.isShop(chest);
-    }
-
 }

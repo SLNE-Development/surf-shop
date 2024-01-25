@@ -1,7 +1,16 @@
 package dev.slne.surf.shop.server.instance;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+
 public class BukkitApi {
 
+    /**
+     * the {@link BukkitInstance} instance
+     */
+    @Getter
+    @Setter(onParam_ = @NotNull)
     private static BukkitInstance instance;
 
     /**
@@ -9,23 +18,4 @@ public class BukkitApi {
      */
     private BukkitApi() {
     }
-
-    /**
-     * Sets the instance of the plugin
-     *
-     * @param instance The instance of the plugin
-     */
-    public static void setInstance(BukkitInstance instance) {
-        BukkitApi.instance = instance;
-    }
-
-    /**
-     * Returns the instance of the plugin
-     *
-     * @return The instance of the plugin
-     */
-    public static BukkitInstance getInstance() {
-        return instance;
-    }
-
 }

@@ -1,38 +1,57 @@
 package dev.slne.surf.shop.server.shop;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.slne.data.api.DataApi;
-import dev.slne.data.api.processor.__SubscribeProcessor;
+import dev.slne.surf.shop.api.ShopApi;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.api.shop.ShopManager;
 import dev.slne.surf.shop.server.BukkitMain;
 import dev.slne.surf.shop.server.shop.visualizer.ShopVisualizerTask;
-import dev.slne.surf.shop.server.util.UUIDDataType;
+import dev.slne.surf.shop.server.spring.repository.jpa.ShopRepository;
+import dev.slne.surf.shop.server.util.UuidDataType;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Chest;
-import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.*;
+
 public class ServerShopManager implements ShopManager {
 
-    private List<Shop> shops;
+    private Cache<UUID, Shop> shopCache = Caffeine.newBuilder()
+            .build();
+    /**
+     * -- GETTER --
+     *
+     * @return the fetched
+     */
+    @Getter
     private boolean fetched;
+    /**
+     * -- GETTER --
+     *
+     * @return the visualizerTask
+     */
+    @Getter
     private final ShopVisualizerTask visualizerTask;
 
     /**
      * A new {@link ServerShopManager} instance
      */
     public ServerShopManager() {
-        this.shops = new ArrayList<>();
         this.fetched = false;
         this.visualizerTask = new ShopVisualizerTask();
     }
@@ -50,7 +69,8 @@ public class ServerShopManager implements ShopManager {
                 throw new NullPointerException("Fetch shops returned null");
             }
 
-            this.shops = fetchedShops;
+            shopCache.putAll(fetchedShops.stream()
+                    .collect(Collectors.toMap(Shop::getUuid, shop -> shop)));
             this.fetched = true;
 
             DataApi.getDataInstance().logInfo(getClass(), "Fetched " + fetchedShops.size() + " shops");
@@ -66,7 +86,7 @@ public class ServerShopManager implements ShopManager {
         final CompletableFuture<Void> future = new CompletableFuture<>();
 
         for (Shop shop : shops) {
-            future.thenComposeAsync(__ -> shop.update());
+            future.thenComposeAsync(__ -> shop.save());
         }
 
         return future;
@@ -97,6 +117,13 @@ public class ServerShopManager implements ShopManager {
      * @return the shops
      */
     public List<Shop> getShops() {
+        ShopApi.getContext().getBean(ShopRepository.class)
+
+
+        CacheManager cacheManager = ShopApi.getContext().getBean(CacheManager.class);
+        Cache<Object, Object> nativeCache = cacheManager.getCache().getNativeCache();
+        Map<Object, Object> all = nativeCache.getAll();
+
         return shops;
     }
 
@@ -122,7 +149,7 @@ public class ServerShopManager implements ShopManager {
     @Override
     public Shop getShop(UUID uuid) {
         return shops.stream()
-                .filter(shop -> Objects.equals(shop.getUUID(), uuid))
+                .filter(shop -> Objects.equals(shop.getUuid(), uuid))
                 .findFirst()
                 .orElse(null);
     }
@@ -139,13 +166,6 @@ public class ServerShopManager implements ShopManager {
                 .orElse(null);
     }
 
-    /**
-     * @return the fetched
-     */
-    public boolean isFetched() {
-        return fetched;
-    }
-
     @Override
     public void addShop(Shop shop) {
         shops.add(shop);
@@ -159,15 +179,26 @@ public class ServerShopManager implements ShopManager {
     @Override
     public void makeShop(Chest chest, Shop shop) {
         Bukkit.getScheduler().runTask(BukkitMain.getInstance(), () -> {
-            chest.getPersistentDataContainer().set(Shop.CREATED_SHOP_KEY, UUIDDataType.UUID, shop.getUUID());
+            chest.getPersistentDataContainer().set(Shop.CREATED_SHOP_KEY, UuidDataType.UUID, shop.getUuid());
             chest.update();
         });
     }
 
-    /**
-     * @return the visualizerTask
-     */
-    public ShopVisualizerTask getVisualizerTask() {
-        return visualizerTask;
+    @Override
+    public CompletableFuture<Shop> createShop(Shop shop) {
+        checkNotNull(shop, "Shop cannot be null");
+        final Shop cachedShop = shopCache.getIfPresent(shop.getUuid());
+
+        if (cachedShop != null) {
+            return CompletableFuture.completedFuture(cachedShop);
+        }
+
+        return shop.save().thenApplyAsync(updatedShop -> {
+            shopCache.put(updatedShop.getUuid(), updatedShop);
+            return updatedShop;
+        }).exceptionally(throwable -> {
+            DataApi.getDataInstance().logError(getClass(), "Failed to create shop", throwable);
+            return null;
+        });
     }
 }

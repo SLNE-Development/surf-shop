@@ -2,7 +2,6 @@ package dev.slne.surf.shop.server.shop.gui._2_0.sell;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
-import dev.slne.gui.api.SurfGui;
 import dev.slne.surf.shop.api.shop.Shop;
 import dev.slne.surf.shop.server.message.MessageManager;
 import dev.slne.surf.shop.server.shop.gui._2_0.ShopGui;
@@ -15,7 +14,6 @@ import dev.slne.surf.shop.server.util.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -195,20 +193,7 @@ public class ShopSellMenu extends ShopGui {
      * Buys the selected amount of items.
      */
     private void buyItems() {
-        final ItemStack itemStack = getShop().item();
-
-        if (itemStack == null) {
-            return;
-        }
-
-        Component displayName = (itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()
-                ? itemStack.getItemMeta().displayName()
-                : Component.text(itemStack.getType().name()));
-
-        assert displayName != null;
-        displayName = displayName.colorIfAbsent(MessageManager.VARIABLE_VALUE);
-
-
+        final Component displayName = getShop().renderItem();
         final List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Bist du dir sicher, dass du", NamedTextColor.GRAY));
         lore.add(Component.text(selectedAmount * getShop().quantity() + "x", MessageManager.VARIABLE_VALUE).append(Component.text(" "))

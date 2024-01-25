@@ -6,15 +6,36 @@ import org.bukkit.OfflinePlayer;
 
 import java.util.UUID;
 
+/**
+ * Represents a member of a shop.
+ */
 public interface ShopMember extends Interable<ShopMember> {
 
+    /**
+     * Get the id of the member.
+     *
+     * @return the id
+     */
     long getId();
 
-    UUID getUUID();
+    /**
+     * Get the uuid of the member.
+     *
+     * @return the uuid
+     */
+    UUID getUuid();
 
+    /**
+     * Get the player of the member.
+     *
+     * @return the player
+     */
     OfflinePlayer getPlayer();
 
-    long getShopId();
-
+    /**
+     * Returns the shop wich is associated with this member
+     *
+     * @return the shop
+     */
     Shop getShop();
 }

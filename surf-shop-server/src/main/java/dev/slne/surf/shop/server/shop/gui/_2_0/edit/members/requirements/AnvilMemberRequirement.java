@@ -45,6 +45,8 @@ public class AnvilMemberRequirement implements AnvilRequirement {
      */
     @Override
     public CompletableFuture<Boolean> isMet(String input) {
-        return CompletableFuture.supplyAsync(() -> addMember != shop.isMember(Bukkit.getOfflinePlayer(input)));
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(input);
+
+        return CompletableFuture.supplyAsync(() -> addMember != shop.isMember(offlinePlayer));
     }
 }
