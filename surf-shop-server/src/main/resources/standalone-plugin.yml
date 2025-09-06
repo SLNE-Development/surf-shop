@@ -1,0 +1,7 @@
+name: surf-shop-server
+main: 'dev.slne.surf.shop.server.PluginMain'
+bootstrapper: 'dev.slne.surf.shop.server.PluginBootstrap'
+version: 1.21.8-1.0.0-SNAPSHOT
+description: 'Surf Shop'
+authors:
+  - 'Ammo'
