@@ -2,6 +2,7 @@ package dev.slne.surf.shop.auction.core.auction.service
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import dev.slne.surf.core.api.common.player.SurfPlayer
+import dev.slne.surf.core.api.common.surfCoreApi
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.eq
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.insert
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.Unmodifiable
 import java.time.OffsetDateTime
 import java.util.*
 
-object AuctionsServiceImpl : AuctionsService {
+object AuctionServiceImpl : AuctionService {
     private val auctionCache = Caffeine.newBuilder()
         .build<UUID, Auction>()
 
@@ -32,6 +33,50 @@ object AuctionsServiceImpl : AuctionsService {
 
         auctionCache.invalidateAll()
         auctionCache.putAll(auctions.associateBy { it.uuid })
+    }
+
+    override fun cacheAuction(auction: Auction) {
+        auctionCache.put(auction.uuid, auction)
+    }
+
+    override suspend fun createAuction(
+        ownerUuid: UUID,
+        itemData: String,
+        startingBid: Int,
+        instantBuyEnabled: Boolean,
+        instantBuyPrice: Int?,
+        startsAt: OffsetDateTime,
+        endsAt: OffsetDateTime
+    ): Auction {
+        val auction = AuctionImpl(
+            uuid = UUID.randomUUID(),
+            ownerUuid = ownerUuid,
+            itemData = itemData,
+            startingBid = startingBid,
+            instantBuyEnabled = instantBuyEnabled,
+            instantBuyPrice = instantBuyPrice,
+            startsAt = startsAt,
+            endsAt = endsAt,
+            serverName = surfCoreApi.getCurrentServerName(),
+        )
+
+        cacheAuction(auction)
+
+        suspendTransaction {
+            AuctionsTable.insert {
+                it[AuctionsTable.uuid] = auction.uuid
+                it[AuctionsTable.ownerUuid] = auction.ownerUuid
+                it[AuctionsTable.itemData] = auction.itemData
+                it[AuctionsTable.startingBid] = auction.startingBid
+                it[AuctionsTable.instantBuyEnabled] = auction.instantBuyEnabled
+                it[AuctionsTable.instantBuyPrice] = auction.instantBuyPrice
+                it[AuctionsTable.startsAt] = auction.startsAt
+                it[AuctionsTable.endsAt] = auction.endsAt
+                it[AuctionsTable.serverName] = auction.serverName
+            }
+        }
+
+        return auction
     }
 
     override suspend fun findAuctions(): ObjectList<Auction> = suspendTransaction {

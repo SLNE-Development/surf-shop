@@ -5,7 +5,7 @@ import dev.slne.surf.core.api.common.server.SurfServer
 import dev.slne.surf.core.api.common.surfCoreApi
 import dev.slne.surf.shop.auction.api.auction.Auction
 import dev.slne.surf.shop.auction.api.auction.bid.AuctionBid
-import dev.slne.surf.shop.auction.core.auction.service.AuctionsService
+import dev.slne.surf.shop.auction.core.auction.service.AuctionService
 import dev.slne.surf.surfapi.core.api.serializer.java.datetime.datetime.offset.SerializableOffsetDateTime
 import dev.slne.surf.surfapi.core.api.serializer.java.uuid.SerializableUUID
 import dev.slne.surf.surfapi.core.api.util.freeze
@@ -26,7 +26,7 @@ class AuctionImpl(
     override val startsAt: SerializableOffsetDateTime,
     override val endsAt: SerializableOffsetDateTime,
     override val serverName: String,
-    bids: List<AuctionBid>
+    bids: List<AuctionBid> = emptyList()
 ) : Auction {
     private val bidMutex = Mutex()
 
@@ -43,13 +43,13 @@ class AuctionImpl(
         bidder: SurfPlayer,
         amount: Int
     ) = bidMutex.withLock {
-        AuctionsService.placeBid(this, bidder, amount)
+        AuctionService.placeBid(this, bidder, amount)
     }
 
     fun cacheBid(bid: AuctionBid) = _bids.add(bid)
 
     override suspend fun instantBuy(buyer: SurfPlayer) = bidMutex.withLock {
-        AuctionsService.instantBuy(this, buyer)
+        AuctionService.instantBuy(this, buyer)
     }
 
     override suspend fun owner() = surfCoreApi.getOfflinePlayer(ownerUuid)
