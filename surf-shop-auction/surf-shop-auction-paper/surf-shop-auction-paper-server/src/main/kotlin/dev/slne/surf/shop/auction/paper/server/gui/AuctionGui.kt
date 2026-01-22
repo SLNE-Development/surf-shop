@@ -1,11 +1,13 @@
 package dev.slne.surf.shop.auction.paper.server.gui
 
+import com.github.shynixn.mccoroutine.folia.launch
 import com.github.stefvanschie.inventoryframework.gui.GuiItem
 import com.github.stefvanschie.inventoryframework.pane.PaginatedPane
 import com.github.stefvanschie.inventoryframework.pane.Pane
 import com.github.stefvanschie.inventoryframework.pane.component.PagingButtons
 import dev.slne.surf.shop.auction.api.auction.AuctionManager
 import dev.slne.surf.shop.auction.paper.api.auction.itemStack
+import dev.slne.surf.shop.auction.paper.server.plugin
 import dev.slne.surf.surfapi.bukkit.api.builder.ItemStack
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -17,6 +19,7 @@ import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import dev.slne.surf.surfapi.core.api.messages.adventure.text
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import java.time.format.DateTimeFormatter
 
 object AuctionGui {
     fun mainGui(
@@ -60,21 +63,70 @@ object AuctionGui {
     })
 
     private fun SurfChestSinglePlayerGui.addAuctionItems() {
-        val pagination = PaginatedPane(slot(1, 0), 8, 5).apply {
-            populateWithGuiItems(buildAuctionItems())
-        }
+        val pagination = PaginatedPane(slot(1, 0), 8, 5)
 
         val pagingButtons = PagingButtons(slot(7, 5), 2, Pane.Priority.HIGHEST, pagination).apply {
             setBackwardButton(backButton)
             setForwardButton(nextButton)
         }
 
+        plugin.launch {
+            pagination.populateWithGuiItems(buildAuctionItems())
+            update()
+        }
+
         addPane(pagination)
         addPane(pagingButtons)
     }
 
-    fun buildAuctionItems() = AuctionManager.auctions.map { auction ->
-        GuiItem(auction.itemStack) { event ->
+    suspend fun buildAuctionItems() = AuctionManager.auctions.map { auction ->
+        val itemStack = auction.itemStack.clone()
+        val newItemStack = ItemStack(itemStack.type, itemStack.amount) {
+            itemStack.enchantments.forEach { (enchantment, level) ->
+                addUnsafeEnchantment(enchantment, level)
+            }
+
+            val owner = auction.owner()
+
+            buildLore {
+                emptyLine()
+
+                line {
+                    variableKey("Auktion #")
+                    variableValue(auction.uuid.toString())
+                }
+
+                line {
+                    variableKey("Verkäufer: ")
+                    variableValue(owner.lastKnownName ?: owner.uuid.toString())
+                }
+
+                line {
+                    variableKey("Startgebot: ")
+                    variableValue(auction.startingBid)
+                }
+
+                line {
+                    variableKey("Aktuelles Gebot: ")
+                    variableValue(auction.currentBid?.amount ?: auction.startingBid)
+                }
+
+                val instantBuyPrice = auction.instantBuyPrice
+                if (auction.instantBuyEnabled && instantBuyPrice != null) {
+                    line {
+                        variableKey("Sofortkauf: ")
+                        variableValue(instantBuyPrice)
+                    }
+                }
+
+                line {
+                    variableKey("Auktionsende: ")
+                    variableValue(auction.endsAt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+                }
+            }
+        }
+
+        GuiItem(newItemStack) { event ->
             event.whoClicked.sendText {
                 primary("You clicked on auction #${auction.uuid}")
             }
