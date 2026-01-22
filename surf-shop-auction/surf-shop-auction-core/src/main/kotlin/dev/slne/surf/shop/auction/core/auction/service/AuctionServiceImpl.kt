@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import dev.slne.surf.core.api.common.player.SurfPlayer
 import dev.slne.surf.core.api.common.surfCoreApi
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.eq
+import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.leftJoin
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.insert
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.selectAll
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -12,9 +13,9 @@ import dev.slne.surf.shop.auction.api.auction.bid.AuctionBid
 import dev.slne.surf.shop.auction.core.auction.AuctionImpl
 import dev.slne.surf.shop.auction.core.auction.db.tables.AuctionBidsTable
 import dev.slne.surf.shop.auction.core.auction.db.tables.AuctionsTable
+import dev.slne.surf.surfapi.core.api.util.logger
 import dev.slne.surf.surfapi.core.api.util.toObjectList
 import it.unimi.dsi.fastutil.objects.ObjectList
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.annotations.Unmodifiable
@@ -22,6 +23,8 @@ import java.time.OffsetDateTime
 import java.util.*
 
 object AuctionServiceImpl : AuctionService {
+    private val log = logger()
+
     private val auctionCache = Caffeine.newBuilder()
         .build<UUID, Auction>()
 
@@ -30,6 +33,8 @@ object AuctionServiceImpl : AuctionService {
 
     override suspend fun cacheAuctions() {
         val auctions = findAuctions()
+
+        log.atInfo().log("Caching ${auctions.size} auctions")
 
         auctionCache.invalidateAll()
         auctionCache.putAll(auctions.associateBy { it.uuid })
@@ -80,30 +85,38 @@ object AuctionServiceImpl : AuctionService {
     }
 
     override suspend fun findAuctions(): ObjectList<Auction> = suspendTransaction {
-        AuctionsTable.selectAll().mapNotNull { row ->
-            val bids = AuctionBidsTable.selectAll()
-                .where { AuctionBidsTable.auction eq row[AuctionsTable.id] }
-                .mapNotNull { bidRow ->
+        val rows = AuctionsTable
+            .leftJoin(AuctionBidsTable, { id }, { auction })
+            .selectAll()
+            .toList()
+
+        rows.groupBy { it[AuctionsTable.id] }.mapNotNull { (_, groupedRows) ->
+            val first = groupedRows.first()
+
+            @Suppress("UNNECESSARY_SAFE_CALL")
+            val bids = groupedRows.mapNotNull { row ->
+                row[AuctionBidsTable.id]?.let {
                     AuctionBid(
-                        bidderUuid = bidRow[AuctionBidsTable.bidderUuid],
-                        amount = bidRow[AuctionBidsTable.amount],
-                        timestamp = bidRow[AuctionBidsTable.createdAt]
+                        bidderUuid = row[AuctionBidsTable.bidderUuid],
+                        amount = row[AuctionBidsTable.amount],
+                        timestamp = row[AuctionBidsTable.createdAt]
                     )
-                }.toList().toObjectList()
+                }
+            }.toObjectList()
 
             AuctionImpl(
-                uuid = row[AuctionsTable.uuid],
-                ownerUuid = row[AuctionsTable.ownerUuid],
-                itemData = row[AuctionsTable.itemData],
-                startingBid = row[AuctionsTable.startingBid],
-                instantBuyEnabled = row[AuctionsTable.instantBuyEnabled],
-                instantBuyPrice = row[AuctionsTable.instantBuyPrice],
-                startsAt = row[AuctionsTable.startsAt],
-                endsAt = row[AuctionsTable.endsAt],
-                serverName = row[AuctionsTable.serverName],
+                uuid = first[AuctionsTable.uuid],
+                ownerUuid = first[AuctionsTable.ownerUuid],
+                itemData = first[AuctionsTable.itemData],
+                startingBid = first[AuctionsTable.startingBid],
+                instantBuyEnabled = first[AuctionsTable.instantBuyEnabled],
+                instantBuyPrice = first[AuctionsTable.instantBuyPrice],
+                startsAt = first[AuctionsTable.startsAt],
+                endsAt = first[AuctionsTable.endsAt],
+                serverName = first[AuctionsTable.serverName],
                 bids = bids
             )
-        }.toList().toObjectList()
+        }.toObjectList()
     }
 
     override suspend fun placeBid(auction: Auction, bidder: SurfPlayer, amount: Int) {
