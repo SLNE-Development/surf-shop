@@ -2,6 +2,7 @@ package dev.slne.surf.shop.backend.service
 
 import com.google.auto.service.AutoService
 import dev.slne.surf.shop.api.auction.Auction
+import dev.slne.surf.shop.backend.repository.auctionRepository
 import dev.slne.surf.shop.core.service.AuctionService
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
@@ -21,18 +22,36 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
         pricePerItem: Int,
         seller: UUID
     ): Auction {
+        val createdByRepository = auctionRepository.createAuction(
+            item,
+            storedItemCount,
+            pricePerItem,
+            seller,
+            System.currentTimeMillis()
+        )
 
+        _auctions[createdByRepository.auctionUuid] = createdByRepository
+        return createdByRepository
     }
 
     override suspend fun saveAuction(auction: Auction): Auction {
-        TODO("Not yet implemented")
+        auctionRepository.saveAuction(auction)
+        _auctions[auction.auctionUuid] = auction
+        return auction
     }
 
     override suspend fun deleteAuction(auction: Auction): Boolean {
-        TODO("Not yet implemented")
+        val deletedByRepository = auctionRepository.deleteAuction(auction)
+        if (deletedByRepository) {
+            _auctions.remove(auction.auctionUuid)
+        }
+        return deletedByRepository
     }
 
     override suspend fun fetchAuctions() {
-        TODO("Not yet implemented")
+        val loadedAuctions = auctionRepository.loadAuctions()
+
+        _auctions.clear()
+        loadedAuctions.forEach { _auctions[it.auctionUuid] = it }
     }
 }
