@@ -34,6 +34,14 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
         return createdByRepository
     }
 
+    override fun blockAuctionAction(auction: Auction) {
+        TODO("Not yet implemented")
+    }
+
+    override fun unblockAuction(auction: Auction) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun saveAuction(auction: Auction): Auction {
         auctionRepository.saveAuction(auction)
         _auctions[auction.auctionUuid] = auction
