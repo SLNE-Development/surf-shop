@@ -2,7 +2,7 @@ package dev.slne.surf.shop.api.auction
 
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
-import java.util.UUID
+import java.util.*
 
 data class Auction(
     val internalId: ULong,
@@ -14,4 +14,5 @@ data class Auction(
     val createdAt: Long,
 ) {
     val sellerName get() = Bukkit.getOfflinePlayer(seller).name
+    fun isEmpty() = storedItemCount <= 0
 }

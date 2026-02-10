@@ -4,12 +4,14 @@ import com.google.auto.service.AutoService
 import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.backend.repository.auctionRepository
 import dev.slne.surf.shop.core.service.AuctionService
+import dev.slne.surf.shop.core.util.logger
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import net.kyori.adventure.util.Services
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 @AutoService(AuctionService::class)
 class AuctionServiceImpl : AuctionService, Services.Fallback {
@@ -57,9 +59,15 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
     }
 
     override suspend fun fetchAuctions() {
-        val loadedAuctions = auctionRepository.loadAuctions()
+        logger.info("Fetching auctions from database... (this may take a while!)")
 
-        _auctions.clear()
-        loadedAuctions.forEach { _auctions[it.auctionUuid] = it }
+        val ms = measureTimeMillis {
+            val loadedAuctions = auctionRepository.loadAuctions()
+
+            _auctions.clear()
+            loadedAuctions.forEach { _auctions[it.auctionUuid] = it }
+        }
+
+        logger.info("Loaded ${_auctions.size} auctions in ${ms}ms")
     }
 }

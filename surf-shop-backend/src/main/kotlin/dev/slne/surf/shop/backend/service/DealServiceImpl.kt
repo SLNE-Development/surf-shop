@@ -6,6 +6,7 @@ import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.backend.repository.dealRepository
 import dev.slne.surf.shop.core.service.DealService
 import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.core.util.logger
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
@@ -84,6 +85,13 @@ class DealServiceImpl : DealService, Services.Fallback {
     }
 
     override suspend fun fetchDeals() {
+        logger.info("Fetching deals from database... (this may take a while!)")
 
+        val loadedDeals = dealRepository.loadDeals()
+
+        _deals.clear()
+        loadedDeals.forEach { _deals[it.dealUuid] = it }
+
+        logger.info("Loaded ${_deals.size} deals")
     }
 }
