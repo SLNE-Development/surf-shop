@@ -36,13 +36,13 @@ object CreateAuctionView : View() {
         render.layoutSlot('I', itemNotSet).onClick { context ->
             context.openForPlayer(
                 PlayerInventorySelectItemView::class.java,
-                ImmutableMap.of<String, String>(
+                ImmutableMap.of(
                     "create-item",
-                    "",
+                    ItemStack.empty(),
                     "create-amount",
-                    "",
+                    -1,
                     "create-price",
-                    ""
+                    -1
                 )
             )
         }

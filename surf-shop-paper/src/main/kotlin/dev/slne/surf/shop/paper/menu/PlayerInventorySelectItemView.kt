@@ -38,7 +38,9 @@ object PlayerInventorySelectItemView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('X', outlineItem)
-        render.layoutSlot('B', backItem)
+        render.layoutSlot('B', backItem).onClick { context ->
+            context.back()
+        }
         render.layoutSlot('S', continueItem)
     }
 
