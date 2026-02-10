@@ -13,4 +13,5 @@ surfPaperPluginApi {
 dependencies {
     api(project(":surf-shop-core"))
     runtimeOnly(project(":surf-shop-backend"))
+    implementation("me.devnatan:inventory-framework-anvil-input:3.5.5")
 }

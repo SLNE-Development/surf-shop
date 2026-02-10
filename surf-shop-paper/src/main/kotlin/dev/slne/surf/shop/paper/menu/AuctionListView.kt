@@ -8,10 +8,11 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
+import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.ViewType
 import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextColor
@@ -67,10 +68,9 @@ object AuctionListView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Auktionen", TextDecoration.BOLD)
+                auctionColored("Auktionen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(6)
-            .type(ViewType.CHEST)
             .layout(
                 "OOOOOOOOO",
                 "ORRRRRRRO",
@@ -79,6 +79,7 @@ object AuctionListView : View() {
                 "ORRRRRRRO",
                 "UOOPCNOOS"
             )
+            .cancelInteractions()
     }
 
     override fun onFirstRender(render: RenderContext) {
@@ -91,7 +92,7 @@ object AuctionListView : View() {
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('C', createItem).onClick { context ->
-            // TODO: Create Auction Menu
+            viewFrame.open(CreateAuctionView::class.java, context.player)
         }
         render
             .layoutSlot('P', previousItem)
@@ -132,4 +133,4 @@ fun createAuctionItem(auction: Auction) = auction.item.clone().apply {
 }
 
 fun SurfComponentBuilder.auctionColored(text: Any, vararg decoration: TextDecoration) =
-    coloredComponent(text.toString(), TextColor.color(53, 187, 232), *decoration)
+    coloredComponent(text.toString(), TextColor.color(252, 233, 121), *decoration)
