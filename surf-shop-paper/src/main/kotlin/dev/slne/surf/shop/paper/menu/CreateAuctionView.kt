@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu
 
+import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -14,7 +15,9 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
 object CreateAuctionView : View() {
-    private val itemState: State<ItemStack?> = mutableState(null)
+    private val itemState: State<ItemStack?> = initialState("create-item")
+    private val amountState: State<Int> = initialState("create-amount")
+    private val priceState: State<Int> = initialState("create-price")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -22,14 +25,27 @@ object CreateAuctionView : View() {
                 auctionColored("Auktion erstellen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
-            .layout("OOOOOOOOO", "O       O", "O   I C O", "O       O", "OOOOBOOOO")
+            .layout("OOOOOOOOO", "O       O", "O A I C O", "O       O", "OOOOBOOOO")
             .cancelInteractions()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
+        render.layoutSlot('A', amountItem)
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I', itemNotSet)
+        render.layoutSlot('I', itemNotSet).onClick { context ->
+            context.openForPlayer(
+                PlayerInventorySelectItemView::class.java,
+                ImmutableMap.of<String, String>(
+                    "create-item",
+                    "",
+                    "create-amount",
+                    "",
+                    "create-price",
+                    ""
+                )
+            )
+        }
         render.layoutSlot('C', createItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.back()
@@ -57,6 +73,12 @@ object CreateAuctionView : View() {
     private val backItem = MenuHeads.CROSS.clone().apply {
         displayName {
             error("Abbrechen")
+        }
+    }
+
+    private val amountItem = MenuHeads.DOLLAR.clone().apply {
+        displayName {
+            auctionColored("Anzahl festlegen")
         }
     }
 }

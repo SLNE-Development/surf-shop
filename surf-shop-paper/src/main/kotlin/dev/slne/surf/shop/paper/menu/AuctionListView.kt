@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu
 
+import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
@@ -8,7 +9,6 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import me.devnatan.inventoryframework.View
@@ -92,7 +92,17 @@ object AuctionListView : View() {
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('C', createItem).onClick { context ->
-            viewFrame.open(CreateAuctionView::class.java, context.player)
+            context.openForPlayer(
+                CreateAuctionView::class.java,
+                ImmutableMap.of<String, String>(
+                    "create-item",
+                    "",
+                    "create-amount",
+                    "",
+                    "create-price",
+                    ""
+                )
+            )
         }
         render
             .layoutSlot('P', previousItem)

@@ -8,7 +8,6 @@ import dev.slne.surf.shop.paper.command.auctionCommand
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import me.devnatan.inventoryframework.AnvilInputFeature
 import org.bukkit.plugin.java.JavaPlugin
 
 val plugin get() = JavaPlugin.getPlugin(PaperMain::class.java)
@@ -20,7 +19,6 @@ class PaperMain : SuspendingJavaPlugin() {
         auctionService.fetchAuctions()
         dealService.fetchDeals()
 
-        viewFrame.install(AnvilInputFeature.AnvilInput)
         viewFrame.with(AuctionListView)
         viewFrame.with(CreateAuctionView)
     }
