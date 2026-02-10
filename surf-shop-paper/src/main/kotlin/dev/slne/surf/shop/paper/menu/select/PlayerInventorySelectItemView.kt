@@ -1,6 +1,8 @@
-package dev.slne.surf.shop.paper.menu
+package dev.slne.surf.shop.paper.menu.select
 
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.paper.menu.CreateAuctionView
+import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
@@ -93,6 +95,7 @@ object PlayerInventorySelectItemView : View() {
                 auctionColored("Nach der Auswahl kommst du in das Vorschau-Menü,")
             }
             line {
+                appendSpace()
                 appendSpace()
                 appendSpace()
                 auctionColored("in dem du deine Auktion erstellen kannst.")

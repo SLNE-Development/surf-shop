@@ -7,7 +7,7 @@ import dev.slne.surf.shop.core.service.dealService
 import dev.slne.surf.shop.paper.command.auctionCommand
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
-import dev.slne.surf.shop.paper.menu.PlayerInventorySelectItemView
+import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -23,6 +23,7 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(AuctionListView)
         viewFrame.with(CreateAuctionView)
         viewFrame.with(PlayerInventorySelectItemView)
+        viewFrame.with(SelectPricePerItemView)
     }
 
     override suspend fun onEnableAsync() {

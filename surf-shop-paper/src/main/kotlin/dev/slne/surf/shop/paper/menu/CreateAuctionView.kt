@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.paper.menu
 
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -95,6 +96,12 @@ object CreateAuctionView : View() {
     private val amountItem = MenuHeads.DOLLAR.clone().apply {
         displayName {
             auctionColored("Anzahl festlegen")
+        }
+    }
+
+    private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
+        displayName {
+            auctionColored("Preis pro Item festlegen")
         }
     }
 }
