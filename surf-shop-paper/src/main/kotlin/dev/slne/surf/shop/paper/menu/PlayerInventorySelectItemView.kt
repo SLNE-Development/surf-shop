@@ -37,6 +37,7 @@ object PlayerInventorySelectItemView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
+        val pagination = paginationState.get(render)
         render.layoutSlot('X', outlineItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.back()
