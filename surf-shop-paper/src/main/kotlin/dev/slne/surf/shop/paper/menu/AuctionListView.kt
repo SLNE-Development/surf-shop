@@ -18,6 +18,7 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
+import org.bukkit.inventory.ItemStack
 
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
@@ -94,13 +95,13 @@ object AuctionListView : View() {
         render.layoutSlot('C', createItem).onClick { context ->
             context.openForPlayer(
                 CreateAuctionView::class.java,
-                ImmutableMap.of<String, String>(
+                ImmutableMap.of(
                     "create-item",
-                    "",
+                    ItemStack.empty(),
                     "create-amount",
-                    "",
+                    -1,
                     "create-price",
-                    ""
+                    -1
                 )
             )
         }

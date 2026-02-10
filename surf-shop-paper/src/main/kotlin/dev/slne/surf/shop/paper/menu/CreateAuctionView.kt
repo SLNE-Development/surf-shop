@@ -15,7 +15,7 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
 object CreateAuctionView : View() {
-    private val itemState: State<ItemStack?> = initialState("create-item")
+    private val itemState: State<ItemStack> = initialState("create-item")
     private val amountState: State<Int> = initialState("create-amount")
     private val priceState: State<Int> = initialState("create-price")
 
@@ -34,7 +34,7 @@ object CreateAuctionView : View() {
         render.layoutSlot('A', amountItem)
         render.layoutSlot('O', outlineItem)
 
-        if (itemState.get(render)?.amount == -1) {
+        if (itemState.get(render)?.isEmpty == true) {
             render.layoutSlot('I', itemNotSet).onClick { context ->
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
@@ -47,7 +47,9 @@ object CreateAuctionView : View() {
                 )
             }
         } else {
-            render.layoutSlot('I', itemState.get(render)).onClick { context ->
+            render.layoutSlot('I', itemState.get(render).apply {
+                amount = 1
+            }).onClick { context ->
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
