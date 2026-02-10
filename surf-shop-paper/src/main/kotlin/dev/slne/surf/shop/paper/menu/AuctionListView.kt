@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.paper.menu
 
 import dev.slne.surf.shop.api.auction.Auction
+import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -17,6 +18,8 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 
 class AuctionListView : View() {
+    private val sortTypeState = initialState<AuctionSortType>("sort")
+
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
