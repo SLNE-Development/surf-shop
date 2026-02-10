@@ -37,16 +37,20 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
     }
 
     override fun blockAuctionAction(auction: Auction) {
-        TODO("Not yet implemented")
+        _auctions[auction.auctionUuid] = auction.apply {
+            isBlocked = true
+        }
     }
 
     override fun unblockAuction(auction: Auction) {
-        TODO("Not yet implemented")
+        _auctions[auction.auctionUuid] = auction.apply {
+            isBlocked = false
+        }
     }
 
     override suspend fun saveAuction(auction: Auction): Auction {
-        auctionRepository.saveAuction(auction)
         _auctions[auction.auctionUuid] = auction
+        auctionRepository.saveAuction(auction)
         return auction
     }
 
