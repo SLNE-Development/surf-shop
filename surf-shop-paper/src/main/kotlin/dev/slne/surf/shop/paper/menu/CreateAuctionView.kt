@@ -33,19 +33,33 @@ object CreateAuctionView : View() {
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('A', amountItem)
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I', itemNotSet).onClick { context ->
-            context.openForPlayer(
-                PlayerInventorySelectItemView::class.java,
-                ImmutableMap.of(
-                    "create-item",
-                    ItemStack.empty(),
-                    "create-amount",
-                    -1,
-                    "create-price",
-                    -1
+
+        if (itemState.get(render)?.amount == -1) {
+            render.layoutSlot('I', itemNotSet).onClick { context ->
+                context.openForPlayer(
+                    PlayerInventorySelectItemView::class.java,
+                    ImmutableMap.of(
+                        "create-amount",
+                        -1,
+                        "create-price",
+                        -1
+                    )
                 )
-            )
+            }
+        } else {
+            render.layoutSlot('I', itemState.get(render)).onClick { context ->
+                context.openForPlayer(
+                    PlayerInventorySelectItemView::class.java,
+                    ImmutableMap.of(
+                        "create-amount",
+                        -1,
+                        "create-price",
+                        -1
+                    )
+                )
+            }
         }
+
         render.layoutSlot('C', createItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.back()
