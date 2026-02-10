@@ -43,11 +43,11 @@ object PlayerInventorySelectItemView : View() {
         }
             .size(6)
             .layout(
-                "IIIIQIIII",
+                "XXXXQXXXX",
                 "IIIIIIIII",
                 "IIIIIIIII",
                 "IIIIIIIII",
-                "XXXXXXXXX",
+                "IIIIIIIII",
                 "XXXXBXXXX"
             )
             .cancelInteractions()
