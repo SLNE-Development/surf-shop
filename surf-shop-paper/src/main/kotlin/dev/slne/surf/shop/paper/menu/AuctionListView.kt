@@ -2,6 +2,7 @@ package dev.slne.surf.shop.paper.menu
 
 import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -22,10 +23,43 @@ class AuctionListView : View() {
         }
     }
 
+    private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
+        displayName {
+            auctionColored("Auktion erstellen")
+        }
+    }
+
+    private val previousItem = buildItem(Material.ARROW) { // TODO: Menu Heads
+        displayName {
+            auctionColored("Vorherige Seite")
+        }
+    }
+
+    private val nextItem = buildItem(Material.ARROW) { // TODO: Menu Heads
+        displayName {
+            auctionColored("Nächste Seite")
+        }
+    }
+
+    private val sortItem = buildItem(Material.COMPARATOR) {
+        displayName {
+            auctionColored("Sortieren")
+        }
+    }
+
+    private val updateItem = buildItem(Material.REPEATER) {
+        displayName {
+            auctionColored("Aktualisieren")
+        }
+    }
+
     private val pagination = computedPaginationState<Auction>({
         auctionService.loadedAuctions.filter { !it.isEmpty() }.toMutableList()
     }, { context, builder, index, value ->
-        builder.withItem()
+        builder.withItem(createAuctionItem(value))
+        builder.onClick { context ->
+            // TODO: Buy Confirmation, Amount etc
+        }
     })
 
     override fun onInit(config: ViewConfigBuilder) {
@@ -41,12 +75,36 @@ class AuctionListView : View() {
                 "OIIIIIIIIO",
                 "OIIIIIIIIO",
                 "OIIIIIIIIO",
-                "UEOPCNOOS"
+                "UOOPCNOOS"
             )
     }
 
     override fun onFirstRender(render: RenderContext) {
+        render.layoutSlot('S', sortItem).onClick { context ->
+            // TODO: Sort Menu
+        }
+        render.layoutSlot('U', updateItem).onClick { context ->
+            // TODO: Update Menu
+        }
         render.layoutSlot('O', outlineItem)
+        render.layoutSlot('C', createItem).onClick { context ->
+            // TODO: Create Auction Menu
+        }
+        render
+            .layoutSlot('P', previousItem)
+            .displayIf { _ -> pagination.get(render).canBack() }
+            .updateOnStateChange(pagination)
+            .onClick { _ ->
+                pagination.get(render).back()
+            }
+
+        render
+            .layoutSlot('N', nextItem)
+            .displayIf { _ -> pagination.get(render).canAdvance() }
+            .updateOnStateChange(pagination)
+            .onClick { _ ->
+                pagination.get(render).advance()
+            }
     }
 }
 
