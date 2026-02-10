@@ -12,12 +12,14 @@ import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.ViewType
+import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 
-class AuctionListView : View() {
+@Suppress("UnstableApiUsage")
+object AuctionListView : View() {
     private val sortTypeState = initialState<AuctionSortType>("sort")
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
@@ -32,13 +34,13 @@ class AuctionListView : View() {
         }
     }
 
-    private val previousItem = buildItem(Material.ARROW) { // TODO: Menu Heads
+    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply { // TODO: Menu Heads
         displayName {
             auctionColored("Vorherige Seite")
         }
     }
 
-    private val nextItem = buildItem(Material.ARROW) { // TODO: Menu Heads
+    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply { // TODO: Menu Heads
         displayName {
             auctionColored("Nächste Seite")
         }
@@ -56,33 +58,31 @@ class AuctionListView : View() {
         }
     }
 
-    private val pagination = computedPaginationState<Auction>({
+    private val paginationState = buildComputedPaginationState<Auction> {
         auctionService.loadedAuctions.filter { !it.isEmpty() }.toMutableList()
-    }, { context, builder, index, value ->
-        builder.withItem(createAuctionItem(value))
-        builder.onClick { context ->
-            // TODO: Buy Confirmation, Amount etc
-        }
-    })
+    }.itemFactory { builder, auction ->
+        builder.withItem(createAuctionItem(auction))
+    }.layoutTarget('R').build()
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                spacer("Auktionen")
+                auctionColored("Auktionen", TextDecoration.BOLD)
             }
             .size(6)
             .type(ViewType.CHEST)
             .layout(
                 "OOOOOOOOO",
-                "OIIIIIIIIO",
-                "OIIIIIIIIO",
-                "OIIIIIIIIO",
-                "OIIIIIIIIO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
                 "UOOPCNOOS"
             )
     }
 
     override fun onFirstRender(render: RenderContext) {
+        val pagination = paginationState.get(render)
         render.layoutSlot('S', sortItem).onClick { context ->
             // TODO: Sort Menu
         }
@@ -95,19 +95,32 @@ class AuctionListView : View() {
         }
         render
             .layoutSlot('P', previousItem)
-            .displayIf { _ -> pagination.get(render).canBack() }
-            .updateOnStateChange(pagination)
+            .displayIf { _ -> paginationState.get(render).canBack() }
+            .updateOnStateChange(paginationState)
             .onClick { _ ->
-                pagination.get(render).back()
+                paginationState.get(render).back()
             }
 
         render
             .layoutSlot('N', nextItem)
-            .displayIf { _ -> pagination.get(render).canAdvance() }
-            .updateOnStateChange(pagination)
+            .displayIf { _ -> paginationState.get(render).canAdvance() }
+            .updateOnStateChange(paginationState)
             .onClick { _ ->
-                pagination.get(render).advance()
+                paginationState.get(render).advance()
             }
+    }
+
+    override fun onUpdate(update: Context) {
+        updatePagination(update)
+    }
+
+    override fun onResume(origin: Context, target: Context) {
+        target.update()
+    }
+
+    private fun updatePagination(context: Context) {
+        val pagination = paginationState.get(context)
+        pagination.switchTo(pagination.currentPageIndex())
     }
 }
 
