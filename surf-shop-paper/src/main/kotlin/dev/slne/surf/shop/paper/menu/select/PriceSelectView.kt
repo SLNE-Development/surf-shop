@@ -3,17 +3,20 @@ package dev.slne.surf.shop.paper.menu.select
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import kotlin.math.max
 
@@ -47,24 +50,41 @@ object PriceSelectView : View() {
         render.layoutSlot('1', minusOne).onClick { context ->
             localPriceState.set(max(0, localPriceState.get(render) - 1), render)
             context.update()
+
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            }
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
             localPriceState.set(max(0, localPriceState.get(render) - 32), render)
             context.update()
+
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            }
         }
 
         render.layoutSlot('3', plusOne).onClick { context ->
             localPriceState.set(localPriceState.get(render) + 1, render)
             context.update()
+
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+            }
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
             localPriceState.set(localPriceState.get(render) + 32, render)
             context.update()
+
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+            }
         }
 
         render.layoutSlot('B', continueItem).onClick { context ->
+            context.playGeneralClickSound()
             context.openForPlayer(
                 CreateAuctionView::class.java,
                 ImmutableMap.of(

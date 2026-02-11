@@ -48,6 +48,7 @@ object CreateAuctionView : View() {
                 }
             }
         }).onClick { context ->
+            context.playGeneralClickSound()
             context.openForPlayer(
                 PriceSelectView::class.java,
                 ImmutableMap.of(
@@ -59,6 +60,7 @@ object CreateAuctionView : View() {
 
         if (itemState.get(render)?.isEmpty == true) {
             render.layoutSlot('I', itemNotSet).onClick { context ->
+                context.playGeneralClickSound()
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
@@ -71,6 +73,7 @@ object CreateAuctionView : View() {
             render.layoutSlot('I', itemState.get(render).apply {
                 amount = 1
             }).onClick { context ->
+                context.playGeneralClickSound()
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
@@ -81,8 +84,11 @@ object CreateAuctionView : View() {
             }
         }
 
-        render.layoutSlot('C', createItem(render))
+        render.layoutSlot('C', createItem(render)).onClick { context ->
+            context.playGeneralClickSound()
+        }
         render.layoutSlot('B', backItem).onClick { context ->
+            context.playGeneralClickSound()
             context.back()
         }
     }

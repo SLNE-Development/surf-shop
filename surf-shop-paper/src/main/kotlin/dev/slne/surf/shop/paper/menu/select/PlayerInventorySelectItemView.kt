@@ -3,18 +3,21 @@ package dev.slne.surf.shop.paper.menu.select
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
 object PlayerInventorySelectItemView : View() {
@@ -24,6 +27,11 @@ object PlayerInventorySelectItemView : View() {
         context.player.inventory.storageContents.filterNotNull().toMutableList()
     }.itemFactory { builder, item ->
         builder.withItem(item).onClick { context ->
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_PLING)
+                pitch(2f)
+            }
+
             context.openForPlayer(
                 CreateAuctionView::class.java,
                 ImmutableMap.of(
@@ -58,6 +66,7 @@ object PlayerInventorySelectItemView : View() {
         render.layoutSlot('X', outlineItem)
         render.layoutSlot('Q', explainItem)
         render.layoutSlot('B', backItem).onClick { context ->
+            context.playGeneralClickSound()
             context.back()
         }
     }
