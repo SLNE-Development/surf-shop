@@ -2,6 +2,7 @@ package dev.slne.surf.shop.paper.menu
 
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
+import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -26,7 +27,7 @@ object CreateAuctionView : View() {
                 auctionColored("Auktion erstellen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
-            .layout("OOOOOOOOO", "O       O", "O A I C O", "O       O", "OOOOBOOOO")
+            .layout("OOOOOOOOO", "O       O", "OPA I C O", "O       O", "OOOOBOOOO")
             .cancelInteractions()
             .build()
     }
@@ -34,6 +35,16 @@ object CreateAuctionView : View() {
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('A', amountItem)
         render.layoutSlot('O', outlineItem)
+        render.layoutSlot('P', pricePerItemItem).onClick { context ->
+            context.openForPlayer(
+                PriceSelectView::class.java,
+                ImmutableMap.of(
+                    "create-item", itemState.get(render),
+                    "create-amount", amountState.get(render),
+                    "create-price", priceState.get(render)
+                )
+            )
+        }
 
         if (itemState.get(render)?.isEmpty == true) {
             render.layoutSlot('I', itemNotSet).onClick { context ->
