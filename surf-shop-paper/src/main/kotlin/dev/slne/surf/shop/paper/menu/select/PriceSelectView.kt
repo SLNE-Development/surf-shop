@@ -46,22 +46,22 @@ object PriceSelectView : View() {
         render.layoutSlot('O', outlineItem)
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            price = max(0, priceState.get(render) - 1)
+            price = max(0, price - 1)
             context.update()
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            price = max(0, priceState.get(render) - 32)
+            price = max(0, price - 32)
             context.update()
         }
 
         render.layoutSlot('3', plusOne).onClick { context ->
-            price = priceState.get(render) + 1
+            price += 1
             context.update()
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            price = priceState.get(render) + 32
+            price += 32
             context.update()
         }
 
@@ -72,7 +72,7 @@ object PriceSelectView : View() {
                     "create-item",
                     itemState.get(render),
                     "create-price",
-                    priceState.get(render)
+                    price
                 )
             )
         }

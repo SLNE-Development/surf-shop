@@ -5,6 +5,7 @@ import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
+import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
@@ -33,7 +34,18 @@ object CreateAuctionView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('P', pricePerItemItem).onClick { context ->
+        render.layoutSlot('P', pricePerItemItem.clone().apply {
+            if (priceState.get(render) > 0) {
+                buildLore {
+                    emptyLine()
+                    line {
+                        spacer("-")
+                        appendSpace()
+                        auctionColored("Aktueller Preis Pro Item: ${priceState.get(render)}")
+                    }
+                }
+            }
+        }).onClick { context ->
             context.openForPlayer(
                 PriceSelectView::class.java,
                 ImmutableMap.of(
@@ -49,7 +61,7 @@ object CreateAuctionView : View() {
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        -1
+                        priceState.get(context)
                     )
                 )
             }
@@ -61,7 +73,7 @@ object CreateAuctionView : View() {
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        -1
+                        priceState.get(context)
                     )
                 )
             }
