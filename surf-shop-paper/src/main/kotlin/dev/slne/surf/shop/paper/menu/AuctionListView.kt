@@ -104,6 +104,8 @@ object AuctionListView : View() {
             context.openForPlayer(
                 CreateAuctionView::class.java,
                 ImmutableMap.of(
+                    "sort",
+                    sortTypeState.get(context),
                     "create-item",
                     ItemStack.empty(),
                     "create-price",
@@ -147,7 +149,41 @@ object AuctionListView : View() {
 fun createAuctionItem(auction: Auction) = auction.item.clone().apply {
     buildLore {
         emptyLine()
+        line {
+            auctionColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
+        }
+        line {
+            spacer("-")
+            appendSpace()
+            auctionColored("Preis: ")
+            variableValue("${auction.pricePerItem}/Item")
+        }
 
+        line {
+            spacer("-")
+            appendSpace()
+            auctionColored("Auf Lager: ")
+
+            if (auction.storedItemCount > 0) {
+                variableValue("${auction.storedItemCount} Items")
+            } else {
+                error("Ausverkauft")
+            }
+        }
+
+        line {
+            spacer("-")
+            appendSpace()
+            auctionColored("Verkäufer: ")
+            variableValue(auction.sellerName)
+        }
+
+        line {
+            spacer("-")
+            appendSpace()
+            auctionColored("Erstellt am: ")
+            variableValue(auction.createdAt)
+        }
     }
 }
 

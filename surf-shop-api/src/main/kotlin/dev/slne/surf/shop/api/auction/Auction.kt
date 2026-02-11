@@ -11,10 +11,10 @@ data class Auction(
     val storedItemCount: Int,
     val pricePerItem: Int,
     val seller: UUID,
-    val createdAt: Long,
+    val createdAt: Long, // TODO: Change to OffsetDateTime!  ~ red
 ) {
     var isBlocked: Boolean = false
 
-    val sellerName get() = Bukkit.getOfflinePlayer(seller).name
+    val sellerName get() = Bukkit.getOfflinePlayer(seller).name ?: "#Unbekannt"
     fun isEmpty() = storedItemCount <= 0
 }
