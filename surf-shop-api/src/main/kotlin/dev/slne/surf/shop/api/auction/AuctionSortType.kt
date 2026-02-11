@@ -6,5 +6,8 @@ enum class AuctionSortType {
     TIME_ASC,
     TIME_DESC,
     MOST_STORED,
-    MOST_DEALS
+    MOST_DEALS;
+
+    fun next() = entries[(ordinal + 1) % entries.size]
+    fun previous() = entries[(ordinal - 1 + entries.size) % entries.size]
 }

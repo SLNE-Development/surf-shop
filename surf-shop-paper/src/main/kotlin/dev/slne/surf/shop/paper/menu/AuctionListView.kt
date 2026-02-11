@@ -8,6 +8,7 @@ import dev.slne.surf.shop.core.util.dealCount
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
+import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
@@ -28,6 +29,8 @@ import org.bukkit.inventory.ItemStack
 
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
+    private val selectedSort = mutableState(AuctionSortType.TIME_ASC)
+
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
@@ -52,9 +55,90 @@ object AuctionListView : View() {
         }
     }
 
-    private val sortItem = buildItem(Material.COMPARATOR) {
+    private fun sortItem(state: AuctionSortType) = buildItem(Material.COMPARATOR) {
         displayName {
             auctionColored("Sortieren")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                if (state == AuctionSortType.PRICE_ASC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Preis aufsteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Preis aufsteigend")
+                }
+            }
+
+            line {
+                if (state == AuctionSortType.PRICE_DESC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Preis absteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Preis absteigend")
+                }
+            }
+
+            line {
+                if (state == AuctionSortType.TIME_ASC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Zeit aufsteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Zeit aufsteigend")
+                }
+            }
+
+            line {
+                if (state == AuctionSortType.TIME_DESC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Zeit absteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Zeit absteigend")
+                }
+            }
+
+            line {
+                if (state == AuctionSortType.MOST_STORED) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Meiste gelagerte Items")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Meiste gelagerte Items")
+                }
+            }
+
+            line {
+                if (state == AuctionSortType.MOST_DEALS) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Meiste Verkäufe")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Meiste Verkäufe")
+                }
+            }
         }
     }
 
@@ -88,11 +172,18 @@ object AuctionListView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('S', sortItem).onClick { context ->
-            // TODO: Sort Menu
+        selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
 
-            context.playGeneralClickSound()
-        }
+        render
+            .layoutSlot('S')
+            .updateOnClick()
+            .renderWith { sortItem(selectedSort.get(render)) }
+            .onClick { context ->
+                context.playGeneralClickSound()
+
+                selectedSort.set(selectedSort.get(render).next(), render)
+                plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
+            }
         render.layoutSlot('U', updateItem).onClick { context ->
             // TODO: Update Menu
 
@@ -112,18 +203,24 @@ object AuctionListView : View() {
             )
         }
         render
-            .layoutSlot('P', previousItem)
+            .layoutSlot('P')
+            .renderWith {
+                previousItem
+            }
+            .watch(paginationState)
             .displayIf { _ -> paginationState.get(render).canBack() }
-            .updateOnStateChange(paginationState)
             .onClick { context ->
                 context.playNewPageSound()
                 paginationState.get(render).back()
             }
 
         render
-            .layoutSlot('N', nextItem)
+            .layoutSlot('N')
+            .renderWith {
+                nextItem
+            }
+            .watch(paginationState)
             .displayIf { _ -> paginationState.get(render).canAdvance() }
-            .updateOnStateChange(paginationState)
             .onClick { context ->
                 context.playNewPageSound()
                 paginationState.get(render).advance()
