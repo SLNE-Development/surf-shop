@@ -49,6 +49,7 @@ object PriceSelectView : View() {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
+            context.player.closeInventory()
             context.player.showDialog(
                 createSpecificPriceDialog(
                     itemState.get(render),

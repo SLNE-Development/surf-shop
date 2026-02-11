@@ -60,14 +60,14 @@ fun createSpecificPriceDialog(
 
                 action {
                     customPlayerClick { response, player ->
-                        val price = response.getText("price")?.trim()?.toIntOrNull()
+                        val price = response.getText("price")?.trim()?.toIntOrNull() ?: 0
 
                         player.closeDialog()
 
                         viewFrame.open(
                             CreateAuctionView::class.java, player, ImmutableMap.of(
                                 "create-item", itemStack,
-                                "create-price", price ?: 0
+                                "create-price", price
                             )
                         )
                     }
