@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.paper.menu.select
 
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.paper.dialog.create.createSpecificPriceDialog
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -33,7 +34,7 @@ object PriceSelectView : View() {
             .size(5)
             .layout(
                 "OOOOOOOOO",
-                "O       O",
+                "O   W   O",
                 "O21 P 34O",
                 "O       O",
                 "OOOOBOOOO"
@@ -46,6 +47,15 @@ object PriceSelectView : View() {
         localPriceState.set(priceState.get(render), render)
 
         render.layoutSlot('O', outlineItem)
+        render.layoutSlot('W', ownItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.player.showDialog(
+                createSpecificPriceDialog(
+                    itemState.get(render),
+                    localPriceState.get(render)
+                )
+            )
+        }
 
         render.layoutSlot('1', minusOne).onClick { context ->
             localPriceState.set(max(0, localPriceState.get(render) - 1), render)
@@ -131,5 +141,9 @@ object PriceSelectView : View() {
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
         displayName { auctionColored("Übernehmen") }
+    }
+
+    private val ownItem = MenuHeads.DOLLAR.clone().apply {
+        displayName { auctionColored("Eigenen Preis eingeben") }
     }
 }

@@ -27,7 +27,6 @@ import org.bukkit.inventory.ItemStack
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
     private val sortTypeState = initialState<AuctionSortType>("sort")
-    private lateinit var sortType: AuctionSortType
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
@@ -65,13 +64,11 @@ object AuctionListView : View() {
         }
     }
 
-    private val paginationState by lazy {
-        buildComputedPaginationState<Auction> {
-            getLoadedAuctionsSorted(sortType).toMutableList()
-        }.itemFactory { builder, auction ->
-            builder.withItem(createAuctionItem(auction))
-        }.layoutTarget('R').build()
-    }
+    private val paginationState = buildComputedPaginationState<Auction> { context ->
+        getLoadedAuctionsSorted(sortTypeState.get(context)).toMutableList()
+    }.itemFactory { builder, auction ->
+        builder.withItem(createAuctionItem(auction))
+    }.layoutTarget('R').build()
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -91,7 +88,6 @@ object AuctionListView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        sortType = sortTypeState.get(render)
         render.layoutSlot('S', sortItem).onClick { context ->
             // TODO: Sort Menu
 
