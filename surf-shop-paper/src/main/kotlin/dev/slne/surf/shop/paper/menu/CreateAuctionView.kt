@@ -9,10 +9,12 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.Colors
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.state.State
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
@@ -79,7 +81,7 @@ object CreateAuctionView : View() {
             }
         }
 
-        render.layoutSlot('C', createItem)
+        render.layoutSlot('C', createItem(render))
         render.layoutSlot('B', backItem).onClick { context ->
             context.back()
         }
@@ -91,9 +93,37 @@ object CreateAuctionView : View() {
         }
     }
 
-    private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
+    private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
             auctionColored("Auktion erstellen")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                spacer("-")
+                appendSpace()
+                auctionColored("Item: ")
+                if (itemState.get(context)?.isEmpty == true) {
+                    variableValue("Kein Item ausgewählt")
+                } else {
+                    append(
+                        Component.translatable(itemState.get(context).type.translationKey())
+                            .color(Colors.VARIABLE_VALUE)
+                    )
+                }
+            }
+
+            line {
+                spacer("-")
+                appendSpace()
+                auctionColored("Preis pro Item: ")
+                if (priceState.get(context) <= 0) {
+                    variableValue("Kein Preis festgelegt")
+                } else {
+                    variableValue(priceState.get(context))
+                }
+            }
         }
     }
 

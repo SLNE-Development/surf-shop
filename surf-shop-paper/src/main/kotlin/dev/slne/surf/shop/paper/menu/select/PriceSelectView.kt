@@ -20,8 +20,7 @@ import kotlin.math.max
 object PriceSelectView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
     private val priceState: State<Int> = initialState("create-price")
-
-    private var price: Int = 0
+    private val localPriceState = mutableState(0)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -41,27 +40,27 @@ object PriceSelectView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        price = priceState.get(render)
+        localPriceState.set(priceState.get(render), render)
 
         render.layoutSlot('O', outlineItem)
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            price = max(0, price - 1)
+            localPriceState.set(max(0, localPriceState.get(render) - 1), render)
             context.update()
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            price = max(0, price - 32)
+            localPriceState.set(max(0, localPriceState.get(render) - 32), render)
             context.update()
         }
 
         render.layoutSlot('3', plusOne).onClick { context ->
-            price += 1
+            localPriceState.set(localPriceState.get(render) + 1, render)
             context.update()
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            price += 32
+            localPriceState.set(localPriceState.get(render) + 32, render)
             context.update()
         }
 
@@ -72,23 +71,23 @@ object PriceSelectView : View() {
                     "create-item",
                     itemState.get(render),
                     "create-price",
-                    price
+                    localPriceState.get(context)
                 )
             )
         }
 
-        render.layoutSlot('P', valueItem)
+        render.layoutSlot('P', valueItem(render)).updateOnStateChange(localPriceState)
     }
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName { spacer("") }
     }
 
-    private val valueItem = buildItem(Material.GOLD_INGOT) {
+    private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
         displayName {
             auctionColored("Preis: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(price)
+            auctionColored(localPriceState.get(context))
         }
     }
 
