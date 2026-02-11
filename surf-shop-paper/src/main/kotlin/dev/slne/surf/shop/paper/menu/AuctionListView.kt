@@ -314,7 +314,7 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedAuctionsSortedFiltered(
+private fun getLoadedAuctionsSortedFiltered( // TODO: Better filter
     sortType: AuctionSortType,
     search: String?
 ): List<Auction> {
