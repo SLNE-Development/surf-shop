@@ -76,7 +76,9 @@ object PriceSelectView : View() {
             )
         }
 
-        render.layoutSlot('P', valueItem(render)).updateOnStateChange(localPriceState)
+        render.layoutSlot('P').watch(localPriceState).renderWith {
+            valueItem(render)
+        }
     }
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
