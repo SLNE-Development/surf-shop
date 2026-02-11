@@ -1,8 +1,8 @@
 package dev.slne.surf.shop.paper.dialog
 
-import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.dialog.search.searchDialog
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 
@@ -20,9 +20,11 @@ fun searchAuctionItemDialog() = searchDialog(
         }
     },
     onSearch = { player, query ->
-        viewFrame.open(AuctionListView::class.java, player, ImmutableMap.of("search", query))
+        searchInputCache[player.uniqueId] = query
+        viewFrame.open(AuctionListView::class.java, player)
     },
     onClose = { player, query ->
-        viewFrame.open(AuctionListView::class.java, player, ImmutableMap.of("search", query))
+        searchInputCache[player.uniqueId] = query
+        viewFrame.open(AuctionListView::class.java, player)
     }
 )

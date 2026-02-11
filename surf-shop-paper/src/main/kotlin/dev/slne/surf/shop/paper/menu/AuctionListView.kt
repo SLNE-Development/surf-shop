@@ -8,6 +8,7 @@ import dev.slne.surf.shop.core.util.dealCount
 import dev.slne.surf.shop.paper.dialog.searchAuctionItemDialog
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -31,7 +32,6 @@ import org.bukkit.inventory.ItemStack
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
     private val selectedSort = mutableState(AuctionSortType.TIME_ASC)
-    private val searchInput = initialState<String?>("search")
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
@@ -160,7 +160,7 @@ object AuctionListView : View() {
     private val paginationState = buildComputedPaginationState<Auction> { context ->
         getLoadedAuctionsSortedFiltered(
             plugin.getSorting(context.player.uniqueId),
-            searchInput.get(context)
+            searchInputCache[context.player.uniqueId]
         ).toMutableList()
     }.itemFactory { builder, auction ->
         builder.withItem(createAuctionItem(auction))
