@@ -62,6 +62,7 @@ object AuctionListView : View() {
 
         buildLore {
             emptyLine()
+            line { auctionColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
             line {
                 if (state == AuctionSortType.PRICE_ASC) {
                     appendSpace()
