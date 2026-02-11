@@ -5,12 +5,13 @@ import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.core.util.dealCount
+import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import me.devnatan.inventoryframework.View
@@ -18,6 +19,7 @@ import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -26,8 +28,6 @@ import org.bukkit.inventory.ItemStack
 
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
-    private val sortTypeState = initialState<AuctionSortType>("sort")
-
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
@@ -65,7 +65,7 @@ object AuctionListView : View() {
     }
 
     private val paginationState = buildComputedPaginationState<Auction> { context ->
-        getLoadedAuctionsSorted(sortTypeState.get(context)).toMutableList()
+        getLoadedAuctionsSorted(plugin.getSorting(context.player.uniqueId)).toMutableList()
     }.itemFactory { builder, auction ->
         builder.withItem(createAuctionItem(auction))
     }.layoutTarget('R').build()
@@ -104,8 +104,6 @@ object AuctionListView : View() {
             context.openForPlayer(
                 CreateAuctionView::class.java,
                 ImmutableMap.of(
-                    "sort",
-                    sortTypeState.get(context),
                     "create-item",
                     ItemStack.empty(),
                     "create-price",
@@ -147,44 +145,47 @@ object AuctionListView : View() {
 }
 
 fun createAuctionItem(auction: Auction) = auction.item.clone().apply {
-    buildLore {
-        emptyLine()
-        line {
-            auctionColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
-        }
-        line {
-            spacer("-")
-            appendSpace()
-            auctionColored("Preis: ")
-            variableValue("${auction.pricePerItem}/Item")
-        }
+    val oldLore = lore()?.toMutableList() ?: mutableListOf()
+    val newEntries = mutableListOf<Component>()
 
-        line {
-            spacer("-")
-            appendSpace()
-            auctionColored("Auf Lager: ")
+    newEntries.add(Component.empty())
+    newEntries.add(buildText {
+        auctionColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
+    })
 
-            if (auction.storedItemCount > 0) {
-                variableValue("${auction.storedItemCount} Items")
-            } else {
-                error("Ausverkauft")
-            }
-        }
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        auctionColored("Preis: ")
+        variableValue("${auction.pricePerItem}/Item")
+    })
 
-        line {
-            spacer("-")
-            appendSpace()
-            auctionColored("Verkäufer: ")
-            variableValue(auction.sellerName)
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        auctionColored("Auf Lager: ")
+        if (auction.storedItemCount > 0) {
+            variableValue("${auction.storedItemCount} Items")
+        } else {
+            error("Ausverkauft")
         }
+    })
 
-        line {
-            spacer("-")
-            appendSpace()
-            auctionColored("Erstellt am: ")
-            variableValue(auction.createdAt)
-        }
-    }
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        auctionColored("Verkäufer: ")
+        variableValue(auction.sellerName)
+    })
+
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        auctionColored("Erstellt am: ")
+        variableValue(auction.createdAt)
+    })
+
+    lore(oldLore + newEntries)
 }
 
 fun SlotClickContext.playGeneralClickSound() {

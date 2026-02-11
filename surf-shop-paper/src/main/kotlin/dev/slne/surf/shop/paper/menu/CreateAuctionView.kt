@@ -1,8 +1,8 @@
 package dev.slne.surf.shop.paper.menu
 
+import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
@@ -17,6 +17,7 @@ import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.Colors
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -30,7 +31,6 @@ import org.bukkit.inventory.ItemStack
 object CreateAuctionView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
     private val priceState: State<Int> = initialState("create-price")
-    private val sort: State<AuctionSortType> = initialState("sort")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -133,12 +133,13 @@ object CreateAuctionView : View() {
                     success("Die Auktion wurde erstellt!")
                 }
 
-                context.player.closeInventory()
-                viewFrame.open(
-                    AuctionListView::class.java,
-                    context.player,
-                    ImmutableMap.of("sort", sort.get(context))
-                )
+                withContext(plugin.globalRegionDispatcher) {
+                    context.player.closeInventory()
+                    viewFrame.open(
+                        AuctionListView::class.java,
+                        context.player
+                    )
+                }
             }
         }
         render.layoutSlot('B', backItem).onClick { context ->
