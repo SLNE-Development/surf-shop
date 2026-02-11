@@ -30,7 +30,9 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
             pricePerItem,
             seller,
             System.currentTimeMillis()
-        )
+        ).apply {
+            this.rebuildSearchTokens()
+        }
 
         _auctions[createdByRepository.auctionUuid] = createdByRepository
         return createdByRepository
@@ -49,8 +51,12 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
     }
 
     override suspend fun saveAuction(auction: Auction): Auction {
-        _auctions[auction.auctionUuid] = auction
-        auctionRepository.saveAuction(auction)
+        val updatedAuction = auction.apply {
+            this.rebuildSearchTokens()
+        }
+
+        _auctions[auction.auctionUuid] = updatedAuction
+        auctionRepository.saveAuction(updatedAuction)
         return auction
     }
 
@@ -69,7 +75,11 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
             val loadedAuctions = auctionRepository.loadAuctions()
 
             _auctions.clear()
-            loadedAuctions.forEach { _auctions[it.auctionUuid] = it }
+            loadedAuctions.forEach {
+                _auctions[it.auctionUuid] = it.apply {
+                    this.rebuildSearchTokens()
+                }
+            }
         }
 
         logger.info("Loaded ${_auctions.size} auctions in ${ms}ms")

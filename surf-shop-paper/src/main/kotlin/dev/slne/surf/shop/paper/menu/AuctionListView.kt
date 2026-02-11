@@ -45,13 +45,13 @@ object AuctionListView : View() {
         }
     }
 
-    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply { // TODO: Menu Heads
+    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
         displayName {
             auctionColored("Vorherige Seite")
         }
     }
 
-    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply { // TODO: Menu Heads
+    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply {
         displayName {
             auctionColored("Nächste Seite")
         }
@@ -197,8 +197,7 @@ object AuctionListView : View() {
                 plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
             }
         render.layoutSlot('U', updateItem).onClick { context ->
-            // TODO: Update Menu
-
+            render.update()
             context.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
@@ -314,31 +313,42 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedAuctionsSortedFiltered( // TODO: Better filter
+private fun getLoadedAuctionsSortedFiltered(
     sortType: AuctionSortType,
     search: String?
 ): List<Auction> {
-
     val base = auctionService.loadedAuctions
 
     val filtered = if (search.isNullOrBlank()) {
         base
     } else {
         val terms = search
+            .trim()
             .lowercase()
-            .split("\\s+".toRegex())
-            .filter { it.isNotBlank() }
+            .split(' ')
+            .filter { it.isNotEmpty() }
 
-        base.filter { auction ->
-            val item = auction.item
+        if (terms.isEmpty()) {
+            base
+        } else {
+            base.filter { auction ->
+                val tokens = auction.searchableTokens
 
-            val material = item.type.name.lowercase()
-            val enchantments = item.enchantments.keys
-                .joinToString(" ") { it.key.key.lowercase() }
+                for (term in terms) {
+                    var matched = false
 
-            val searchable = "$material $enchantments"
+                    for (token in tokens) {
+                        if (token.contains(term)) {
+                            matched = true
+                            break
+                        }
+                    }
 
-            terms.all { term -> searchable.contains(term) }
+                    if (!matched) return@filter false
+                }
+
+                true
+            }
         }
     }
 
