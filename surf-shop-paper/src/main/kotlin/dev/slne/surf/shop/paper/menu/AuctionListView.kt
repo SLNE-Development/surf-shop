@@ -98,10 +98,8 @@ object AuctionListView : View() {
                 ImmutableMap.of(
                     "create-item",
                     ItemStack.empty(),
-                    "create-amount",
-                    -1,
                     "create-price",
-                    -1
+                    0
                 )
             )
         }

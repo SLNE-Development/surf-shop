@@ -1,5 +1,7 @@
 package dev.slne.surf.shop.paper.menu.select
 
+import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -9,7 +11,6 @@ import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.state.MutableState
 import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -18,8 +19,9 @@ import kotlin.math.max
 
 object PriceSelectView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
-    private val amountState: State<Int> = initialState("create-amount")
-    private val priceState: MutableState<Int> = initialState("create-price")
+    private val priceState: State<Int> = initialState("create-price")
+
+    private var price: Int = 0
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -39,44 +41,54 @@ object PriceSelectView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
+        price = priceState.get(render)
+
         render.layoutSlot('O', outlineItem)
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            priceState.set(max(0, priceState.get(render) - 1), render)
+            price = max(0, priceState.get(render) - 1)
             context.update()
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            priceState.set(max(0, priceState.get(render) - 32), render)
+            price = max(0, priceState.get(render) - 32)
             context.update()
         }
 
         render.layoutSlot('3', plusOne).onClick { context ->
-            priceState.set(priceState.get(render) + 1, render)
+            price = priceState.get(render) + 1
             context.update()
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            priceState.set(priceState.get(render) + 32, render)
+            price = priceState.get(render) + 32
             context.update()
         }
 
-        render.layoutSlot('B', backItem).onClick { context ->
-            context.back()
+        render.layoutSlot('B', continueItem).onClick { context ->
+            context.openForPlayer(
+                CreateAuctionView::class.java,
+                ImmutableMap.of(
+                    "create-item",
+                    itemState.get(render),
+                    "create-price",
+                    priceState.get(render)
+                )
+            )
         }
 
-        render.layoutSlot('P', valueItem(render))
+        render.layoutSlot('P', valueItem)
     }
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName { spacer("") }
     }
 
-    private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
+    private val valueItem = buildItem(Material.GOLD_INGOT) {
         displayName {
             auctionColored("Preis: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(priceState.get(context))
+            auctionColored(price)
         }
     }
 
@@ -96,7 +108,7 @@ object PriceSelectView : View() {
         displayName { auctionColored("-32") }
     }
 
-    private val backItem = MenuHeads.CHECK.clone().apply {
+    private val continueItem = MenuHeads.CHECK.clone().apply {
         displayName { auctionColored("Übernehmen") }
     }
 }

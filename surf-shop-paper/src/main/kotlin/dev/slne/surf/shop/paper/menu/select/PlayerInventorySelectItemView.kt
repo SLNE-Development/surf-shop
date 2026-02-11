@@ -18,7 +18,6 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
 object PlayerInventorySelectItemView : View() {
-    private val amountState: State<Int> = initialState("create-amount")
     private val priceState: State<Int> = initialState("create-price")
 
     private val paginationState = buildComputedPaginationState<ItemStack> { context ->
@@ -30,8 +29,6 @@ object PlayerInventorySelectItemView : View() {
                 ImmutableMap.of(
                     "create-item",
                     item,
-                    "create-amount",
-                    amountState.get(context),
                     "create-price",
                     priceState.get(context)
                 )

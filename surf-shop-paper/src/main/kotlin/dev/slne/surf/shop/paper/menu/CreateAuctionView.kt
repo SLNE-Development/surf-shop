@@ -18,7 +18,6 @@ import org.bukkit.inventory.ItemStack
 
 object CreateAuctionView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
-    private val amountState: State<Int> = initialState("create-amount")
     private val priceState: State<Int> = initialState("create-price")
 
     override fun onInit(config: ViewConfigBuilder) {
@@ -27,20 +26,18 @@ object CreateAuctionView : View() {
                 auctionColored("Auktion erstellen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
-            .layout("OOOOOOOOO", "O       O", "OPA I C O", "O       O", "OOOOBOOOO")
+            .layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
             .cancelInteractions()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('A', amountItem)
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('P', pricePerItemItem).onClick { context ->
             context.openForPlayer(
                 PriceSelectView::class.java,
                 ImmutableMap.of(
                     "create-item", itemState.get(render),
-                    "create-amount", amountState.get(render),
                     "create-price", priceState.get(render)
                 )
             )
@@ -51,8 +48,6 @@ object CreateAuctionView : View() {
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
-                        "create-amount",
-                        -1,
                         "create-price",
                         -1
                     )
@@ -65,8 +60,6 @@ object CreateAuctionView : View() {
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
-                        "create-amount",
-                        -1,
                         "create-price",
                         -1
                     )
@@ -101,12 +94,6 @@ object CreateAuctionView : View() {
     private val backItem = MenuHeads.CROSS.clone().apply {
         displayName {
             error("Abbrechen")
-        }
-    }
-
-    private val amountItem = MenuHeads.DOLLAR.clone().apply {
-        displayName {
-            auctionColored("Anzahl festlegen")
         }
     }
 
