@@ -31,7 +31,7 @@ object PriceSelectView : View() {
                 "OOOOOOOOO",
                 "O       O",
                 "O21 P 34O",
-                "O      O",
+                "O       O",
                 "OOOOBOOOO"
             )
             .cancelInteractions()
