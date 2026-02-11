@@ -31,7 +31,7 @@ import org.bukkit.inventory.ItemStack
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
     private val selectedSort = mutableState(AuctionSortType.TIME_ASC)
-    private val searchInput = initialState<String>("search")
+    private val searchInput = initialState<String?>("search")
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {

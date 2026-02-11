@@ -19,8 +19,8 @@ fun searchAuctionItemDialog() = searchDialog(
             auctionColored("Gib den Namen eines Items ein, um nach Auktionen zu suchen. Suche Nach Enchantment Namen, z.b. \"Mending\" oder \"Soulbound\"")
         }
     },
-    onSearch = { _, _ ->
-
+    onSearch = { player, query ->
+        viewFrame.open(AuctionListView::class.java, player, ImmutableMap.of("search", query))
     },
     onClose = { player, query ->
         viewFrame.open(AuctionListView::class.java, player, ImmutableMap.of("search", query))
