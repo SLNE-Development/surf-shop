@@ -5,6 +5,7 @@ import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.core.util.dealCount
+import dev.slne.surf.shop.paper.dialog.searchAuctionItemDialog
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -30,6 +31,7 @@ import org.bukkit.inventory.ItemStack
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
     private val selectedSort = mutableState(AuctionSortType.TIME_ASC)
+    private val searchInput = initialState<String>("search")
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
@@ -52,6 +54,12 @@ object AuctionListView : View() {
     private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply { // TODO: Menu Heads
         displayName {
             auctionColored("Nächste Seite")
+        }
+    }
+
+    private val searchItem = buildItem(Material.BRUSH) {
+        displayName {
+            auctionColored("Suchen")
         }
     }
 
@@ -150,7 +158,10 @@ object AuctionListView : View() {
     }
 
     private val paginationState = buildComputedPaginationState<Auction> { context ->
-        getLoadedAuctionsSorted(plugin.getSorting(context.player.uniqueId)).toMutableList()
+        getLoadedAuctionsSortedFiltered(
+            plugin.getSorting(context.player.uniqueId),
+            searchInput.get(context)
+        ).toMutableList()
     }.itemFactory { builder, auction ->
         builder.withItem(createAuctionItem(auction))
     }.layoutTarget('R').build()
@@ -167,7 +178,7 @@ object AuctionListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "UOOPCNOOS"
+                "UAOPCNOOS"
             )
             .cancelInteractions()
     }
@@ -191,6 +202,11 @@ object AuctionListView : View() {
             context.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
+        render.layoutSlot('A', searchItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.player.closeInventory()
+            context.player.showDialog(searchAuctionItemDialog())
+        }
         render.layoutSlot('C', createItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
@@ -298,13 +314,42 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedAuctionsSorted(sortType: AuctionSortType): List<Auction> = when (sortType) {
-    AuctionSortType.PRICE_ASC -> auctionService.loadedAuctions.sortedBy { it.pricePerItem }
-    AuctionSortType.PRICE_DESC -> auctionService.loadedAuctions.sortedByDescending { it.pricePerItem }
-    AuctionSortType.TIME_ASC -> auctionService.loadedAuctions.sortedBy { it.createdAt }
-    AuctionSortType.TIME_DESC -> auctionService.loadedAuctions.sortedByDescending { it.createdAt }
-    AuctionSortType.MOST_STORED -> auctionService.loadedAuctions.sortedByDescending { it.storedItemCount }
-    AuctionSortType.MOST_DEALS -> auctionService.loadedAuctions.sortedByDescending { it.dealCount }
+private fun getLoadedAuctionsSortedFiltered(
+    sortType: AuctionSortType,
+    search: String?
+): List<Auction> {
+
+    val base = auctionService.loadedAuctions
+
+    val filtered = if (search.isNullOrBlank()) {
+        base
+    } else {
+        val terms = search
+            .lowercase()
+            .split("\\s+".toRegex())
+            .filter { it.isNotBlank() }
+
+        base.filter { auction ->
+            val item = auction.item
+
+            val material = item.type.name.lowercase()
+            val enchantments = item.enchantments.keys
+                .joinToString(" ") { it.key.key.lowercase() }
+
+            val searchable = "$material $enchantments"
+
+            terms.all { term -> searchable.contains(term) }
+        }
+    }
+
+    return when (sortType) {
+        AuctionSortType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
+        AuctionSortType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
+        AuctionSortType.TIME_ASC -> filtered.sortedBy { it.createdAt }
+        AuctionSortType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
+        AuctionSortType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
+        AuctionSortType.MOST_DEALS -> filtered.sortedByDescending { it.dealCount }
+    }
 }
 
 
