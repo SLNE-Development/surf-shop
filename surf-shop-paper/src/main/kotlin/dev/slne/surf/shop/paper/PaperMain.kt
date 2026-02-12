@@ -20,7 +20,7 @@ val plugin get() = JavaPlugin.getPlugin(PaperMain::class.java)
 
 class PaperMain : SuspendingJavaPlugin() {
     private val sorts = mutableObject2ObjectMapOf<UUID, AuctionSortType>()
-    fun getSorting(player: UUID) = sorts.getOrDefault(player, AuctionSortType.TIME_ASC)
+    fun getSorting(player: UUID) = sorts.getOrDefault(player, AuctionSortType.ITEM_NAME)
     fun setSorting(player: UUID, sortType: AuctionSortType) {
         sorts[player] = sortType
     }
