@@ -16,7 +16,7 @@ fun searchAuctionItemDialog() = searchDialog(
     },
     body = {
         plainMessage {
-            auctionColored("Gib den Namen eines Items ein, um nach Auktionen zu suchen. Suche Nach Enchantment Namen, z.b. \"Mending\" oder \"Soulbound\"")
+            auctionColored("Gib den Namen eines Items ein, um nach Auktionen zu suchen. Suche nach Verzauberungsnamen, z.b. \"Mending\" oder \"Soulbound\"")
         }
     },
     onSearch = { player, query ->
