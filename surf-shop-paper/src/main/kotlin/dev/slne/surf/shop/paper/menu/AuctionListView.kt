@@ -6,8 +6,10 @@ import dev.slne.surf.shop.api.auction.AuctionSortType
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.core.util.dealCount
 import dev.slne.surf.shop.paper.dialog.searchAuctionItemDialog
+import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
@@ -28,6 +30,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
+import java.util.*
 
 @Suppress("UnstableApiUsage")
 object AuctionListView : View() {
@@ -162,8 +165,26 @@ object AuctionListView : View() {
             plugin.getSorting(context.player.uniqueId),
             searchInputCache[context.player.uniqueId]
         ).toMutableList()
-    }.itemFactory { builder, auction ->
-        builder.withItem(createAuctionItem(auction))
+    }.elementFactory { context, builder, _, auction ->
+        builder.withItem(createAuctionItem(auction, context.player.uniqueId)).onClick { context ->
+            context.playGeneralClickSound()
+
+            if (auction.seller == context.player.uniqueId) {
+                if (context.isShiftLeftClick) {
+                    // DELETE
+                } else {
+                    context.openForPlayer(
+                        EditAuctionView::class.java,
+                        ImmutableMap.of(
+                            "edit-auction",
+                            auction
+                        )
+                    )
+                }
+            } else {
+                // TODO: Buy Menu
+            }
+        }
     }.layoutTarget('R').build()
 
     override fun onInit(config: ViewConfigBuilder) {
@@ -257,7 +278,7 @@ object AuctionListView : View() {
     }
 }
 
-fun createAuctionItem(auction: Auction) = auction.item.clone().apply {
+fun createAuctionItem(auction: Auction, viewer: UUID) = auction.item.clone().apply {
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
     val newEntries = mutableListOf<Component>()
 
@@ -297,6 +318,26 @@ fun createAuctionItem(auction: Auction) = auction.item.clone().apply {
         auctionColored("Erstellt am: ")
         variableValue(auction.createdAt)
     })
+
+    newEntries.add(Component.empty())
+
+    if (auction.seller == viewer) {
+        newEntries.add(buildText {
+            spacer("Klicke, um die Auktion zu bearbeiten.")
+        })
+
+        newEntries.add(buildText {
+            spacer("Drücke ")
+            displayKey("key.sneak")
+            spacer(" + ")
+            displayKey("key.mouse.left")
+            spacer(" um die Auktion zu löschen.")
+        })
+    } else {
+        newEntries.add(buildText {
+            spacer("Klicke, um die Auktion zu kaufen.")
+        })
+    }
 
     lore(oldLore + newEntries)
 }

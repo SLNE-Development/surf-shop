@@ -3,11 +3,11 @@ package dev.slne.surf.shop.paper.menu.edit
 import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -24,16 +24,13 @@ import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
-import org.bukkit.inventory.ItemStack
 
 object EditAuctionView : View() {
-    private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Int> = initialState("create-price")
+    private val auctionState = initialState<Auction>("edit-auction")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -41,7 +38,7 @@ object EditAuctionView : View() {
                 auctionColored("Auktion bearbeiten".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
-            .layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
+            .layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
             .cancelInteractions()
             .build()
     }
@@ -49,13 +46,13 @@ object EditAuctionView : View() {
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('P', pricePerItemItem.clone().apply {
-            if (priceState.get(render) > 0) {
+            if (auctionState.get(render).pricePerItem > 0) {
                 buildLore {
                     emptyLine()
                     line {
                         spacer("-")
                         appendSpace()
-                        auctionColored("Aktueller Preis Pro Item: ${priceState.get(render)}")
+                        auctionColored("Aktueller Preis Pro Item: ${auctionState.get(render).pricePerItem}")
                     }
                 }
             }
@@ -64,59 +61,28 @@ object EditAuctionView : View() {
             context.openForPlayer(
                 PriceSelectView::class.java,
                 ImmutableMap.of(
-                    "create-item", itemState.get(render),
-                    "create-price", priceState.get(render)
+                    "edit-auction", auctionState.get(render),
+                    "edit-price", auctionState.get(render).pricePerItem
                 )
             )
         }
 
-        if (itemState.get(render)?.isEmpty == true) {
-            render.layoutSlot('I', itemNotSet).onClick { context ->
-                context.playGeneralClickSound()
-                context.openForPlayer(
-                    PlayerInventorySelectItemView::class.java,
-                    ImmutableMap.of(
-                        "create-price",
-                        priceState.get(context)
-                    )
-                )
-            }
-        } else {
-            render.layoutSlot('I', itemState.get(render).apply {
-                amount = 1
-            }).onClick { context ->
-                context.playGeneralClickSound()
-                context.openForPlayer(
-                    PlayerInventorySelectItemView::class.java,
-                    ImmutableMap.of(
-                        "create-price",
-                        priceState.get(context)
-                    )
-                )
-            }
-        }
+        render.layoutSlot('I', auctionState.get(render).item.apply {
+            amount = 1
+        })
 
-        render.layoutSlot('C', createItem(render)).onClick { context ->
+        render.layoutSlot('F', insertItemsItem)
+
+        render.layoutSlot('C', saveItem(render)).onClick { context ->
             context.playGeneralClickSound()
 
-            val item = itemState.get(context)
-            val price = priceState.get(context)
-
-            if (item.isEmpty) {
-                context.player.sendText {
-                    appendErrorPrefix()
-                    error("Du musst ein Item auswählen, um eine Auktion zu erstellen.")
-                }
-                context.player.playSound(true) {
-                    type(Sound.ENTITY_VILLAGER_NO)
-                }
-                return@onClick
-            }
+            val auction = auctionState.get(context)
+            val price = auction.pricePerItem
 
             if (price <= 0) {
                 context.player.sendText {
                     appendErrorPrefix()
-                    error("Du musst einen Preis pro Item festlegen, um eine Auktion zu erstellen.")
+                    error("Du kannst den Preis der Auktion nicht entfernen.")
                 }
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
@@ -125,7 +91,7 @@ object EditAuctionView : View() {
             }
 
             plugin.launch {
-                auctionService.createAuction(item, 0, price, context.player.uniqueId)
+                auctionService.saveAuction(auctionState.get(render))
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
@@ -133,7 +99,7 @@ object EditAuctionView : View() {
 
                 context.player.sendText {
                     appendSuccessPrefix()
-                    success("Die Auktion wurde erstellt!")
+                    success("Die Auktion wurde aktualisiert!")
                 }
 
                 withContext(plugin.globalRegionDispatcher) {
@@ -157,9 +123,9 @@ object EditAuctionView : View() {
         }
     }
 
-    private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
+    private fun saveItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            auctionColored("Auktion erstellen")
+            auctionColored("Bearbeitung speichern")
         }
 
         buildLore {
@@ -168,38 +134,34 @@ object EditAuctionView : View() {
                 spacer("-")
                 appendSpace()
                 auctionColored("Item: ")
-                if (itemState.get(context)?.isEmpty == true) {
-                    variableValue("Kein Item ausgewählt")
-                } else {
-                    append(
-                        Component.translatable(itemState.get(context).type.translationKey())
-                            .color(Colors.VARIABLE_VALUE)
-                    )
-                }
+                append(
+                    Component.translatable(auctionState.get(context).item.type.translationKey())
+                        .color(Colors.VARIABLE_VALUE)
+                )
             }
 
             line {
                 spacer("-")
                 appendSpace()
                 auctionColored("Preis pro Item: ")
-                if (priceState.get(context) <= 0) {
+                if (auctionState.get(context).pricePerItem <= 0) {
                     variableValue("Kein Preis festgelegt")
                 } else {
-                    variableValue(priceState.get(context))
+                    variableValue(auctionState.get(context).pricePerItem)
                 }
             }
-        }
-    }
-
-    private val itemNotSet = MenuHeads.QUESTION.clone().apply {
-        displayName {
-            auctionColored("Kein Item ausgewählt")
         }
     }
 
     private val backItem = MenuHeads.CROSS.clone().apply {
         displayName {
             error("Abbrechen")
+        }
+    }
+
+    private val insertItemsItem = buildItem(Material.CHEST) {
+        displayName {
+            auctionColored("Items lagern")
         }
     }
 
