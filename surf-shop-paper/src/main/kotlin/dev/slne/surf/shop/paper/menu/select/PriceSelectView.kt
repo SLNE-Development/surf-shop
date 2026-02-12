@@ -68,7 +68,7 @@ object PriceSelectView : View() {
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 32), render)
+            localPriceState.set(max(0, localPriceState.get(render) - 50), render)
             context.update()
 
             context.player.playSound(true) {
@@ -86,7 +86,7 @@ object PriceSelectView : View() {
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            localPriceState.set(localPriceState.get(render) + 32, render)
+            localPriceState.set(localPriceState.get(render) + 50, render)
             context.update()
 
             context.player.playSound(true) {
@@ -129,7 +129,7 @@ object PriceSelectView : View() {
     }
 
     private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+32") }
+        displayName { auctionColored("+50") }
     }
 
     private val minusOne = MenuHeads.MINUS.clone().apply {
@@ -137,7 +137,7 @@ object PriceSelectView : View() {
     }
 
     private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-32") }
+        displayName { auctionColored("-50") }
     }
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
