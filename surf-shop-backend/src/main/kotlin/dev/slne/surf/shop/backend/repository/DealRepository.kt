@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
+import java.time.OffsetDateTime
 import java.util.*
 
 val dealRepository = DealRepository()
@@ -27,7 +28,7 @@ class DealRepository {
         auction: Auction,
         amount: Int,
         buyer: UUID,
-        boughtAt: Long
+        boughtAt: OffsetDateTime
     ): Deal = suspendTransaction {
         DealsTable.insertReturning {
             it[this.dealUuid] = UUID.randomUUID()

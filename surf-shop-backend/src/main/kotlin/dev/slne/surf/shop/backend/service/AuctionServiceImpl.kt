@@ -10,6 +10,7 @@ import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import net.kyori.adventure.util.Services
 import org.bukkit.inventory.ItemStack
+import java.time.OffsetDateTime
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -29,7 +30,7 @@ class AuctionServiceImpl : AuctionService, Services.Fallback {
             storedItemCount,
             pricePerItem,
             seller,
-            System.currentTimeMillis()
+            OffsetDateTime.now()
         ).apply {
             this.rebuildSearchTokens()
         }

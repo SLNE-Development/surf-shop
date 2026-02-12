@@ -14,6 +14,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSet
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.util.Services
 import org.bukkit.entity.Player
+import java.time.OffsetDateTime
 import java.util.*
 
 @AutoService(DealService::class)
@@ -31,7 +32,7 @@ class DealServiceImpl : DealService, Services.Fallback {
             auction,
             amount,
             buyer,
-            System.currentTimeMillis()
+            OffsetDateTime.now()
         )
 
         _deals[boughtByRepository.dealUuid] = boughtByRepository

@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.backend.table
 
 import dev.slne.surf.database.columns.nativeUuid
+import dev.slne.surf.database.columns.time.offsetDateTime
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.dao.id.ULongIdTable
 
 object DealsTable : ULongIdTable("shop_auction_deals") {
@@ -8,5 +9,5 @@ object DealsTable : ULongIdTable("shop_auction_deals") {
     val auctionInternalId = ulong("auction_internal_id").references(AuctionsTable.id)
     val amount = integer("amount")
     val boughtBy = nativeUuid("bought_by")
-    val boughtAt = long("bought_at")
+    val boughtAt = offsetDateTime("bought_at")
 }

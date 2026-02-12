@@ -1,8 +1,8 @@
 package dev.slne.surf.shop.api.deal
 
-import dev.slne.surf.surfapi.bukkit.api.SurfBukkitApi
 import org.bukkit.Bukkit
-import java.util.UUID
+import java.time.OffsetDateTime
+import java.util.*
 
 data class Deal(
     val dealInternalId: ULong,
@@ -10,7 +10,7 @@ data class Deal(
     val auctionInternalId: ULong,
     val amount: Int,
     val boughtBy: UUID,
-    val boughtAt: Long
+    val boughtAt: OffsetDateTime
 ) {
     val boughtByName get() = Bukkit.getOfflinePlayer(boughtBy).name
 }

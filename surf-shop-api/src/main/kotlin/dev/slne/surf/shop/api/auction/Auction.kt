@@ -3,6 +3,7 @@ package dev.slne.surf.shop.api.auction
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
+import java.time.OffsetDateTime
 import java.util.*
 
 data class Auction(
@@ -12,7 +13,7 @@ data class Auction(
     val storedItemCount: Int,
     val pricePerItem: Int,
     val seller: UUID,
-    val createdAt: Long, // TODO: Change to OffsetDateTime!  ~ red
+    val createdAt: OffsetDateTime,
 ) {
     var isBlocked: Boolean = false
 

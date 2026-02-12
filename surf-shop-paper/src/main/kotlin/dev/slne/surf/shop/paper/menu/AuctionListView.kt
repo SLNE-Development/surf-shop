@@ -19,6 +19,7 @@ import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
+import dev.slne.surf.surfapi.core.api.util.dateTimeFormatter
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.Context
@@ -74,6 +75,20 @@ object AuctionListView : View() {
         buildLore {
             emptyLine()
             line { auctionColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
+
+            line {
+                if (state == AuctionSortType.ITEM_NAME) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    auctionColored("Itemname")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Itemname")
+                }
+            }
+
             line {
                 if (state == AuctionSortType.PRICE_ASC) {
                     appendSpace()
@@ -316,7 +331,7 @@ fun createAuctionItem(auction: Auction, viewer: UUID) = auction.item.clone().app
         spacer("-")
         appendSpace()
         auctionColored("Erstellt am: ")
-        variableValue(auction.createdAt)
+        variableValue(auction.createdAt.format(dateTimeFormatter))
     })
 
     newEntries.add(Component.empty())
@@ -400,6 +415,7 @@ private fun getLoadedAuctionsSortedFiltered(
         AuctionSortType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
         AuctionSortType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
         AuctionSortType.MOST_DEALS -> filtered.sortedByDescending { it.dealCount }
+        AuctionSortType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
     }
 }
 

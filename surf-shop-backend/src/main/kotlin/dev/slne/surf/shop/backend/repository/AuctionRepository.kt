@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
 import org.bukkit.inventory.ItemStack
+import java.time.OffsetDateTime
 import java.util.*
 
 val auctionRepository = AuctionRepository()
@@ -31,7 +32,7 @@ class AuctionRepository {
         storedItemCount: Int,
         pricePerItem: Int,
         seller: UUID,
-        createdAt: Long
+        createdAt: OffsetDateTime
     ): Auction = suspendTransaction {
         AuctionsTable.insertReturning {
             it[this.auctionUuid] = UUID.randomUUID()

@@ -79,7 +79,7 @@ object CreateAuctionView : View() {
                 )
             }
         } else {
-            render.layoutSlot('I', itemState.get(render).apply {
+            render.layoutSlot('I', itemState.get(render).clone().apply {
                 amount = 1
             }).onClick { context ->
                 context.playGeneralClickSound()
