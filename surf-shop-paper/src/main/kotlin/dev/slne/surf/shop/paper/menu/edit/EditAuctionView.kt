@@ -7,8 +7,8 @@ import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -59,7 +59,7 @@ object EditAuctionView : View() {
         }).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                PriceSelectView::class.java,
+                PriceEditView::class.java,
                 ImmutableMap.of(
                     "edit-auction", auctionState.get(render),
                     "edit-price", auctionState.get(render).pricePerItem
@@ -117,15 +117,9 @@ object EditAuctionView : View() {
         }
     }
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName {
-            spacer("")
-        }
-    }
-
     private fun saveItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            auctionColored("Bearbeitung speichern")
+            auctionColored("Speichern")
         }
 
         buildLore {
