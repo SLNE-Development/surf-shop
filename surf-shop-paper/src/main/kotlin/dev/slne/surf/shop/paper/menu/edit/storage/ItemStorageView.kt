@@ -60,7 +60,7 @@ object ItemStorageView : View() {
                 ItemStorageRemoveView::class.java,
                 ImmutableMap.of(
                     "edit-auction", auctionState.get(render),
-                    "edit-amount", auctionState.get(render).storedItemCount
+                    "edit-amount", 64
                 )
             )
         }

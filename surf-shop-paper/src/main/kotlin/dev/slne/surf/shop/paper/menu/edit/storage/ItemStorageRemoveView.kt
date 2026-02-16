@@ -177,7 +177,11 @@ object ItemStorageRemoveView : View() {
         displayName {
             auctionColored("Anzahl: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(localAmountState.get(context))
+            auctionColored((" ${localAmountState.get(context)}/" + auctionService.loadedAuctions.find {
+                it.auctionUuid == auctionState.get(
+                    context
+                )?.auctionUuid
+            }?.storedItemCount))
         }
     }
 
