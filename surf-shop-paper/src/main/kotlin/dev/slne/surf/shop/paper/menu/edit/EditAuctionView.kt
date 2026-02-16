@@ -71,7 +71,15 @@ object EditAuctionView : View() {
             amount = 1
         })
 
-        render.layoutSlot('F', insertItemsItem)
+        render.layoutSlot('F', insertItemsItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(
+                ItemStorageView::class.java,
+                ImmutableMap.of(
+                    "edit-auction", auctionState.get(render)
+                )
+            )
+        }
 
         render.layoutSlot('C', saveItem(render)).onClick { context ->
             context.playGeneralClickSound()

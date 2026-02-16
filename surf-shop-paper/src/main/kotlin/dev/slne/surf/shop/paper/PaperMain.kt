@@ -9,6 +9,7 @@ import dev.slne.surf.shop.paper.command.auctionCommand
 import dev.slne.surf.shop.paper.menu.AuctionListView
 import dev.slne.surf.shop.paper.menu.CreateAuctionView
 import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
+import dev.slne.surf.shop.paper.menu.edit.ItemStorageView
 import dev.slne.surf.shop.paper.menu.edit.PriceEditView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
@@ -38,6 +39,7 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(PriceSelectView)
         viewFrame.with(EditAuctionView)
         viewFrame.with(PriceEditView)
+        viewFrame.with(ItemStorageView)
     }
 
     override suspend fun onEnableAsync() {
