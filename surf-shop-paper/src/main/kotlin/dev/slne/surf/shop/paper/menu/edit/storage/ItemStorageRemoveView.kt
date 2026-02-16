@@ -126,30 +126,97 @@ object ItemStorageRemoveView : View() {
                 }
 
                 if (updatedAuction.storedItemCount < toRemove) {
+                    val amountToGive = updatedAuction.storedItemCount
+
+                    withContext(plugin.entityDispatcher(context.player)) {
+                        val player = context.player
+                        val owner = context.player.uniqueId
+                        var remainingAmount = amountToGive
+                        val maxStackSize = updatedAuction.item.maxStackSize
+
+                        while (remainingAmount > 0) {
+                            val giveNow = minOf(maxStackSize, remainingAmount)
+
+                            val stack = updatedAuction.item.clone()
+                            stack.amount = giveNow
+
+                            val leftover = player.inventory.addItem(stack)
+
+                            if (leftover.isNotEmpty()) {
+                                leftover.values.forEach { rest ->
+                                    val dropped =
+                                        player.world.dropItemNaturally(player.location, rest)
+                                    dropped.owner = owner
+                                }
+                            }
+
+                            remainingAmount -= giveNow
+                        }
+
+                        player.playSound(true) {
+                            type(Sound.ENTITY_CHICKEN_EGG)
+                        }
+                    }
+
                     auctionService.saveAuction(updatedAuction.copy(storedItemCount = 0))
 
                     context.player.sendText {
                         appendSuccessPrefix()
                         success("Die Auktion wurde aktualisiert. Es konnten aber nur ")
-                        variableValue(updatedAuction.storedItemCount)
+                        variableValue(amountToGive)
                         success(" von ")
                         variableValue(toRemove)
-                        success(" Items entfernt werden, da die Auktion nur noch ")
-                        variableValue(updatedAuction.storedItemCount)
-                        success(" Items gespeichert hatte.")
+                        success(" Items entnommen werden, da die Auktion nur noch ")
+                        variableValue(amountToGive)
+                        success(" Items gelagert hatte.")
                     }
                 } else {
-                    auctionService.saveAuction(updatedAuction.copy(storedItemCount = updatedAuction.storedItemCount - toRemove))
+                    withContext(plugin.entityDispatcher(context.player)) {
+                        val player = context.player
+                        val owner = context.player.uniqueId
+                        var remainingAmount = toRemove
+                        val maxStackSize = updatedAuction.item.maxStackSize
+
+                        while (remainingAmount > 0) {
+                            val giveNow = minOf(maxStackSize, remainingAmount)
+
+                            val stack = updatedAuction.item.clone()
+                            stack.amount = giveNow
+
+                            val leftover = player.inventory.addItem(stack)
+
+                            if (leftover.isNotEmpty()) {
+                                leftover.values.forEach { rest ->
+                                    val dropped =
+                                        player.world.dropItemNaturally(player.location, rest)
+                                    dropped.owner = owner
+                                }
+                            }
+
+                            remainingAmount -= giveNow
+                        }
+
+                        player.playSound(true) {
+                            type(Sound.ENTITY_CHICKEN_EGG)
+                        }
+                    }
+
+                    auctionService.saveAuction(
+                        updatedAuction.copy(
+                            storedItemCount = updatedAuction.storedItemCount - toRemove
+                        )
+                    )
 
                     context.player.sendText {
                         appendSuccessPrefix()
                         success("Die Auktion wurde aktualisiert und ")
                         variableValue(toRemove)
-                        success(" Items wurden entfernt. Es sind nun noch ")
+                        success(" Items wurden entnommen. Es sind nun noch ")
                         variableValue(updatedAuction.storedItemCount - toRemove)
-                        success(" Items in der Auktion gespeichert.")
+                        success(" Items in der Auktion gelagert.")
                     }
                 }
+
 
                 auctionService.unblockAuction(updatedAuction)
 
