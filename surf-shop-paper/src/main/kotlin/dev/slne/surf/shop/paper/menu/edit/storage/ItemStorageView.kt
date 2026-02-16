@@ -43,7 +43,13 @@ object ItemStorageView : View() {
             )
         }
 
-        render.layoutSlot('A', insertItemsItem)
+        render.layoutSlot('A', insertItemsItem).onClick { context ->
+            viewFrame.open(
+                ItemStorageInsertView::class.java,
+                context.player,
+                ImmutableMap.of("edit-auction", auctionState.get(render))
+            )
+        }
         render.layoutSlot('C', removeItemsItem)
     }
 
