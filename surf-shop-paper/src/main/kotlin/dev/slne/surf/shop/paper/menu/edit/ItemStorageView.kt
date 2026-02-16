@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu.edit
 
+import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.menu.outlineItem
@@ -7,6 +8,7 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -32,7 +34,12 @@ object ItemStorageView : View() {
 
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.back()
+
+            viewFrame.open(
+                EditAuctionView::class.java,
+                context.player,
+                ImmutableMap.of("edit-auction", auctionState.get(render))
+            )
         }
 
         render.layoutSlot('A', insertItemsItem)
@@ -47,7 +54,7 @@ object ItemStorageView : View() {
 
     private val insertItemsItem = MenuHeads.PLUS.clone().apply {
         displayName {
-            error("Items einlagern")
+            success("Items einlagern")
         }
     }
 
