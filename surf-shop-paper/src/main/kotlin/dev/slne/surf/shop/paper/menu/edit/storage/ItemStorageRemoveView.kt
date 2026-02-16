@@ -71,7 +71,7 @@ object ItemStorageRemoveView : View() {
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localAmountState.set(max(0, localAmountState.get(render) - 50), render)
+            localAmountState.set(max(0, localAmountState.get(render) - 64), render)
             context.update()
 
             context.player.playSound(true) {
@@ -89,7 +89,7 @@ object ItemStorageRemoveView : View() {
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            localAmountState.set(localAmountState.get(render) + 50, render)
+            localAmountState.set(localAmountState.get(render) + 64, render)
             context.update()
 
             context.player.playSound(true) {
@@ -177,7 +177,7 @@ object ItemStorageRemoveView : View() {
         displayName {
             auctionColored("Anzahl: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored((" ${localAmountState.get(context)}/" + auctionService.loadedAuctions.find {
+            auctionColored(("${localAmountState.get(context)}/" + auctionService.loadedAuctions.find {
                 it.auctionUuid == auctionState.get(
                     context
                 )?.auctionUuid
@@ -190,7 +190,7 @@ object ItemStorageRemoveView : View() {
     }
 
     private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+50") }
+        displayName { auctionColored("+64") }
     }
 
     private val minusOne = MenuHeads.MINUS.clone().apply {
@@ -198,7 +198,7 @@ object ItemStorageRemoveView : View() {
     }
 
     private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-50") }
+        displayName { auctionColored("-64") }
     }
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
