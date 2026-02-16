@@ -9,6 +9,7 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import me.devnatan.inventoryframework.View
@@ -22,6 +23,7 @@ import org.bukkit.inventory.ItemStack
 
 object PlayerInventorySelectItemView : View() {
     private val priceState: State<Int> = initialState("create-price")
+    private val itemState = initialState<ItemStack>("create-item")
 
     private val paginationState = buildComputedPaginationState<ItemStack> { context ->
         context.player.inventory.storageContents.filterNotNull().toMutableList()
@@ -62,12 +64,16 @@ object PlayerInventorySelectItemView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        val pagination = paginationState.get(render)
         render.layoutSlot('X', outlineItem)
         render.layoutSlot('Q', explainItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.back()
+            viewFrame.open(
+                CreateAuctionView::class.java, context.player, ImmutableMap.of(
+                    "create-price", priceState.get(context),
+                    "create-item", itemState.get(context)
+                )
+            )
         }
     }
 
