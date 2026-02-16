@@ -47,6 +47,7 @@ fun createEditSpecificRemoveAmountPriceDialog(
                         viewFrame.open(
                             ItemStorageRemoveView::class.java, player, ImmutableMap.of(
                                 "edit-auction", auction,
+                                "edit-amount", 0
                             )
                         )
                     }
@@ -58,13 +59,14 @@ fun createEditSpecificRemoveAmountPriceDialog(
 
                 action {
                     customPlayerClick { response, player ->
-                        val price = response.getText("amount")?.trim()?.toIntOrNull() ?: 0
+                        val amount = response.getText("amount")?.trim()?.toIntOrNull() ?: 0
 
                         player.closeDialog()
 
                         viewFrame.open(
                             ItemStorageRemoveView::class.java, player, ImmutableMap.of(
-                                "edit-auction", auction.copy(pricePerItem = price)
+                                "edit-auction", auction,
+                                "edit-amount", amount
                             )
                         )
                     }
