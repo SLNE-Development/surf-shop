@@ -151,6 +151,8 @@ object ItemStorageRemoveView : View() {
                     }
                 }
 
+                auctionService.unblockAuction(updatedAuction)
+
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.openForPlayer(
                         ItemStorageView::class.java,
