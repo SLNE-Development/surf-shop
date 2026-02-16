@@ -72,15 +72,16 @@ object EditAuctionView : View() {
             amount = 1
         })
 
-        render.layoutSlot('F', insertItemsItem).onClick { context ->
-            context.playGeneralClickSound()
-            context.openForPlayer(
-                ItemStorageView::class.java,
-                ImmutableMap.of(
-                    "edit-auction", auctionState.get(render)
+        render.layoutSlot('F', storageItem(auctionState.get(render).storedItemCount))
+            .onClick { context ->
+                context.playGeneralClickSound()
+                context.openForPlayer(
+                    ItemStorageView::class.java,
+                    ImmutableMap.of(
+                        "edit-auction", auctionState.get(render)
+                    )
                 )
-            )
-        }
+            }
 
         render.layoutSlot('C', saveItem(render)).onClick { context ->
             context.playGeneralClickSound()
@@ -122,6 +123,7 @@ object EditAuctionView : View() {
         }
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
+            context.player.closeInventory()
 
             viewFrame.open(
                 AuctionListView::class.java,
@@ -166,9 +168,22 @@ object EditAuctionView : View() {
         }
     }
 
-    private val insertItemsItem = buildItem(Material.CHEST) {
+    private fun storageItem(amount: Int) = buildItem(Material.CHEST) {
         displayName {
-            auctionColored("Items lagern")
+            auctionColored("Item Lager")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                auctionColored("Auf Lager: ")
+
+                if (amount <= 0) {
+                    error("Ausverkauft")
+                } else {
+                    variableValue("$amount Items")
+                }
+            }
         }
     }
 

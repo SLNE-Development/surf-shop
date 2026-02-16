@@ -39,4 +39,16 @@ data class Auction(
             }
         }
     }
+
+    companion object {
+        fun empty() = Auction(
+            internalId = 0uL,
+            auctionUuid = UUID.randomUUID(),
+            item = ItemStack.empty(),
+            storedItemCount = 0,
+            pricePerItem = 0,
+            seller = UUID.randomUUID(),
+            createdAt = OffsetDateTime.MIN
+        )
+    }
 }

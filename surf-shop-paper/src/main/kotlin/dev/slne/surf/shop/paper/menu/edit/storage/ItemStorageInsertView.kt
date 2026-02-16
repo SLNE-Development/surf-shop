@@ -13,18 +13,19 @@ import dev.slne.surf.shop.paper.util.translatable
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
+import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.inventory.ItemStack
 
 object ItemStorageInsertView : View() {
     private val auctionState = initialState<Auction>("edit-auction")
+    private val localAuctionState: MutableState<Auction> = mutableState(Auction.empty())
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -38,30 +39,33 @@ object ItemStorageInsertView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
+        localAuctionState.set(auctionState.get(render), render)
+
         render.layoutSlot('O', outlineItem)
 
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
 
-            viewFrame.open(
+            context.openForPlayer(
                 ItemStorageView::class.java,
-                context.player,
                 ImmutableMap.of("edit-auction", auctionState.get(render))
             )
         }
 
-        render.layoutSlot('S').onClick { context ->
+        render.layoutSlot('S', ItemStack.empty()).onClick { context ->
             context.isCancelled = false
         }
 
-        render.layoutSlot('Q', explainItem)
+        render.layoutSlot('Q').renderWith {
+            explainItem(localAuctionState.get(render).storedItemCount)
+        }.watch(localAuctionState)
     }
 
     override fun onClick(click: SlotClickContext) {
         if (click.clickedContainer.isEntityContainer) {
             if (click.isShiftLeftClick) {
-                val item = click.item
-                val auction = auctionState.get(click)
+                val item = click.item ?: return
+                val auction = localAuctionState.get(click)
 
                 if (!item.isSimilar(auction.item)) {
                     return
@@ -72,7 +76,11 @@ object ItemStorageInsertView : View() {
 
                 plugin.launch {
                     val amount = item.amount
-                    auctionService.saveAuction(auction.copy(storedItemCount = auction.storedItemCount + amount))
+                    val newAuction =
+                        auction.copy(storedItemCount = auction.storedItemCount + amount)
+                    localAuctionState.set(newAuction, click)
+
+                    auctionService.saveAuction(newAuction)
 
                     click.player.sendText {
                         appendSuccessPrefix()
@@ -92,7 +100,7 @@ object ItemStorageInsertView : View() {
         }
     }
 
-    private val explainItem = MenuHeads.QUESTION.clone().apply {
+    private fun explainItem(amount: Int) = MenuHeads.QUESTION.clone().apply {
         displayName {
             auctionColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
         }
@@ -114,6 +122,12 @@ object ItemStorageInsertView : View() {
                 appendSpace()
                 appendSpace()
                 auctionColored("und steht zum Verkauf bereit.")
+            }
+            emptyLine()
+            line {
+                spacer("Derzeit sind ")
+                variableValue("$amount Items")
+                spacer(" im Lager.")
             }
         }
     }

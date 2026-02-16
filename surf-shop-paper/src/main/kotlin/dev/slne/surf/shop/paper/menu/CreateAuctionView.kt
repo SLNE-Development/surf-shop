@@ -144,6 +144,7 @@ object CreateAuctionView : View() {
         }
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
+            context.player.closeInventory()
             viewFrame.open(AuctionListView::class.java, context.player)
         }
     }

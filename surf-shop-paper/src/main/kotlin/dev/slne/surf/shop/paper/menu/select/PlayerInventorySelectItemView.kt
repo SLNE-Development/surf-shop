@@ -68,6 +68,7 @@ object PlayerInventorySelectItemView : View() {
         render.layoutSlot('Q', explainItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
+            context.player.closeInventory()
             viewFrame.open(
                 CreateAuctionView::class.java, context.player, ImmutableMap.of(
                     "create-price", priceState.get(context),

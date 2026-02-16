@@ -35,6 +35,7 @@ object ItemStorageView : View() {
 
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
+            context.player.closeInventory()
 
             viewFrame.open(
                 EditAuctionView::class.java,
@@ -44,12 +45,15 @@ object ItemStorageView : View() {
         }
 
         render.layoutSlot('A', insertItemsItem).onClick { context ->
-            viewFrame.open(
+            context.playGeneralClickSound()
+            context.openForPlayer(
                 ItemStorageInsertView::class.java,
-                context.player,
-                ImmutableMap.of("edit-auction", auctionState.get(render))
+                ImmutableMap.of(
+                    "edit-auction", auctionState.get(render)
+                )
             )
         }
+
         render.layoutSlot('C', removeItemsItem)
     }
 
