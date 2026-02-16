@@ -14,18 +14,23 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
+import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
+import me.devnatan.inventoryframework.context.CloseContext
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
 object ItemStorageInsertView : View() {
     private val auctionState = initialState<Auction>("edit-auction")
     private val localAuctionState: MutableState<Auction> = mutableState(Auction.empty())
+    private val itemInsertedState = mutableState(0)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -81,22 +86,43 @@ object ItemStorageInsertView : View() {
                     localAuctionState.set(newAuction, click)
 
                     auctionService.saveAuction(newAuction)
+                    itemInsertedState.set(itemInsertedState.get(click) + amount, click)
 
-                    click.player.sendText {
+                    click.player.sendActionBar(buildText {
                         appendSuccessPrefix()
                         success("Du hast ")
-                        variableValue("${amount}x ")
-                        translatable(item.translationKey())
+                        variableValue("$amount Items")
                         success(" eingelagert.")
+                    })
+
+                    click.player.playSound(true) {
+                        type(Sound.ENTITY_PLAYER_LEVELUP)
                     }
                 }
             }
         }
     }
 
+    override fun onClose(close: CloseContext) {
+        val added = itemInsertedState.get(close)
+        if (added > 0) {
+            close.player.sendText {
+                appendSuccessPrefix()
+                success("Du hast ")
+                variableValue("${added}x ")
+                translatable(auctionState.get(close).item.type.translationKey())
+                success(" eingelagert.")
+            }
+
+            close.player.playSound(true) {
+                type(Sound.ENTITY_VILLAGER_YES)
+            }
+        }
+    }
+
     private val backItem = MenuHeads.CROSS.clone().apply {
         displayName {
-            error("Abbrechen")
+            error("Zurück")
         }
     }
 

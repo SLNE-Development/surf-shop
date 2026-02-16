@@ -54,7 +54,16 @@ object ItemStorageView : View() {
             )
         }
 
-        render.layoutSlot('C', removeItemsItem)
+        render.layoutSlot('C', removeItemsItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(
+                ItemStorageRemoveView::class.java,
+                ImmutableMap.of(
+                    "edit-auction", auctionState.get(render),
+                    "edit-amount", auctionState.get(render).storedItemCount
+                )
+            )
+        }
     }
 
     private val backItem = MenuHeads.CROSS.clone().apply {
