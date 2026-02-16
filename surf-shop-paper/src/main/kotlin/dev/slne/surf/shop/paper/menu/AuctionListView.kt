@@ -229,7 +229,13 @@ object AuctionListView : View() {
             .onClick { context ->
                 context.playGeneralClickSound()
 
-                selectedSort.set(selectedSort.get(render).next(), render)
+                if (context.isRightClick) {
+                    selectedSort.set(selectedSort.get(render).previous(), render)
+                } else {
+                    selectedSort.set(selectedSort.get(render).next(), render)
+                }
+
+
                 plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
             }
         render.layoutSlot('U', updateItem).onClick { context ->
