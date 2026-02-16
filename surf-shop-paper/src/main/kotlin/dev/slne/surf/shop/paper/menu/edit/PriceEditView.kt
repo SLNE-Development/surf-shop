@@ -51,7 +51,7 @@ object PriceEditView : View() {
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificPriceDialog(
-                    auctionState.get(render)
+                    auctionState.get(render).copy(pricePerItem = localPriceState.get(render))
                 )
             )
         }
@@ -98,7 +98,7 @@ object PriceEditView : View() {
                 EditAuctionView::class.java,
                 ImmutableMap.of(
                     "edit-auction",
-                    auctionState.get(render)
+                    auctionState.get(render).copy(pricePerItem = localPriceState.get(context))
                 )
             )
         }

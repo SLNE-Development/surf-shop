@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.paper.menu.edit
 
-import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.auction.Auction
@@ -102,7 +102,7 @@ object EditAuctionView : View() {
                     success("Die Auktion wurde aktualisiert!")
                 }
 
-                withContext(plugin.globalRegionDispatcher) {
+                withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
                     viewFrame.open(
                         AuctionListView::class.java,
