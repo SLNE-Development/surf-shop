@@ -157,7 +157,7 @@ object CreateShopView : View() {
 
     private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            shopColored("sHOP erstellen")
+            shopColored("Shop erstellen")
         }
 
         buildLore {
