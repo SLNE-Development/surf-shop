@@ -102,7 +102,7 @@ object CreateShopView : View() {
             if (item.isEmpty) {
                 context.player.sendText {
                     appendErrorPrefix()
-                    error("Du musst ein Item auswählen, um eine Auktion zu erstellen.")
+                    error("Du musst ein Item auswählen, um ein Shop zu erstellen.")
                 }
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
@@ -113,7 +113,7 @@ object CreateShopView : View() {
             if (price <= 0) {
                 context.player.sendText {
                     appendErrorPrefix()
-                    error("Du musst einen Preis pro Item festlegen, um eine Auktion zu erstellen.")
+                    error("Du musst einen Preis pro Item festlegen, um ein Shop zu erstellen.")
                 }
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
@@ -130,7 +130,7 @@ object CreateShopView : View() {
 
                 context.player.sendText {
                     appendSuccessPrefix()
-                    success("Die Auktion wurde erstellt!")
+                    success("Der Shop wurde erstellt!")
                 }
 
                 withContext(plugin.globalRegionDispatcher) {
@@ -157,7 +157,7 @@ object CreateShopView : View() {
 
     private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            shopColored("Auktion erstellen")
+            shopColored("sHOP erstellen")
         }
 
         buildLore {

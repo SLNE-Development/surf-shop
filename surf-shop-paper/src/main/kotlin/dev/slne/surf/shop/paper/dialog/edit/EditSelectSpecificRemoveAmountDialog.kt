@@ -19,10 +19,10 @@ fun createEditSpecificRemoveAmountPriceDialog(
         title { shopColored("Anzahl auswählen") }
         body {
             plainMessage {
-                info("Hier kannst du die Anzahl angeben, die du an Items auszahlen möchtest. Diese Anzahl wird von der Gesamtanzahl der Auktion abgezogen.")
+                info("Hier kannst du die Anzahl angeben, die du an Items auszahlen möchtest.")
                 appendNewline(2)
                 appendWarningPrefix()
-                error("Bitte beachte, das die Anzahl nicht kleiner als 1 sein darf. Diese Anzahl wird von der Gesamtanzahl der Auktion abgezogen.")
+                error("Bitte beachte, das die Anzahl nicht kleiner als 1 sein darf.")
             }
 
             input {

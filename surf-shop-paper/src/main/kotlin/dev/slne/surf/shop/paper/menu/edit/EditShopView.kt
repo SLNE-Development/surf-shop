@@ -36,7 +36,7 @@ object EditShopView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                shopColored("Auktion bearbeiten".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Shop bearbeiten".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
@@ -92,7 +92,7 @@ object EditShopView : View() {
             if (price <= 0) {
                 context.player.sendText {
                     appendErrorPrefix()
-                    error("Du kannst den Preis der Auktion nicht entfernen.")
+                    error("Du kannst den Preis des Shops nicht entfernen.")
                 }
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
@@ -109,7 +109,7 @@ object EditShopView : View() {
 
                 context.player.sendText {
                     appendSuccessPrefix()
-                    success("Die Auktion wurde aktualisiert!")
+                    success("Der Shop wurde aktualisiert!")
                 }
 
                 withContext(plugin.entityDispatcher(context.player)) {

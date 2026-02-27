@@ -111,7 +111,7 @@ object PlayerInventorySelectItemView : View() {
                 appendSpace()
                 appendSpace()
                 appendSpace()
-                shopColored("in dem du deine Auktion erstellen kannst.")
+                shopColored("in dem du deinen Shop erstellen kannst.")
             }
         }
     }

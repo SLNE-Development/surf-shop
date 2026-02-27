@@ -141,7 +141,7 @@ object ItemStorageInsertView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                shopColored("Das ausgewählte Item wird sofort in deine Auktion eingelagert")
+                shopColored("Das ausgewählte Item wird sofort in deinen Shop eingelagert")
             }
             line {
                 appendSpace()

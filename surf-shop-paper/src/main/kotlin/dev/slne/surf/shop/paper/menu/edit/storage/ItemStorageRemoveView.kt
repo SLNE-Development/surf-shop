@@ -162,11 +162,11 @@ object ItemStorageRemoveView : View() {
 
                     context.player.sendText {
                         appendSuccessPrefix()
-                        success("Die Auktion wurde aktualisiert. Es konnten aber nur ")
+                        success("Der Shop wurde aktualisiert. Es konnten aber nur ")
                         variableValue(amountToGive)
                         success(" von ")
                         variableValue(toRemove)
-                        success(" Items entnommen werden, da die Auktion nur noch ")
+                        success(" Items entnommen werden, da der Shop nur noch ")
                         variableValue(amountToGive)
                         success(" Items gelagert hatte.")
                     }
@@ -209,11 +209,11 @@ object ItemStorageRemoveView : View() {
 
                     context.player.sendText {
                         appendSuccessPrefix()
-                        success("Die Auktion wurde aktualisiert und ")
+                        success("Der Shop wurde aktualisiert und ")
                         variableValue(toRemove)
                         success(" Items wurden entnommen. Es sind nun noch ")
                         variableValue(updatedShop.storedItemCount - toRemove)
-                        success(" Items in der Auktion gelagert.")
+                        success(" Items in den Shop gelagert.")
                     }
                 }
 

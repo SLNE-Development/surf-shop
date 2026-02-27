@@ -45,7 +45,7 @@ object ShopListView : View() {
 
     private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
         displayName {
-            shopColored("Auktion erstellen")
+            shopColored("Shop erstellen")
         }
     }
 
@@ -205,7 +205,7 @@ object ShopListView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                shopColored("Auktionen".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Shops".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(6)
             .layout(
@@ -344,7 +344,7 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
 
     if (shop.seller == viewer) {
         newEntries.add(buildText {
-            spacer("Klicke, um die Auktion zu bearbeiten.")
+            spacer("Klicke, um den Shop zu bearbeiten.")
         })
 
         newEntries.add(buildText {
@@ -352,11 +352,11 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
             displayKey("key.sneak")
             spacer(" + ")
             displayKey("key.mouse.left")
-            spacer(" um die Auktion zu löschen.")
+            spacer(" um den Shop zu löschen.")
         })
     } else {
         newEntries.add(buildText {
-            spacer("Klicke, um die Auktion zu kaufen.")
+            spacer("Klicke, um Items zu kaufen.")
         })
     }
 
