@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.paper.dialog.edit
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.paper.menu.auctionColored
-import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.surfapi.bukkit.api.dialog.base
 import dev.slne.surf.surfapi.bukkit.api.dialog.builder.actionButton
 import dev.slne.surf.surfapi.bukkit.api.dialog.dialog
@@ -13,10 +13,10 @@ import dev.slne.surf.surfapi.core.api.messages.adventure.appendNewline
 
 @Suppress("UnstableApiUsage")
 fun createEditSpecificPriceDialog(
-    auction: Auction
+    shop: Shop
 ) = dialog {
     base {
-        title { auctionColored("Item Preis festgelegen") }
+        title { shopColored("Item Preis festgelegen") }
         body {
             plainMessage {
                 info("Hier kannst du einen Preis für das Item festlegen, welches verkaufst.")
@@ -27,9 +27,9 @@ fun createEditSpecificPriceDialog(
 
             input {
                 text("price") {
-                    label { auctionColored("Preis pro Item") }
+                    label { shopColored("Preis pro Item") }
                     width(300)
-                    initial(auction.pricePerItem.toString())
+                    initial(shop.pricePerItem.toString())
                     maxLength(64)
                 }
             }
@@ -45,8 +45,8 @@ fun createEditSpecificPriceDialog(
                     customPlayerClick { _, player ->
                         player.closeDialog()
                         viewFrame.open(
-                            EditAuctionView::class.java, player, ImmutableMap.of(
-                                "edit-auction", auction,
+                            EditShopView::class.java, player, ImmutableMap.of(
+                                "edit-shop", shop,
                             )
                         )
                     }
@@ -63,8 +63,8 @@ fun createEditSpecificPriceDialog(
                         player.closeDialog()
 
                         viewFrame.open(
-                            EditAuctionView::class.java, player, ImmutableMap.of(
-                                "edit-auction", auction.copy(pricePerItem = price)
+                            EditShopView::class.java, player, ImmutableMap.of(
+                                "edit-shop", shop.copy(pricePerItem = price)
                             )
                         )
                     }

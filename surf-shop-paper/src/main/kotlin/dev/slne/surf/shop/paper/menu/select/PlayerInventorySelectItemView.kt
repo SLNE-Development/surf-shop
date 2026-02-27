@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.paper.menu.select
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.paper.menu.CreateAuctionView
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
@@ -35,7 +35,7 @@ object PlayerInventorySelectItemView : View() {
             }
 
             context.openForPlayer(
-                CreateAuctionView::class.java,
+                CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
                     item,
@@ -48,7 +48,7 @@ object PlayerInventorySelectItemView : View() {
 
     override fun onInit(config: ViewConfigBuilder) {
         config.titleBuilder {
-            auctionColored("Item wählen".toSmallCaps(), TextDecoration.BOLD)
+            shopColored("Item wählen".toSmallCaps(), TextDecoration.BOLD)
         }
             .size(6)
             .layout(
@@ -70,7 +70,7 @@ object PlayerInventorySelectItemView : View() {
             context.playGeneralClickSound()
             context.player.closeInventory()
             viewFrame.open(
-                CreateAuctionView::class.java, context.player, ImmutableMap.of(
+                CreateShopView::class.java, context.player, ImmutableMap.of(
                     "create-price", priceState.get(context),
                     "create-item", itemState.get(context)
                 )
@@ -92,7 +92,7 @@ object PlayerInventorySelectItemView : View() {
 
     private val explainItem = MenuHeads.QUESTION.clone().apply {
         displayName {
-            auctionColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
+            shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
         }
 
         buildLore {
@@ -100,18 +100,18 @@ object PlayerInventorySelectItemView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Klicke auf ein Item, um es auszuwählen.")
+                shopColored("Klicke auf ein Item, um es auszuwählen.")
             }
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Nach der Auswahl kommst du in das Vorschau-Menü,")
+                shopColored("Nach der Auswahl kommst du in das Vorschau-Menü,")
             }
             line {
                 appendSpace()
                 appendSpace()
                 appendSpace()
-                auctionColored("in dem du deine Auktion erstellen kannst.")
+                shopColored("in dem du deine Auktion erstellen kannst.")
             }
         }
     }

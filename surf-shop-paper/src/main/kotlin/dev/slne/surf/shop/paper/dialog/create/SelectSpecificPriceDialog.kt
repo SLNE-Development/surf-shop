@@ -1,8 +1,8 @@
 package dev.slne.surf.shop.paper.dialog.create
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.paper.menu.CreateAuctionView
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.surfapi.bukkit.api.dialog.base
 import dev.slne.surf.surfapi.bukkit.api.dialog.builder.actionButton
 import dev.slne.surf.surfapi.bukkit.api.dialog.dialog
@@ -17,7 +17,7 @@ fun createSpecificPriceDialog(
     initialPrice: Int
 ) = dialog {
     base {
-        title { auctionColored("Item Preis auswählen") }
+        title { shopColored("Item Preis auswählen") }
         body {
             plainMessage {
                 info("Hier kannst du einen Preis für das Item festlegen, welches du verkaufen möchtest.")
@@ -28,7 +28,7 @@ fun createSpecificPriceDialog(
 
             input {
                 text("price") {
-                    label { auctionColored("Preis pro Item") }
+                    label { shopColored("Preis pro Item") }
                     width(300)
                     initial(initialPrice.toString())
                     maxLength(64)
@@ -46,7 +46,7 @@ fun createSpecificPriceDialog(
                     customPlayerClick { _, player ->
                         player.closeDialog()
                         viewFrame.open(
-                            CreateAuctionView::class.java, player, ImmutableMap.of(
+                            CreateShopView::class.java, player, ImmutableMap.of(
                                 "create-item", itemStack,
                                 "create-price", initialPrice
                             )
@@ -65,7 +65,7 @@ fun createSpecificPriceDialog(
                         player.closeDialog()
 
                         viewFrame.open(
-                            CreateAuctionView::class.java, player, ImmutableMap.of(
+                            CreateShopView::class.java, player, ImmutableMap.of(
                                 "create-item", itemStack,
                                 "create-price", price
                             )

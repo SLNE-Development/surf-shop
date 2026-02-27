@@ -2,9 +2,9 @@ package dev.slne.surf.shop.paper.menu.select
 
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.paper.dialog.create.createSpecificPriceDialog
-import dev.slne.surf.shop.paper.menu.CreateAuctionView
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -29,7 +29,7 @@ object PriceSelectView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Preis festlegen".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Preis festlegen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout(
@@ -97,7 +97,7 @@ object PriceSelectView : View() {
         render.layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateAuctionView::class.java,
+                CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
                     itemState.get(render),
@@ -118,33 +118,33 @@ object PriceSelectView : View() {
 
     private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
         displayName {
-            auctionColored("Preis: ", TextDecoration.BOLD)
+            shopColored("Preis: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(localPriceState.get(context))
+            shopColored(localPriceState.get(context))
         }
     }
 
     private val plusOne = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+1") }
+        displayName { shopColored("+1") }
     }
 
     private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+50") }
+        displayName { shopColored("+50") }
     }
 
     private val minusOne = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-1") }
+        displayName { shopColored("-1") }
     }
 
     private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-50") }
+        displayName { shopColored("-50") }
     }
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
-        displayName { auctionColored("Übernehmen") }
+        displayName { shopColored("Übernehmen") }
     }
 
     private val ownItem = MenuHeads.DOLLAR.clone().apply {
-        displayName { auctionColored("Eigenen Preis eingeben") }
+        displayName { shopColored("Eigenen Preis eingeben") }
     }
 }

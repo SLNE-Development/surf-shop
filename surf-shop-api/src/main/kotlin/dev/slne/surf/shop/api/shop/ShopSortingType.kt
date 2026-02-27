@@ -1,6 +1,6 @@
-package dev.slne.surf.shop.api.auction
+package dev.slne.surf.shop.api.shop
 
-enum class AuctionSortType {
+enum class ShopSortingType {
     ITEM_NAME,
     PRICE_ASC,
     PRICE_DESC,

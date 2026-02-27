@@ -4,8 +4,8 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.ResultRow
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.insertReturning
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.selectAll
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.api.deal.Deal
+import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.table.DealsTable
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import it.unimi.dsi.fastutil.objects.ObjectSet
@@ -25,14 +25,14 @@ class DealRepository {
     }
 
     suspend fun buy(
-        auction: Auction,
+        shop: Shop,
         amount: Int,
         buyer: UUID,
         boughtAt: OffsetDateTime
     ): Deal = suspendTransaction {
         DealsTable.insertReturning {
             it[this.dealUuid] = UUID.randomUUID()
-            it[this.auctionInternalId] = auction.internalId
+            it[this.shopInternalId] = shop.internalId
             it[this.amount] = amount
             it[this.boughtBy] = buyer
             it[this.boughtAt] = boughtAt
@@ -44,7 +44,7 @@ class DealRepository {
     private fun createDeal(row: ResultRow) = Deal(
         dealInternalId = row[DealsTable.id].value,
         dealUuid = row[DealsTable.dealUuid],
-        auctionInternalId = row[DealsTable.auctionInternalId],
+        shopInternalId = row[DealsTable.shopInternalId],
         amount = row[DealsTable.amount],
         boughtBy = row[DealsTable.boughtBy],
         boughtAt = row[DealsTable.boughtAt]

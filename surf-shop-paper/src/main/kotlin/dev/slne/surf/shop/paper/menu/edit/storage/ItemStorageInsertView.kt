@@ -2,11 +2,11 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.core.service.auctionService
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.translatable
@@ -28,14 +28,14 @@ import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
 object ItemStorageInsertView : View() {
-    private val auctionState = initialState<Auction>("edit-auction")
-    private val localAuctionState: MutableState<Auction> = mutableState(Auction.empty())
+    private val shopState = initialState<Shop>("edit-shop")
+    private val localShopState: MutableState<Shop> = mutableState(Shop.empty())
     private val itemInsertedState = mutableState(0)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Items einlagern".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Items einlagern".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout("OOOOQOOOO", "OSSSSSSSO", "OSSSSSSSO", "OSSSSSSSO", "OOOOBOOOO")
@@ -44,7 +44,7 @@ object ItemStorageInsertView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        localAuctionState.set(auctionState.get(render), render)
+        localShopState.set(shopState.get(render), render)
 
         render.layoutSlot('O', outlineItem)
 
@@ -53,7 +53,7 @@ object ItemStorageInsertView : View() {
 
             context.openForPlayer(
                 ItemStorageView::class.java,
-                ImmutableMap.of("edit-auction", auctionState.get(render))
+                ImmutableMap.of("edit-shop", shopState.get(render))
             )
         }
 
@@ -62,17 +62,17 @@ object ItemStorageInsertView : View() {
         }
 
         render.layoutSlot('Q').renderWith {
-            explainItem(localAuctionState.get(render).storedItemCount)
-        }.watch(localAuctionState)
+            explainItem(localShopState.get(render).storedItemCount)
+        }.watch(localShopState)
     }
 
     override fun onClick(click: SlotClickContext) {
         if (click.clickedContainer.isEntityContainer) {
             if (click.isShiftLeftClick) {
                 val item = click.item ?: return
-                val auction = localAuctionState.get(click)
+                val shop = localShopState.get(click)
 
-                if (!item.isSimilar(auction.item)) {
+                if (!item.isSimilar(shop.item)) {
                     return
                 }
 
@@ -81,11 +81,11 @@ object ItemStorageInsertView : View() {
 
                 plugin.launch {
                     val amount = item.amount
-                    val newAuction =
-                        auction.copy(storedItemCount = auction.storedItemCount + amount)
-                    localAuctionState.set(newAuction, click)
+                    val newShop =
+                        shop.copy(storedItemCount = shop.storedItemCount + amount)
+                    localShopState.set(newShop, click)
 
-                    auctionService.saveAuction(newAuction)
+                    shopService.saveShop(newShop)
                     itemInsertedState.set(itemInsertedState.get(click) + amount, click)
 
                     click.player.sendActionBar(buildText {
@@ -110,7 +110,7 @@ object ItemStorageInsertView : View() {
                 appendSuccessPrefix()
                 success("Du hast ")
                 variableValue("${added}x ")
-                translatable(auctionState.get(close).item.type.translationKey())
+                translatable(shopState.get(close).item.type.translationKey())
                 success(" eingelagert.")
             }
 
@@ -128,7 +128,7 @@ object ItemStorageInsertView : View() {
 
     private fun explainItem(amount: Int) = MenuHeads.QUESTION.clone().apply {
         displayName {
-            auctionColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
+            shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
         }
 
         buildLore {
@@ -136,18 +136,18 @@ object ItemStorageInsertView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Klicke auf ein Item, um es einzulagern.")
+                shopColored("Klicke auf ein Item, um es einzulagern.")
             }
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Das ausgewählte Item wird sofort in deine Auktion eingelagert")
+                shopColored("Das ausgewählte Item wird sofort in deine Auktion eingelagert")
             }
             line {
                 appendSpace()
                 appendSpace()
                 appendSpace()
-                auctionColored("und steht zum Verkauf bereit.")
+                shopColored("und steht zum Verkauf bereit.")
             }
             emptyLine()
             line {

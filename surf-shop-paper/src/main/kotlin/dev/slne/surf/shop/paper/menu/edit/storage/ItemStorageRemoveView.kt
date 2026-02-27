@@ -3,11 +3,11 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
-import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -26,14 +26,14 @@ import org.bukkit.Sound
 import kotlin.math.max
 
 object ItemStorageRemoveView : View() {
-    private val auctionState = initialState<Auction>("edit-auction")
+    private val shopState = initialState<Shop>("edit-shop")
     private val amountState = initialState<Int>("edit-amount")
     private val localAmountState = mutableState(0)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Anzahl auswählen".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Anzahl auswählen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout(
@@ -56,7 +56,7 @@ object ItemStorageRemoveView : View() {
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificRemoveAmountPriceDialog(
-                    auctionState.get(render)
+                    shopState.get(render)
                 )
             )
         }
@@ -111,33 +111,33 @@ object ItemStorageRemoveView : View() {
             }
 
             plugin.launch {
-                val auction = auctionState.get(context)
-                auctionService.blockAuctionAction(auction)
+                val shop = shopState.get(context)
+                shopService.blockShop(shop)
 
-                val updatedAuction =
-                    auctionService.loadedAuctions.find { it.auctionUuid === auction.auctionUuid }
+                val updatedShop =
+                    shopService.loadedShops.find { it.shopUuid === shop.shopUuid }
 
-                if (updatedAuction == null) {
+                if (updatedShop == null) {
                     context.player.sendText {
                         appendErrorPrefix()
-                        error("Die Auktion existiert nicht mehr.")
+                        error("Der Shop existiert nicht mehr.")
                     }
                     return@launch
                 }
 
-                if (updatedAuction.storedItemCount < toRemove) {
-                    val amountToGive = updatedAuction.storedItemCount
+                if (updatedShop.storedItemCount < toRemove) {
+                    val amountToGive = updatedShop.storedItemCount
 
                     withContext(plugin.entityDispatcher(context.player)) {
                         val player = context.player
                         val owner = context.player.uniqueId
                         var remainingAmount = amountToGive
-                        val maxStackSize = updatedAuction.item.maxStackSize
+                        val maxStackSize = updatedShop.item.maxStackSize
 
                         while (remainingAmount > 0) {
                             val giveNow = minOf(maxStackSize, remainingAmount)
 
-                            val stack = updatedAuction.item.clone()
+                            val stack = updatedShop.item.clone()
                             stack.amount = giveNow
 
                             val leftover = player.inventory.addItem(stack)
@@ -158,7 +158,7 @@ object ItemStorageRemoveView : View() {
                         }
                     }
 
-                    auctionService.saveAuction(updatedAuction.copy(storedItemCount = 0))
+                    shopService.saveShop(updatedShop.copy(storedItemCount = 0))
 
                     context.player.sendText {
                         appendSuccessPrefix()
@@ -175,12 +175,12 @@ object ItemStorageRemoveView : View() {
                         val player = context.player
                         val owner = context.player.uniqueId
                         var remainingAmount = toRemove
-                        val maxStackSize = updatedAuction.item.maxStackSize
+                        val maxStackSize = updatedShop.item.maxStackSize
 
                         while (remainingAmount > 0) {
                             val giveNow = minOf(maxStackSize, remainingAmount)
 
-                            val stack = updatedAuction.item.clone()
+                            val stack = updatedShop.item.clone()
                             stack.amount = giveNow
 
                             val leftover = player.inventory.addItem(stack)
@@ -201,9 +201,9 @@ object ItemStorageRemoveView : View() {
                         }
                     }
 
-                    auctionService.saveAuction(
-                        updatedAuction.copy(
-                            storedItemCount = updatedAuction.storedItemCount - toRemove
+                    shopService.saveShop(
+                        updatedShop.copy(
+                            storedItemCount = updatedShop.storedItemCount - toRemove
                         )
                     )
 
@@ -212,20 +212,20 @@ object ItemStorageRemoveView : View() {
                         success("Die Auktion wurde aktualisiert und ")
                         variableValue(toRemove)
                         success(" Items wurden entnommen. Es sind nun noch ")
-                        variableValue(updatedAuction.storedItemCount - toRemove)
+                        variableValue(updatedShop.storedItemCount - toRemove)
                         success(" Items in der Auktion gelagert.")
                     }
                 }
 
 
-                auctionService.unblockAuction(updatedAuction)
+                shopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.openForPlayer(
                         ItemStorageView::class.java,
                         ImmutableMap.of(
-                            "edit-auction",
-                            auctionState.get(render)
+                            "edit-shop",
+                            shopState.get(render)
                                 .copy(pricePerItem = localAmountState.get(context))
                         )
                     )
@@ -244,37 +244,37 @@ object ItemStorageRemoveView : View() {
 
     private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
         displayName {
-            auctionColored("Anzahl: ", TextDecoration.BOLD)
+            shopColored("Anzahl: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(("${localAmountState.get(context)}/" + auctionService.loadedAuctions.find {
-                it.auctionUuid == auctionState.get(
+            shopColored(("${localAmountState.get(context)}/" + shopService.loadedShops.find {
+                it.shopUuid == shopState.get(
                     context
-                )?.auctionUuid
+                )?.shopUuid
             }?.storedItemCount))
         }
     }
 
     private val plusOne = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+1") }
+        displayName { shopColored("+1") }
     }
 
     private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+64") }
+        displayName { shopColored("+64") }
     }
 
     private val minusOne = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-1") }
+        displayName { shopColored("-1") }
     }
 
     private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-64") }
+        displayName { shopColored("-64") }
     }
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
-        displayName { auctionColored("Auszahlen") }
+        displayName { shopColored("Auszahlen") }
     }
 
     private val ownItem = MenuHeads.DOLLAR.clone().apply {
-        displayName { auctionColored("Eigene Anzahl eingeben") }
+        displayName { shopColored("Eigene Anzahl eingeben") }
     }
 }

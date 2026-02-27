@@ -7,7 +7,7 @@ import java.util.*
 data class Deal(
     val dealInternalId: ULong,
     val dealUuid: UUID,
-    val auctionInternalId: ULong,
+    val shopInternalId: ULong,
     val amount: Int,
     val boughtBy: UUID,
     val boughtAt: OffsetDateTime

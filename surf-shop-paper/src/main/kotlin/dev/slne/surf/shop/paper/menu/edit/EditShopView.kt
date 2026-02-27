@@ -3,13 +3,13 @@ package dev.slne.surf.shop.paper.menu.edit
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.core.service.auctionService
-import dev.slne.surf.shop.paper.menu.AuctionListView
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
@@ -30,13 +30,13 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 
-object EditAuctionView : View() {
-    private val auctionState = initialState<Auction>("edit-auction")
+object EditShopView : View() {
+    private val shopState = initialState<Shop>("edit-shop")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Auktion bearbeiten".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Auktion bearbeiten".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
@@ -47,13 +47,13 @@ object EditAuctionView : View() {
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('P', pricePerItemItem.clone().apply {
-            if (auctionState.get(render).pricePerItem > 0) {
+            if (shopState.get(render).pricePerItem > 0) {
                 buildLore {
                     emptyLine()
                     line {
                         spacer("-")
                         appendSpace()
-                        auctionColored("Aktueller Preis Pro Item: ${auctionState.get(render).pricePerItem}")
+                        shopColored("Aktueller Preis Pro Item: ${shopState.get(render).pricePerItem}")
                     }
                 }
             }
@@ -62,23 +62,23 @@ object EditAuctionView : View() {
             context.openForPlayer(
                 PriceEditView::class.java,
                 ImmutableMap.of(
-                    "edit-auction", auctionState.get(render),
-                    "edit-price", auctionState.get(render).pricePerItem
+                    "edit-shop", shopState.get(render),
+                    "edit-price", shopState.get(render).pricePerItem
                 )
             )
         }
 
-        render.layoutSlot('I', auctionState.get(render).item.apply {
+        render.layoutSlot('I', shopState.get(render).item.apply {
             amount = 1
         })
 
-        render.layoutSlot('F', storageItem(auctionState.get(render).storedItemCount))
+        render.layoutSlot('F', storageItem(shopState.get(render).storedItemCount))
             .onClick { context ->
                 context.playGeneralClickSound()
                 context.openForPlayer(
                     ItemStorageView::class.java,
                     ImmutableMap.of(
-                        "edit-auction", auctionState.get(render)
+                        "edit-shop", shopState.get(render)
                     )
                 )
             }
@@ -86,8 +86,8 @@ object EditAuctionView : View() {
         render.layoutSlot('C', saveItem(render)).onClick { context ->
             context.playGeneralClickSound()
 
-            val auction = auctionState.get(context)
-            val price = auction.pricePerItem
+            val shop = shopState.get(context)
+            val price = shop.pricePerItem
 
             if (price <= 0) {
                 context.player.sendText {
@@ -101,7 +101,7 @@ object EditAuctionView : View() {
             }
 
             plugin.launch {
-                auctionService.saveAuction(auctionState.get(render))
+                shopService.saveShop(shopState.get(render))
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
@@ -115,7 +115,7 @@ object EditAuctionView : View() {
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
                     viewFrame.open(
-                        AuctionListView::class.java,
+                        ShopListView::class.java,
                         context.player
                     )
                 }
@@ -126,7 +126,7 @@ object EditAuctionView : View() {
             context.player.closeInventory()
 
             viewFrame.open(
-                AuctionListView::class.java,
+                ShopListView::class.java,
                 context.player
             )
         }
@@ -134,7 +134,7 @@ object EditAuctionView : View() {
 
     private fun saveItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            auctionColored("Speichern")
+            shopColored("Speichern")
         }
 
         buildLore {
@@ -142,9 +142,9 @@ object EditAuctionView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Item: ")
+                shopColored("Item: ")
                 append(
-                    Component.translatable(auctionState.get(context).item.type.translationKey())
+                    Component.translatable(shopState.get(context).item.type.translationKey())
                         .color(Colors.VARIABLE_VALUE)
                 )
             }
@@ -152,11 +152,11 @@ object EditAuctionView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Preis pro Item: ")
-                if (auctionState.get(context).pricePerItem <= 0) {
+                shopColored("Preis pro Item: ")
+                if (shopState.get(context).pricePerItem <= 0) {
                     variableValue("Kein Preis festgelegt")
                 } else {
-                    variableValue(auctionState.get(context).pricePerItem)
+                    variableValue(shopState.get(context).pricePerItem)
                 }
             }
         }
@@ -170,13 +170,13 @@ object EditAuctionView : View() {
 
     private fun storageItem(amount: Int) = buildItem(Material.CHEST) {
         displayName {
-            auctionColored("Item Lager")
+            shopColored("Item Lager")
         }
 
         buildLore {
             emptyLine()
             line {
-                auctionColored("Auf Lager: ")
+                shopColored("Auf Lager: ")
 
                 if (amount <= 0) {
                     error("Ausverkauft")
@@ -189,7 +189,7 @@ object EditAuctionView : View() {
 
     private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
         displayName {
-            auctionColored("Preis pro Item festlegen")
+            shopColored("Preis pro Item festlegen")
         }
     }
 }

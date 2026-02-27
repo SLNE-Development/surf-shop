@@ -6,8 +6,8 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.dao.id.ULongIdT
 import org.bukkit.inventory.ItemStack
 import kotlin.io.encoding.Base64
 
-object AuctionsTable : ULongIdTable("shop_auctions_v2") {
-    val auctionUuid = nativeUuid("auction_uuid").uniqueIndex()
+object ShopsTable : ULongIdTable("shop_shops") {
+    val shopUuid = nativeUuid("shop_uuid").uniqueIndex()
     val item = largeText("item_stack").transform(
         { itemStackFromString(it) },
         { itemStackToString(it) })

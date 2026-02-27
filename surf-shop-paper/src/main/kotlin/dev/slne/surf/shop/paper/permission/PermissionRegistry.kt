@@ -6,5 +6,5 @@ object PermissionRegistry : PermissionRegistry() {
     private const val PREFIX = "surf.shop"
     private const val PREFIX_COMMAND = "$PREFIX.command"
 
-    val AUCTION_COMMAND = create("$PREFIX_COMMAND.auction")
+    val SHOP_COMMAND = create("$PREFIX_COMMAND.shop")
 }

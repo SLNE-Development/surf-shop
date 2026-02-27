@@ -1,4 +1,4 @@
-package dev.slne.surf.shop.api.auction
+package dev.slne.surf.shop.api.shop
 
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
@@ -6,9 +6,9 @@ import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import java.time.OffsetDateTime
 import java.util.*
 
-data class Auction(
+data class Shop(
     val internalId: ULong,
-    val auctionUuid: UUID,
+    val shopUuid: UUID,
     val item: ItemStack,
     val storedItemCount: Int,
     val pricePerItem: Int,
@@ -41,9 +41,9 @@ data class Auction(
     }
 
     companion object {
-        fun empty() = Auction(
+        fun empty() = Shop(
             internalId = 0uL,
-            auctionUuid = UUID.randomUUID(),
+            shopUuid = UUID.randomUUID(),
             item = ItemStack.empty(),
             storedItemCount = 0,
             pricePerItem = 0,

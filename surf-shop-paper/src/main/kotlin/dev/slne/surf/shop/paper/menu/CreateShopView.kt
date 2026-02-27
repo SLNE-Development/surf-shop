@@ -3,7 +3,7 @@ package dev.slne.surf.shop.paper.menu
 import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
@@ -28,14 +28,14 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-object CreateAuctionView : View() {
+object CreateShopView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
     private val priceState: State<Int> = initialState("create-price")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Auktion erstellen".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Shop erstellen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
@@ -52,7 +52,7 @@ object CreateAuctionView : View() {
                     line {
                         spacer("-")
                         appendSpace()
-                        auctionColored("Aktueller Preis Pro Item: ${priceState.get(render)}")
+                        shopColored("Aktueller Preis Pro Item: ${priceState.get(render)}")
                     }
                 }
             }
@@ -122,7 +122,7 @@ object CreateAuctionView : View() {
             }
 
             plugin.launch {
-                auctionService.createAuction(item, 0, price, context.player.uniqueId)
+                shopService.createShop(item, 0, price, context.player.uniqueId)
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
@@ -136,7 +136,7 @@ object CreateAuctionView : View() {
                 withContext(plugin.globalRegionDispatcher) {
                     context.player.closeInventory()
                     viewFrame.open(
-                        AuctionListView::class.java,
+                        ShopListView::class.java,
                         context.player
                     )
                 }
@@ -145,7 +145,7 @@ object CreateAuctionView : View() {
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
-            viewFrame.open(AuctionListView::class.java, context.player)
+            viewFrame.open(ShopListView::class.java, context.player)
         }
     }
 
@@ -157,7 +157,7 @@ object CreateAuctionView : View() {
 
     private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
         displayName {
-            auctionColored("Auktion erstellen")
+            shopColored("Auktion erstellen")
         }
 
         buildLore {
@@ -165,7 +165,7 @@ object CreateAuctionView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Item: ")
+                shopColored("Item: ")
                 if (itemState.get(context)?.isEmpty == true) {
                     variableValue("Kein Item ausgewählt")
                 } else {
@@ -179,7 +179,7 @@ object CreateAuctionView : View() {
             line {
                 spacer("-")
                 appendSpace()
-                auctionColored("Preis pro Item: ")
+                shopColored("Preis pro Item: ")
                 if (priceState.get(context) <= 0) {
                     variableValue("Kein Preis festgelegt")
                 } else {
@@ -191,7 +191,7 @@ object CreateAuctionView : View() {
 
     private val itemNotSet = MenuHeads.QUESTION.clone().apply {
         displayName {
-            auctionColored("Kein Item ausgewählt")
+            shopColored("Kein Item ausgewählt")
         }
     }
 
@@ -203,7 +203,7 @@ object CreateAuctionView : View() {
 
     private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
         displayName {
-            auctionColored("Preis pro Item festlegen")
+            shopColored("Preis pro Item festlegen")
         }
     }
 }

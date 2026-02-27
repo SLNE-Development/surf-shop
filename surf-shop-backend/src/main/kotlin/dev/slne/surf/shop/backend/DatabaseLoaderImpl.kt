@@ -4,8 +4,8 @@ import com.google.auto.service.AutoService
 import dev.slne.surf.database.DatabaseApi
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import dev.slne.surf.shop.backend.table.AuctionsTable
 import dev.slne.surf.shop.backend.table.DealsTable
+import dev.slne.surf.shop.backend.table.ShopsTable
 import dev.slne.surf.shop.core.database.DatabaseLoader
 import net.kyori.adventure.util.Services
 import java.nio.file.Path
@@ -18,7 +18,7 @@ class DatabaseLoaderImpl : DatabaseLoader, Services.Fallback {
 
         suspendTransaction {
             SchemaUtils.create(
-                AuctionsTable, DealsTable
+                ShopsTable, DealsTable
             )
         }
     }

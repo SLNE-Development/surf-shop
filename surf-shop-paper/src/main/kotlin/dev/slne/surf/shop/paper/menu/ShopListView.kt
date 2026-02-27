@@ -1,12 +1,12 @@
 package dev.slne.surf.shop.paper.menu
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.api.auction.AuctionSortType
-import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.api.shop.ShopSortingType
+import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.util.dealCount
-import dev.slne.surf.shop.paper.dialog.searchAuctionItemDialog
-import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
+import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
+import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.displayKey
@@ -34,8 +34,8 @@ import org.bukkit.inventory.ItemStack
 import java.util.*
 
 @Suppress("UnstableApiUsage")
-object AuctionListView : View() {
-    private val selectedSort = mutableState(AuctionSortType.TIME_ASC)
+object ShopListView : View() {
+    private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
@@ -45,43 +45,43 @@ object AuctionListView : View() {
 
     private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
         displayName {
-            auctionColored("Auktion erstellen")
+            shopColored("Auktion erstellen")
         }
     }
 
     private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
         displayName {
-            auctionColored("Vorherige Seite")
+            shopColored("Vorherige Seite")
         }
     }
 
     private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply {
         displayName {
-            auctionColored("Nächste Seite")
+            shopColored("Nächste Seite")
         }
     }
 
     private val searchItem = buildItem(Material.BRUSH) {
         displayName {
-            auctionColored("Suchen")
+            shopColored("Suchen")
         }
     }
 
-    private fun sortItem(state: AuctionSortType) = buildItem(Material.COMPARATOR) {
+    private fun sortItem(state: ShopSortingType) = buildItem(Material.COMPARATOR) {
         displayName {
-            auctionColored("Sortieren")
+            shopColored("Sortieren")
         }
 
         buildLore {
             emptyLine()
-            line { auctionColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
+            line { shopColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
 
             line {
-                if (state == AuctionSortType.ITEM_NAME) {
+                if (state == ShopSortingType.ITEM_NAME) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Itemname")
+                    shopColored("Itemname")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -90,11 +90,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.PRICE_ASC) {
+                if (state == ShopSortingType.PRICE_ASC) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Preis aufsteigend")
+                    shopColored("Preis aufsteigend")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -103,11 +103,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.PRICE_DESC) {
+                if (state == ShopSortingType.PRICE_DESC) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Preis absteigend")
+                    shopColored("Preis absteigend")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -116,11 +116,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.TIME_ASC) {
+                if (state == ShopSortingType.TIME_ASC) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Zeit aufsteigend")
+                    shopColored("Zeit aufsteigend")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -129,11 +129,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.TIME_DESC) {
+                if (state == ShopSortingType.TIME_DESC) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Zeit absteigend")
+                    shopColored("Zeit absteigend")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -142,11 +142,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.MOST_STORED) {
+                if (state == ShopSortingType.MOST_STORED) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Meiste gelagerte Items")
+                    shopColored("Meiste gelagerte Items")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -155,11 +155,11 @@ object AuctionListView : View() {
             }
 
             line {
-                if (state == AuctionSortType.MOST_DEALS) {
+                if (state == ShopSortingType.MOST_DEALS) {
                     appendSpace()
                     spacer("-")
                     appendSpace()
-                    auctionColored("Meiste Verkäufe")
+                    shopColored("Meiste Verkäufe")
                 } else {
                     spacer("-")
                     appendSpace()
@@ -171,28 +171,28 @@ object AuctionListView : View() {
 
     private val updateItem = buildItem(Material.REPEATER) {
         displayName {
-            auctionColored("Aktualisieren")
+            shopColored("Aktualisieren")
         }
     }
 
-    private val paginationState = buildComputedPaginationState<Auction> { context ->
-        getLoadedAuctionsSortedFiltered(
+    private val paginationState = buildComputedPaginationState<Shop> { context ->
+        getLoadedShopsSortedFiltered(
             plugin.getSorting(context.player.uniqueId),
             searchInputCache[context.player.uniqueId]
         ).toMutableList()
-    }.elementFactory { context, builder, _, auction ->
-        builder.withItem(createAuctionItem(auction, context.player.uniqueId)).onClick { context ->
+    }.elementFactory { context, builder, _, shop ->
+        builder.withItem(createShopItem(shop, context.player.uniqueId)).onClick { context ->
             context.playGeneralClickSound()
 
-            if (auction.seller == context.player.uniqueId) {
+            if (shop.seller == context.player.uniqueId) {
                 if (context.isShiftLeftClick) {
                     // DELETE
                 } else {
                     context.openForPlayer(
-                        EditAuctionView::class.java,
+                        EditShopView::class.java,
                         ImmutableMap.of(
-                            "edit-auction",
-                            auction
+                            "edit-shop",
+                            shop
                         )
                     )
                 }
@@ -205,7 +205,7 @@ object AuctionListView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Auktionen".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Auktionen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(6)
             .layout(
@@ -246,12 +246,12 @@ object AuctionListView : View() {
         render.layoutSlot('A', searchItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
-            context.player.showDialog(searchAuctionItemDialog())
+            context.player.showDialog(searchShopItemDialog())
         }
         render.layoutSlot('C', createItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateAuctionView::class.java,
+                CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
                     ItemStack.empty(),
@@ -299,28 +299,28 @@ object AuctionListView : View() {
     }
 }
 
-fun createAuctionItem(auction: Auction, viewer: UUID) = auction.item.clone().apply {
+fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
     val newEntries = mutableListOf<Component>()
 
     newEntries.add(Component.empty())
     newEntries.add(buildText {
-        auctionColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
+        shopColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
     })
 
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
-        auctionColored("Preis: ")
-        variableValue("${auction.pricePerItem}/Item")
+        shopColored("Preis: ")
+        variableValue("${shop.pricePerItem}/Item")
     })
 
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
-        auctionColored("Auf Lager: ")
-        if (auction.storedItemCount > 0) {
-            variableValue("${auction.storedItemCount} Items")
+        shopColored("Auf Lager: ")
+        if (shop.storedItemCount > 0) {
+            variableValue("${shop.storedItemCount} Items")
         } else {
             error("Ausverkauft")
         }
@@ -329,20 +329,20 @@ fun createAuctionItem(auction: Auction, viewer: UUID) = auction.item.clone().app
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
-        auctionColored("Verkäufer: ")
-        variableValue(auction.sellerName)
+        shopColored("Verkäufer: ")
+        variableValue(shop.sellerName)
     })
 
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
-        auctionColored("Erstellt am: ")
-        variableValue(auction.createdAt.format(dateTimeFormatter))
+        shopColored("Erstellt am: ")
+        variableValue(shop.createdAt.format(dateTimeFormatter))
     })
 
     newEntries.add(Component.empty())
 
-    if (auction.seller == viewer) {
+    if (shop.seller == viewer) {
         newEntries.add(buildText {
             spacer("Klicke, um die Auktion zu bearbeiten.")
         })
@@ -375,11 +375,11 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedAuctionsSortedFiltered(
-    sortType: AuctionSortType,
+private fun getLoadedShopsSortedFiltered(
+    sortType: ShopSortingType,
     search: String?
-): List<Auction> {
-    val base = auctionService.loadedAuctions
+): List<Shop> {
+    val base = shopService.loadedShops
 
     val filtered = if (search.isNullOrBlank()) {
         base
@@ -393,8 +393,8 @@ private fun getLoadedAuctionsSortedFiltered(
         if (terms.isEmpty()) {
             base
         } else {
-            base.filter { auction ->
-                val tokens = auction.searchableTokens
+            base.filter { shop ->
+                val tokens = shop.searchableTokens
 
                 for (term in terms) {
                     var matched = false
@@ -415,16 +415,16 @@ private fun getLoadedAuctionsSortedFiltered(
     }
 
     return when (sortType) {
-        AuctionSortType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
-        AuctionSortType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
-        AuctionSortType.TIME_ASC -> filtered.sortedBy { it.createdAt }
-        AuctionSortType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
-        AuctionSortType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
-        AuctionSortType.MOST_DEALS -> filtered.sortedByDescending { it.dealCount }
-        AuctionSortType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
+        ShopSortingType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
+        ShopSortingType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
+        ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
+        ShopSortingType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
+        ShopSortingType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
+        ShopSortingType.MOST_DEALS -> filtered.sortedByDescending { it.dealCount }
+        ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
     }
 }
 
 
-fun SurfComponentBuilder.auctionColored(text: Any, vararg decoration: TextDecoration) =
+fun SurfComponentBuilder.shopColored(text: Any, vararg decoration: TextDecoration) =
     coloredComponent(text.toString(), TextColor.color(252, 233, 121), *decoration)

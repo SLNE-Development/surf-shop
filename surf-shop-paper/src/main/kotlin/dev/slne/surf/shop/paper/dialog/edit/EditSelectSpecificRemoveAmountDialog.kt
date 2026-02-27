@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.paper.dialog.edit
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.paper.menu.auctionColored
+import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.surfapi.bukkit.api.dialog.base
 import dev.slne.surf.surfapi.bukkit.api.dialog.builder.actionButton
 import dev.slne.surf.surfapi.bukkit.api.dialog.dialog
@@ -13,10 +13,10 @@ import dev.slne.surf.surfapi.core.api.messages.adventure.appendNewline
 
 @Suppress("UnstableApiUsage")
 fun createEditSpecificRemoveAmountPriceDialog(
-    auction: Auction
+    shop: Shop
 ) = dialog {
     base {
-        title { auctionColored("Anzahl auswählen") }
+        title { shopColored("Anzahl auswählen") }
         body {
             plainMessage {
                 info("Hier kannst du die Anzahl angeben, die du an Items auszahlen möchtest. Diese Anzahl wird von der Gesamtanzahl der Auktion abgezogen.")
@@ -27,9 +27,9 @@ fun createEditSpecificRemoveAmountPriceDialog(
 
             input {
                 text("amount") {
-                    label { auctionColored("Anzahl an Items") }
+                    label { shopColored("Anzahl an Items") }
                     width(300)
-                    initial(if (auction.storedItemCount > 64) "64" else auction.storedItemCount.toString())
+                    initial(if (shop.storedItemCount > 64) "64" else shop.storedItemCount.toString())
                     maxLength(5)
                 }
             }
@@ -46,7 +46,7 @@ fun createEditSpecificRemoveAmountPriceDialog(
                         player.closeDialog()
                         viewFrame.open(
                             ItemStorageRemoveView::class.java, player, ImmutableMap.of(
-                                "edit-auction", auction,
+                                "edit-shop", shop,
                                 "edit-amount", 0
                             )
                         )
@@ -65,7 +65,7 @@ fun createEditSpecificRemoveAmountPriceDialog(
 
                         viewFrame.open(
                             ItemStorageRemoveView::class.java, player, ImmutableMap.of(
-                                "edit-auction", auction,
+                                "edit-shop", shop,
                                 "edit-amount", amount
                             )
                         )

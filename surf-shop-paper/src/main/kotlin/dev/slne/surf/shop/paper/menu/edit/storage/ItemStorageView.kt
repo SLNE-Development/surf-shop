@@ -1,11 +1,11 @@
 package dev.slne.surf.shop.paper.menu.edit.storage
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
-import dev.slne.surf.shop.paper.menu.auctionColored
-import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
@@ -17,12 +17,12 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextDecoration
 
 object ItemStorageView : View() {
-    private val auctionState = initialState<Auction>("edit-auction")
+    private val shopState = initialState<Shop>("edit-shop")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Item Lager".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Item Lager".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(3)
             .layout("OOOOOOOOO", "OOOAOCOOO", "OOOOBOOOO")
@@ -38,9 +38,9 @@ object ItemStorageView : View() {
             context.player.closeInventory()
 
             viewFrame.open(
-                EditAuctionView::class.java,
+                EditShopView::class.java,
                 context.player,
-                ImmutableMap.of("edit-auction", auctionState.get(render))
+                ImmutableMap.of("edit-shop", shopState.get(render))
             )
         }
 
@@ -49,7 +49,7 @@ object ItemStorageView : View() {
             context.openForPlayer(
                 ItemStorageInsertView::class.java,
                 ImmutableMap.of(
-                    "edit-auction", auctionState.get(render)
+                    "edit-shop", shopState.get(render)
                 )
             )
         }
@@ -59,7 +59,7 @@ object ItemStorageView : View() {
             context.openForPlayer(
                 ItemStorageRemoveView::class.java,
                 ImmutableMap.of(
-                    "edit-auction", auctionState.get(render),
+                    "edit-shop", shopState.get(render),
                     "edit-amount", 0
                 )
             )

@@ -1,10 +1,10 @@
 package dev.slne.surf.shop.paper.menu.edit
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.api.auction.Auction
+import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
-import dev.slne.surf.shop.paper.menu.auctionColored
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -21,14 +21,14 @@ import org.bukkit.Sound
 import kotlin.math.max
 
 object PriceEditView : View() {
-    private val auctionState = initialState<Auction>("edit-auction")
+    private val shopState = initialState<Shop>("edit-shop")
     private val priceState: State<Int> = initialState("edit-price")
     private val localPriceState = mutableState(0)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                auctionColored("Preis bearbeiten".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Preis bearbeiten".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
             .layout(
@@ -51,7 +51,7 @@ object PriceEditView : View() {
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificPriceDialog(
-                    auctionState.get(render).copy(pricePerItem = localPriceState.get(render))
+                    shopState.get(render).copy(pricePerItem = localPriceState.get(render))
                 )
             )
         }
@@ -95,10 +95,10 @@ object PriceEditView : View() {
         render.layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                EditAuctionView::class.java,
+                EditShopView::class.java,
                 ImmutableMap.of(
-                    "edit-auction",
-                    auctionState.get(render).copy(pricePerItem = localPriceState.get(context))
+                    "edit-shop",
+                    shopState.get(render).copy(pricePerItem = localPriceState.get(context))
                 )
             )
         }
@@ -114,33 +114,33 @@ object PriceEditView : View() {
 
     private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
         displayName {
-            auctionColored("Preis: ", TextDecoration.BOLD)
+            shopColored("Preis: ", TextDecoration.BOLD)
             appendSpace()
-            auctionColored(localPriceState.get(context))
+            shopColored(localPriceState.get(context))
         }
     }
 
     private val plusOne = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+1") }
+        displayName { shopColored("+1") }
     }
 
     private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { auctionColored("+50") }
+        displayName { shopColored("+50") }
     }
 
     private val minusOne = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-1") }
+        displayName { shopColored("-1") }
     }
 
     private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { auctionColored("-50") }
+        displayName { shopColored("-50") }
     }
 
     private val continueItem = MenuHeads.CHECK.clone().apply {
-        displayName { auctionColored("Übernehmen") }
+        displayName { shopColored("Übernehmen") }
     }
 
     private val ownItem = MenuHeads.DOLLAR.clone().apply {
-        displayName { auctionColored("Eigenen Preis eingeben") }
+        displayName { shopColored("Eigenen Preis eingeben") }
     }
 }

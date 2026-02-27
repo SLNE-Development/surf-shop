@@ -1,11 +1,11 @@
 package dev.slne.surf.shop.backend.service
 
 import com.google.auto.service.AutoService
-import dev.slne.surf.shop.api.auction.Auction
 import dev.slne.surf.shop.api.deal.Deal
+import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.repository.dealRepository
 import dev.slne.surf.shop.core.service.DealService
-import dev.slne.surf.shop.core.service.auctionService
+import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.util.logger
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
@@ -24,12 +24,12 @@ class DealServiceImpl : DealService, Services.Fallback {
     override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
 
     override suspend fun buyInternal(
-        auction: Auction,
+        shop: Shop,
         amount: Int,
         buyer: UUID
     ): Deal {
         val boughtByRepository = dealRepository.buy(
-            auction,
+            shop,
             amount,
             buyer,
             OffsetDateTime.now()
@@ -41,48 +41,48 @@ class DealServiceImpl : DealService, Services.Fallback {
 
     override suspend fun buy(
         player: Player,
-        auction: Auction,
+        shop: Shop,
         amount: Int
     ): Deal? {
-        val updatedAuction =
-            auctionService.loadedAuctions.firstOrNull { it.auctionUuid == auction.auctionUuid }
+        val updatedShop =
+            shopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
                 ?: return null
 
-        auctionService.blockAuctionAction(updatedAuction)
+        shopService.blockShop(updatedShop)
 
-        if (auction.storedItemCount < amount) {
-            buyInternal(auction, auction.storedItemCount, player.uniqueId)
-            auctionService.saveAuction(updatedAuction.copy(storedItemCount = 0))
+        if (shop.storedItemCount < amount) {
+            buyInternal(shop, shop.storedItemCount, player.uniqueId)
+            shopService.saveShop(updatedShop.copy(storedItemCount = 0))
 
             player.sendText {
                 appendSuccessPrefix()
                 success("Du konntest nur ")
-                variableValue("${auction.storedItemCount}x")
+                variableValue("${shop.storedItemCount}x")
                 success(" von ")
                 variableValue("${amount}x ")
                 append {
-                    append(Component.translatable(auction.item.type.translationKey()))
-                    hoverEvent(auction.item.asHoverEvent())
+                    append(Component.translatable(shop.item.type.translationKey()))
+                    hoverEvent(shop.item.asHoverEvent())
                 }
                 success("Items kaufen.")
             }
         } else {
-            auctionService.saveAuction(updatedAuction.copy(storedItemCount = updatedAuction.storedItemCount - amount))
+            shopService.saveShop(updatedShop.copy(storedItemCount = updatedShop.storedItemCount - amount))
 
             player.sendText {
                 appendSuccessPrefix()
                 success("Du hast ")
                 variableValue("${amount}x ")
                 append {
-                    append(Component.translatable(auction.item.type.translationKey()))
-                    hoverEvent(auction.item.asHoverEvent())
+                    append(Component.translatable(shop.item.type.translationKey()))
+                    hoverEvent(shop.item.asHoverEvent())
                 }
 
                 success("  gekauft.")
             }
         }
 
-        return buyInternal(auction, amount, player.uniqueId)
+        return buyInternal(shop, amount, player.uniqueId)
     }
 
     override suspend fun fetchDeals() {

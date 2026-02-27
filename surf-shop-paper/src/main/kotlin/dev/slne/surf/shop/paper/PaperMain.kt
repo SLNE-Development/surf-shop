@@ -1,14 +1,14 @@
 package dev.slne.surf.shop.paper
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
-import dev.slne.surf.shop.api.auction.AuctionSortType
+import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.database.databaseLoader
-import dev.slne.surf.shop.core.service.auctionService
 import dev.slne.surf.shop.core.service.dealService
-import dev.slne.surf.shop.paper.command.auctionCommand
-import dev.slne.surf.shop.paper.menu.AuctionListView
-import dev.slne.surf.shop.paper.menu.CreateAuctionView
-import dev.slne.surf.shop.paper.menu.edit.EditAuctionView
+import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.command.shopCommand
+import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.edit.PriceEditView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageInsertView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
@@ -23,23 +23,23 @@ import java.util.*
 val plugin get() = JavaPlugin.getPlugin(PaperMain::class.java)
 
 class PaperMain : SuspendingJavaPlugin() {
-    private val sorts = mutableObject2ObjectMapOf<UUID, AuctionSortType>()
-    fun getSorting(player: UUID) = sorts.getOrDefault(player, AuctionSortType.ITEM_NAME)
-    fun setSorting(player: UUID, sortType: AuctionSortType) {
+    private val sorts = mutableObject2ObjectMapOf<UUID, ShopSortingType>()
+    fun getSorting(player: UUID) = sorts.getOrDefault(player, ShopSortingType.ITEM_NAME)
+    fun setSorting(player: UUID, sortType: ShopSortingType) {
         sorts[player] = sortType
     }
 
     override suspend fun onLoadAsync() {
         databaseLoader.connect(plugin.dataPath)
 
-        auctionService.fetchAuctions()
+        shopService.fetchShops()
         dealService.fetchDeals()
 
-        viewFrame.with(AuctionListView)
-        viewFrame.with(CreateAuctionView)
+        viewFrame.with(ShopListView)
+        viewFrame.with(CreateShopView)
         viewFrame.with(PlayerInventorySelectItemView)
         viewFrame.with(PriceSelectView)
-        viewFrame.with(EditAuctionView)
+        viewFrame.with(EditShopView)
         viewFrame.with(PriceEditView)
         viewFrame.with(ItemStorageView)
         viewFrame.with(ItemStorageInsertView)
@@ -47,7 +47,7 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     override suspend fun onEnableAsync() {
-        auctionCommand()
+        shopCommand()
     }
 
     override suspend fun onDisableAsync() {
