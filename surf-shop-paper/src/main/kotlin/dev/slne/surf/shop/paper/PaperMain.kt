@@ -8,6 +8,7 @@ import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.edit.PriceEditView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageInsertView
@@ -44,6 +45,7 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(ItemStorageView)
         viewFrame.with(ItemStorageInsertView)
         viewFrame.with(ItemStorageRemoveView)
+        viewFrame.with(BuyShopItemView)
     }
 
     override suspend fun onEnableAsync() {
