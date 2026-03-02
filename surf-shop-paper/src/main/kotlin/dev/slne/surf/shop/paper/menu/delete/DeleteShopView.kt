@@ -1,0 +1,78 @@
+package dev.slne.surf.shop.paper.menu.delete
+
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.launch
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.outlineItem
+import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.surfapi.bukkit.api.builder.displayName
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import kotlinx.coroutines.withContext
+import me.devnatan.inventoryframework.View
+import me.devnatan.inventoryframework.ViewConfigBuilder
+import me.devnatan.inventoryframework.context.RenderContext
+import net.kyori.adventure.text.format.TextDecoration
+
+object DeleteShopView : View() {
+    val shopState = initialState<Shop>("delete-shop")
+
+
+    override fun onInit(config: ViewConfigBuilder) {
+        config
+            .titleBuilder {
+                shopColored("Shop löschen".toSmallCaps(), TextDecoration.BOLD)
+            }
+            .size(3)
+            .layout("OOOOOOOOO", "O   I C O", "OOOOBOOOO")
+            .cancelInteractions()
+            .build()
+    }
+
+    override fun onFirstRender(render: RenderContext) {
+        render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+            displayName {
+                error("Abbrechen")
+            }
+        }).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(ShopListView::class.java)
+        }
+
+        val shop = shopState.get(render)
+
+        render.layoutSlot('O', outlineItem)
+        render.layoutSlot('I', shop.item.clone())
+        render.layoutSlot('C', MenuHeads.CHECK.clone().apply {
+            displayName {
+                success("Shop löschen")
+            }
+        }).onClick { context ->
+            context.playGeneralClickSound()
+
+            context.player.sendText {
+                appendInfoPrefix()
+                info("Der Shop wird gelöscht...")
+            }
+
+            plugin.launch {
+                shopService.deleteShop(shop)
+
+                context.player.sendText {
+                    appendSuccessPrefix()
+                    success("Der Shop wurde erfolgreich gelöscht.")
+                }
+
+                withContext(plugin.entityDispatcher(context.player)) {
+                    context.openForPlayer(ShopListView::class.java)
+                }
+            }
+        }
+    }
+}

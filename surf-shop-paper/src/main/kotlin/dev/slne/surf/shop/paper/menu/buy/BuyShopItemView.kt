@@ -1,10 +1,7 @@
 package dev.slne.surf.shop.paper.menu.buy
 
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.paper.menu.outlineItem
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.playNoSound
-import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -206,6 +203,14 @@ object BuyShopItemView : View() {
             context.player.closeInventory()
 
             // TODO: Buy Item
+        }
+        render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+            displayName {
+                error("Abbrechen")
+            }
+        }).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(ShopListView::class.java)
         }
     }
 }

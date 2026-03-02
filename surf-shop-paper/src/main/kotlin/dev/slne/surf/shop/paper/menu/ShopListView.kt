@@ -6,6 +6,7 @@ import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.util.dealCount
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
+import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -196,7 +197,13 @@ object ShopListView : View() {
                     )
                 }
             } else {
-                // TODO: Buy Menu
+                context.openForPlayer(
+                    BuyShopItemView::class.java,
+                    ImmutableMap.of(
+                        "buy-shop",
+                        shop
+                    )
+                )
             }
         }
     }.layoutTarget('R').build()
