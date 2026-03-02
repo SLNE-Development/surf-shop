@@ -21,8 +21,7 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextDecoration
 
 object DeleteShopView : View() {
-    val shopState = initialState<Shop>("delete-shop")
-
+    private val shopState = initialState<Shop>("delete-shop")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
