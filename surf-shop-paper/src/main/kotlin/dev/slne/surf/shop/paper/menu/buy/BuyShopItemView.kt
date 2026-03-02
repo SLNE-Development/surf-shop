@@ -5,6 +5,9 @@ import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
+import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
@@ -14,7 +17,6 @@ import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
-
 
 object BuyShopItemView : View() {
     private val shopState = initialState<Shop>("buy-shop")
@@ -156,5 +158,54 @@ object BuyShopItemView : View() {
 
                 }
             }
+
+        render.layoutSlot('C', MenuHeads.CHECK.clone().apply {
+            displayName {
+                shopColored("Kaufen")
+            }
+
+            buildLore {
+                emptyLine()
+                line {
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Klicke um die Items zu kaufen.")
+                }
+
+                emptyLine()
+                line {
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Anzahl: ")
+                    variableValue(amountState.get(render))
+                }
+
+                line {
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Gesamtpreis: ")
+                    variableValue(amountState.get(render) * shopState.get(render).pricePerItem)
+                }
+            }
+        }).onClick { context ->
+            context.playGeneralClickSound()
+
+            val shop = shopState.get(context)
+            val amount = amountState.get(context)
+
+            if (shop.storedItemCount < amount) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Es sind nicht genügend Items auf Lager!")
+                }
+
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            context.player.closeInventory()
+
+            // TODO: Buy Item
+        }
     }
 }

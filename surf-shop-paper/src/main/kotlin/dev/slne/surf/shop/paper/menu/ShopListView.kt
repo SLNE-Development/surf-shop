@@ -22,7 +22,6 @@ import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import dev.slne.surf.surfapi.core.api.util.dateTimeFormatter
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.Component
@@ -235,8 +234,9 @@ object ShopListView : View() {
                     selectedSort.set(selectedSort.get(render).next(), render)
                 }
 
-
                 plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
+
+                render.openForPlayer(ShopListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
             }
         render.layoutSlot('U', updateItem).onClick { context ->
             render.update()
@@ -283,19 +283,6 @@ object ShopListView : View() {
                 context.playNewPageSound()
                 paginationState.get(render).advance()
             }
-    }
-
-    override fun onUpdate(update: Context) {
-        updatePagination(update)
-    }
-
-    override fun onResume(origin: Context, target: Context) {
-        target.update()
-    }
-
-    private fun updatePagination(context: Context) {
-        val pagination = paginationState.get(context)
-        pagination.switchTo(pagination.currentPageIndex())
     }
 }
 
