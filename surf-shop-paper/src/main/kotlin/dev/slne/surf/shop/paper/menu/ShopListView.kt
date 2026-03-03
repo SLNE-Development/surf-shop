@@ -7,6 +7,7 @@ import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.util.dealCount
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -186,7 +187,13 @@ object ShopListView : View() {
 
             if (shop.seller == context.player.uniqueId) {
                 if (context.isShiftLeftClick) {
-                    // DELETE
+                    context.openForPlayer(
+                        DeleteShopView::class.java,
+                        ImmutableMap.of(
+                            "delete-shop",
+                            shop
+                        )
+                    )
                 } else {
                     context.openForPlayer(
                         EditShopView::class.java,
