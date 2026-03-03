@@ -176,7 +176,7 @@ object ShopListView : View() {
         }
     }
 
-    private val paginationState = buildComputedPaginationState<Shop> { context ->
+    private val paginationState = buildLazyPaginationState { context ->
         getLoadedShopsSortedFiltered(
             plugin.getSorting(context.player.uniqueId),
             searchInputCache[context.player.uniqueId]
