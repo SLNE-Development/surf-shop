@@ -15,3 +15,17 @@ fun SurfComponentBuilder.displayKey(key: String) =
     ).color(Colors.WHITE) // https://minecraft.fandom.com/wiki/Key_codes
 
 fun SurfComponentBuilder.translatable(key: String) = append(Component.translatable(key))
+
+fun formatPriceNice(price: Int): String {
+    val priceString = price.toString()
+    val stringBuilder = StringBuilder()
+
+    for (i in priceString.indices) {
+        if (i > 0 && (priceString.length - i) % 3 == 0) {
+            stringBuilder.append('.')
+        }
+        stringBuilder.append(priceString[i])
+    }
+
+    return "$stringBuilder CC"
+}
