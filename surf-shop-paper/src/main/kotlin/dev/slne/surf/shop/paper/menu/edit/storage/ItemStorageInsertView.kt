@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
@@ -87,6 +88,10 @@ object ItemStorageInsertView : View() {
 
                     shopService.saveShop(newShop)
                     itemInsertedState.set(itemInsertedState.get(click) + amount, click)
+
+                    if (plugin.auxProtectHook) {
+                        AuxProtectHook.logDeposit(click.player, shop, amount)
+                    }
 
                     click.player.sendActionBar(buildText {
                         appendSuccessPrefix()

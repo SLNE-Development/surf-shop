@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -62,6 +63,10 @@ object DeleteShopView : View() {
 
             plugin.launch {
                 shopService.deleteShop(shop)
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logDelete(context.player, shop)
+                }
 
                 context.player.sendText {
                     appendSuccessPrefix()

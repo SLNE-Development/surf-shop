@@ -1,7 +1,9 @@
 package dev.slne.surf.shop.paper.menu.buy
 
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
+import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -208,6 +210,10 @@ object BuyShopItemView : View() {
                 }
 
                 context.player.closeInventory()
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logBuy(context.player, shop, amount)
+                }
 
                 // TODO: Buy Item
             }

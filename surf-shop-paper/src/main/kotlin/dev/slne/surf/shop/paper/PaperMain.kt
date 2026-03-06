@@ -6,6 +6,7 @@ import dev.slne.surf.shop.core.database.databaseLoader
 import dev.slne.surf.shop.core.service.dealService
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.shopCommand
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
@@ -17,6 +18,7 @@ import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.surfapi.bukkit.api.extensions.pluginManager
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import org.bukkit.plugin.java.JavaPlugin
@@ -51,10 +53,16 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     override suspend fun onEnableAsync() {
+        if (auxProtectHook) {
+            AuxProtectHook.create()
+        }
+
         shopCommand()
     }
 
     override suspend fun onDisableAsync() {
         databaseLoader.disconnect()
     }
+
+    val auxProtectHook get() = pluginManager.isPluginEnabled("AuxProtect")
 }

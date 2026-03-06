@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
@@ -206,6 +207,10 @@ object ItemStorageRemoveView : View() {
                             storedItemCount = updatedShop.storedItemCount - toRemove
                         )
                     )
+
+                    if (plugin.auxProtectHook) {
+                        AuxProtectHook.logWithdraw(context.player, shop, toRemove)
+                    }
 
                     context.player.sendText {
                         appendSuccessPrefix()
