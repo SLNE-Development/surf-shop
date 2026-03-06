@@ -53,7 +53,7 @@ object ItemStorageInsertView : View() {
 
             context.openForPlayer(
                 ItemStorageView::class.java,
-                ImmutableMap.of("edit-shop", shopState.get(render))
+                ImmutableMap.of("edit-shop", localShopState.get(render))
             )
         }
 
