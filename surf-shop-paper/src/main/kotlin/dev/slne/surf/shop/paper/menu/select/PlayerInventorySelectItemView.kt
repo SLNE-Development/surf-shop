@@ -38,7 +38,9 @@ object PlayerInventorySelectItemView : View() {
                 CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
-                    item,
+                    item.clone().apply {
+                        amount = 1
+                    },
                     "create-price",
                     priceState.get(context)
                 )
