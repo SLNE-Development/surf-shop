@@ -301,6 +301,8 @@ object ShopListView : View() {
 }
 
 fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
+    amount = 1
+    
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
     val newEntries = mutableListOf<Component>()
 
