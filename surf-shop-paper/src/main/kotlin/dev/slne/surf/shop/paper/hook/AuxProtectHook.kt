@@ -20,11 +20,11 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             runCatching {
                 // @formatter:off
-                shopCreatedAction = AuxProtectAPI.createAction(plugin.name, "surfshop_created", "created shop", null)
-                shopDeletedAction = AuxProtectAPI.createAction(plugin.name, "surfshop_deleted", "deleted shop", null)
-                shopBoughtAction = AuxProtectAPI.createAction(plugin.name, "surfshop_bought", "bought from shop", null)
-                shopDepositedAction = AuxProtectAPI.createAction(plugin.name, "surfshop_deposited", "deposited items into shop", null)
-                shopWithdrawnAction = AuxProtectAPI.createAction(plugin.name, "surfshop_withdrawn", "withdrew items from shop", null)
+                shopCreatedAction = createAction(plugin.name, "surfshop_created", "created shop")
+                shopDeletedAction = createAction(plugin.name, "surfshop_deleted", "deleted shop")
+                shopBoughtAction = createAction(plugin.name, "surfshop_bought", "bought from shop")
+                shopDepositedAction = createAction(plugin.name, "surfshop_deposited", "deposited into shop")
+                shopWithdrawnAction = createAction(plugin.name, "surfshop_withdrawn", "withdrew from shop")
                 // @formatter:on
             }
 
@@ -37,6 +37,7 @@ object AuxProtectHook {
     }.getOrNull() ?: EntryAction.getAction(key)
 
     fun logBuy(player: Player, shop: Shop, amount: Int) {
+        println("Logging buy action for player ${player.name}, shop owned by ${shop.seller}, amount $amount, price per item ${shop.pricePerItem}, item ${shop.item.serialize()}")
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
@@ -49,6 +50,8 @@ object AuxProtectHook {
                 )
             )
         }
+
+        println("Logged buy action for player ${player.name}, shop owned by ${shop.seller}, amount $amount, price per item ${shop.pricePerItem}, item ${shop.item.serialize()}")
     }
 
     fun logCreate(player: Player, shop: Shop) {
