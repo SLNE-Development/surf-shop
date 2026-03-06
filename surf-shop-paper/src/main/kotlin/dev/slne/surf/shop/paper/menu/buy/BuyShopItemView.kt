@@ -98,6 +98,8 @@ object BuyShopItemView : View() {
                 val shop = shopState.get(context)
                 val amount = amountState.get(context)
 
+                println(context.clickOrigin.click)
+
                 if (context.isLeftClick) {
                     if (shop.storedItemCount < amount + 1) {
                         context.player.sendText {
@@ -152,7 +154,6 @@ object BuyShopItemView : View() {
                     }
 
                     amountState.set(amountState.get(context) - 64, context)
-
                 }
             }
 

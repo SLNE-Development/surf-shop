@@ -7,4 +7,5 @@ object PermissionRegistry : PermissionRegistry() {
     private const val PREFIX_COMMAND = "$PREFIX.command"
 
     val SHOP_COMMAND = create("$PREFIX_COMMAND.shop")
+    val SHOP_COMMAND_ADMIN = create("$PREFIX_COMMAND.shop.admin")
 }
