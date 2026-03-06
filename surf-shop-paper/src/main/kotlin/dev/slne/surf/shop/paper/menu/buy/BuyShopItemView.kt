@@ -32,87 +32,74 @@ object BuyShopItemView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I', shopState.get(render).item.clone().apply {
-            val oldLore = lore()?.toMutableList() ?: mutableListOf()
-            val newEntries = mutableListOf<Component>()
+        render.layoutSlot('I')
+            .renderWith {
+                shopState.get(render).item.clone().apply {
+                    val oldLore = lore()?.toMutableList() ?: mutableListOf()
+                    val newEntries = mutableListOf<Component>()
 
-            val amount = amountState.get(render)
-            val shop = shopState.get(render)
+                    val amount = amountState.get(render)
+                    val shop = shopState.get(render)
 
-            newEntries.add(Component.empty())
-            newEntries.add(buildText {
-                shopColored("Shopinformationen".toSmallCaps(), TextDecoration.BOLD)
-            })
+                    newEntries.add(Component.empty())
+                    newEntries.add(buildText {
+                        shopColored("Shopinformationen".toSmallCaps(), TextDecoration.BOLD)
+                    })
 
-            newEntries.add(buildText {
-                spacer("-")
-                appendSpace()
-                shopColored("Einzelpreis: ")
-                variableValue(shop.pricePerItem)
-            })
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        shopColored("Einzelpreis: ")
+                        variableValue(shop.pricePerItem)
+                    })
 
-            newEntries.add(buildText {
-                spacer("-")
-                appendSpace()
-                shopColored("Auf Lager: ")
-                if (shop.storedItemCount > 0) {
-                    variableValue("${shop.storedItemCount} Items")
-                } else {
-                    error("Ausverkauft")
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        shopColored("Auf Lager: ")
+                        if (shop.storedItemCount > 0) {
+                            variableValue("${shop.storedItemCount} Items")
+                        } else {
+                            error("Ausverkauft")
+                        }
+                    })
+
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        shopColored("Verkäufer: ")
+                        variableValue(shop.sellerName)
+                    })
+
+                    newEntries.add(Component.empty())
+
+                    newEntries.add(buildText {
+                        shopColored("Kaufsinformationen".toSmallCaps(), TextDecoration.BOLD)
+                    })
+
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        shopColored("Anzahl: ")
+                        variableValue(amount)
+                    })
+
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        shopColored("Gesamtpreis: ")
+                        variableValue(amount * shop.pricePerItem)
+                    })
+
+                    lore(oldLore + newEntries)
                 }
-            })
-
-            newEntries.add(buildText {
-                spacer("-")
-                appendSpace()
-                shopColored("Verkäufer: ")
-                variableValue(shop.sellerName)
-            })
-
-            newEntries.add(Component.empty())
-
-            newEntries.add(buildText {
-                shopColored("Kaufsinformationen".toSmallCaps(), TextDecoration.BOLD)
-            })
-
-            newEntries.add(buildText {
-                spacer("-")
-                appendSpace()
-                shopColored("Anzahl: ")
-                variableValue(amount)
-            })
-
-            newEntries.add(buildText {
-                spacer("-")
-                appendSpace()
-                shopColored("Gesamtpreis: ")
-                variableValue(amount * shop.pricePerItem)
-            })
-
-            lore(oldLore + newEntries)
-        })
+            }
             .updateOnStateChange(amountState)
             .onClick { context ->
                 context.playGeneralClickSound()
 
                 val shop = shopState.get(context)
                 val amount = amountState.get(context)
-
-                println(context.clickOrigin.click)
-
-                if (context.isLeftClick) {
-                    if (shop.storedItemCount < amount + 1) {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es sind nicht genügend Items auf Lager!")
-                        }
-
-                        context.player.playNoSound()
-                        return@onClick
-                    }
-                    amountState.set(amountState.get(context) + 1, context)
-                    return@onClick
-                }
 
                 if (context.isShiftLeftClick) {
                     if (shop.storedItemCount < amount + 64) {
@@ -124,21 +111,21 @@ object BuyShopItemView : View() {
                         context.player.playNoSound()
                         return@onClick
                     }
-                    amountState.set(amountState.get(context) + 64, context)
+                    amountState.set(amount + 64, context)
                     return@onClick
                 }
 
-                if (context.isRightClick) {
-                    if (amount - 1 <= 0) {
+                if (context.isLeftClick) {
+                    if (shop.storedItemCount < amount + 1) {
                         context.player.sendText {
                             appendErrorPrefix()
-                            error("Die Menge muss mindestens 1 betragen!")
+                            error("Es sind nicht genügend Items auf Lager!")
                         }
 
                         context.player.playNoSound()
                         return@onClick
                     }
-                    amountState.set(amountState.get(context) - 1, context)
+                    amountState.set(amount + 1, context)
                     return@onClick
                 }
 
@@ -153,58 +140,77 @@ object BuyShopItemView : View() {
                         return@onClick
                     }
 
-                    amountState.set(amountState.get(context) - 64, context)
+                    amountState.set(amount - 64, context)
+                }
+
+                if (context.isRightClick) {
+                    if (amount - 1 <= 0) {
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Die Menge muss mindestens 1 betragen!")
+                        }
+
+                        context.player.playNoSound()
+                        return@onClick
+                    }
+                    amountState.set(amount - 1, context)
+                    return@onClick
                 }
             }
 
-        render.layoutSlot('C', MenuHeads.CHECK.clone().apply {
-            displayName {
-                shopColored("Kaufen")
+        render.layoutSlot('C')
+            .renderWith {
+                MenuHeads.CHECK.clone().apply {
+                    displayName {
+                        shopColored("Kaufen")
+                    }
+
+                    buildLore {
+                        emptyLine()
+                        line {
+                            spacer("-")
+                            appendSpace()
+                            shopColored("Klicke um die Items zu kaufen.")
+                        }
+
+                        emptyLine()
+                        line {
+                            spacer("-")
+                            appendSpace()
+                            shopColored("Anzahl: ")
+                            variableValue(amountState.get(render))
+                        }
+
+                        line {
+                            spacer("-")
+                            appendSpace()
+                            shopColored("Gesamtpreis: ")
+                            variableValue(amountState.get(render) * shopState.get(render).pricePerItem)
+                        }
+                    }
+                }
             }
+            .updateOnStateChange(amountState)
+            .onClick { context ->
+                context.playGeneralClickSound()
 
-            buildLore {
-                emptyLine()
-                line {
-                    spacer("-")
-                    appendSpace()
-                    shopColored("Klicke um die Items zu kaufen.")
+                val shop = shopState.get(context)
+                val amount = amountState.get(context)
+
+                if (shop.storedItemCount < amount) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Es sind nicht genügend Items auf Lager!")
+                    }
+
+                    context.player.playNoSound()
+                    return@onClick
                 }
 
-                emptyLine()
-                line {
-                    spacer("-")
-                    appendSpace()
-                    shopColored("Anzahl: ")
-                    variableValue(amountState.get(render))
-                }
+                context.player.closeInventory()
 
-                line {
-                    spacer("-")
-                    appendSpace()
-                    shopColored("Gesamtpreis: ")
-                    variableValue(amountState.get(render) * shopState.get(render).pricePerItem)
-                }
+                // TODO: Buy Item
             }
-        }).onClick { context ->
-            context.playGeneralClickSound()
-
-            val shop = shopState.get(context)
-            val amount = amountState.get(context)
-
-            if (shop.storedItemCount < amount) {
-                context.player.sendText {
-                    appendErrorPrefix()
-                    error("Es sind nicht genügend Items auf Lager!")
-                }
-
-                context.player.playNoSound()
-                return@onClick
-            }
-
-            context.player.closeInventory()
-
-            // TODO: Buy Item
-        }
         render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
             displayName {
                 error("Abbrechen")
