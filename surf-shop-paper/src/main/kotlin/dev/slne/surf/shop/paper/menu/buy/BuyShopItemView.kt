@@ -1,6 +1,8 @@
 package dev.slne.surf.shop.paper.menu.buy
 
+import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.service.dealService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
@@ -199,6 +201,16 @@ object BuyShopItemView : View() {
                 val shop = shopState.get(context)
                 val amount = amountState.get(context)
 
+                if (shop.isBlocked) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Du kannst derzeit keine Items in diesem Shop kaufen!")
+                    }
+
+                    context.player.playNoSound()
+                    return@onClick
+                }
+
                 if (shop.storedItemCount < amount) {
                     context.player.sendText {
                         appendErrorPrefix()
@@ -215,7 +227,9 @@ object BuyShopItemView : View() {
                     AuxProtectHook.logBuy(context.player, shop, amount)
                 }
 
-                // TODO: Buy Item
+                plugin.launch {
+                    dealService.buy(context.player, shop, amount)
+                }
             }
         render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
             displayName {
