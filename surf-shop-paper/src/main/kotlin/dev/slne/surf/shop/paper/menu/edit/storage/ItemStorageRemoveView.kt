@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
+import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -81,21 +82,11 @@ object ItemStorageRemoveView : View() {
         }
 
         render.layoutSlot('3', plusOne).onClick { context ->
-            localAmountState.set(localAmountState.get(render) + 1, render)
-            context.update()
-
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
-            }
+            handleIncrement(render, context, 1)
         }
 
         render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            localAmountState.set(localAmountState.get(render) + 64, render)
-            context.update()
-
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
-            }
+            handleIncrement(render, context, 64)
         }
 
         render.layoutSlot('B', continueItem).onClick { context ->
@@ -116,7 +107,7 @@ object ItemStorageRemoveView : View() {
                 shopService.blockShop(shop)
 
                 val updatedShop =
-                    shopService.loadedShops.find { it.shopUuid === shop.shopUuid }
+                    shopService.loadedShops.find { it.shopUuid == shop.shopUuid }
 
                 if (updatedShop == null) {
                     context.player.sendText {
@@ -245,6 +236,29 @@ object ItemStorageRemoveView : View() {
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName { spacer("") }
+    }
+
+    private fun handleIncrement(render: RenderContext, context: SlotClickContext, delta: Int) {
+        val currentStock = shopService.loadedShops.find {
+            it.shopUuid == shopState.get(context)?.shopUuid
+        }?.storedItemCount ?: 0
+
+        val newAmount = localAmountState.get(render) + delta
+
+        if (newAmount > currentStock) {
+            context.player.sendText {
+                appendErrorPrefix()
+                error("Es sind nicht genügend Items auf Lager!")
+            }
+            return
+        }
+
+        localAmountState.set(newAmount, render)
+        context.update()
+
+        context.player.playSound(true) {
+            type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+        }
     }
 
     private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
