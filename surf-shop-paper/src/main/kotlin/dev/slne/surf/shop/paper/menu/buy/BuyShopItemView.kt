@@ -241,9 +241,7 @@ object BuyShopItemView : View() {
                 }
 
                 plugin.launch {
-                    val result = dealService.buy(context.player, shop, amount)
-
-                    when (result) {
+                    when (val result = dealService.buy(context.player, shop, amount)) {
                         Deal.DealResult.InsufficientStock -> {
                             context.player.sendText {
                                 appendErrorPrefix()

@@ -5,6 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.util.updatedShop
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.outlineItem
@@ -48,21 +49,23 @@ object EditShopView : View() {
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('P', pricePerItemItem.clone().apply {
-            if (shopState.get(render).pricePerItem > 0) {
-                buildLore {
-                    emptyLine()
-                    line {
-                        spacer("-")
-                        appendSpace()
-                        shopColored(
-                            "Aktueller Preis Pro Item: ${
-                                formatPriceNice(
-                                    shopState.get(
-                                        render
-                                    ).pricePerItem
-                                )
-                            }"
-                        )
+            shopState.get(render).updatedShop?.pricePerItem?.let {
+                if (it > 0) {
+                    buildLore {
+                        emptyLine()
+                        line {
+                            spacer("-")
+                            appendSpace()
+                            shopColored(
+                                "Aktueller Preis Pro Item: ${
+                                    formatPriceNice(
+                                        shopState.get(
+                                            render
+                                        ).pricePerItem
+                                    )
+                                }"
+                            )
+                        }
                     }
                 }
             }
@@ -95,7 +98,16 @@ object EditShopView : View() {
         render.layoutSlot('C', saveItem(render)).onClick { context ->
             context.playGeneralClickSound()
 
-            val shop = shopState.get(context)
+            val shop = shopState.get(context).updatedShop ?: run {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Der Shop existiert nicht mehr.")
+                }
+                context.player.playSound(true) {
+                    type(Sound.ENTITY_VILLAGER_NO)
+                }
+                return@onClick
+            }
             val price = shop.pricePerItem
 
             if (price <= 0) {
@@ -110,7 +122,7 @@ object EditShopView : View() {
             }
 
             plugin.launch {
-                shopService.saveShop(shopState.get(render))
+                shopService.saveShop(shop)
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)

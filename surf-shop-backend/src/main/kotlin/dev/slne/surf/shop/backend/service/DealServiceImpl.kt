@@ -97,7 +97,6 @@ class DealServiceImpl : DealService, Services.Fallback {
             is TransactionResult.ReceiverInsufficientFunds -> return Deal.DealResult.SelfInsufficientFounds
             is TransactionResult.SenderInsufficientFunds -> return Deal.DealResult.OtherInsufficientFounds
             else -> {
-
                 val updatedShop = shop.copy(
                     storedItemCount = shop.storedItemCount - amount
                 )
