@@ -1,12 +1,15 @@
 package dev.slne.surf.shop.paper.menu.buy
 
 import com.github.shynixn.mccoroutine.folia.launch
+import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.dealService
+import dev.slne.surf.shop.core.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
@@ -92,7 +95,7 @@ object BuyShopItemView : View() {
                         spacer("-")
                         appendSpace()
                         shopColored("Gesamtpreis: ")
-                        variableValue(amount * shop.pricePerItem)
+                        variableValue(formatPriceNice(amount * shop.pricePerItem))
                     })
 
                     lore(oldLore + newEntries)
@@ -198,7 +201,17 @@ object BuyShopItemView : View() {
             .onClick { context ->
                 context.playGeneralClickSound()
 
-                val shop = shopState.get(context)
+                val shop = shopState.get(context).updatedShop ?: run {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Dieser Shop existiert nicht mehr!")
+                    }
+
+                    context.player.playNoSound()
+                    context.openForPlayer(ShopListView::class.java)
+                    return@onClick
+                }
+
                 val amount = amountState.get(context)
 
                 if (shop.isBlocked) {
@@ -228,7 +241,84 @@ object BuyShopItemView : View() {
                 }
 
                 plugin.launch {
-                    dealService.buy(context.player, shop, amount)
+                    val result = dealService.buy(context.player, shop, amount)
+
+                    when (result) {
+                        Deal.DealResult.InsufficientStock -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Es sind nicht genügend Items auf Lager!")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        Deal.DealResult.OtherInsufficientFounds -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Es ist ein Fehler aufgetreten. (SELLER_INSUFFICIENT_FOUNDS)")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        Deal.DealResult.SelfInsufficientFounds -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        Deal.DealResult.ShopBlocked -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Du kannst derzeit keine Items in diesem Shop kaufen!")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        Deal.DealResult.ShopDeleted -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Dieser Shop existiert nicht mehr!")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        is Deal.DealResult.Success -> {
+                            context.player.sendText {
+                                appendSuccessPrefix()
+                                success(
+                                    "Du hast erfolgreich ${result.deal.amount} Items für ${
+                                        formatPriceNice(
+                                            result.deal.amount * shop.pricePerItem
+                                        )
+                                    } gekauft!"
+                                )
+                            }
+
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+
+                        Deal.DealResult.TransactionFailed -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
+                            }
+
+                            context.player.playNoSound()
+                            context.openForPlayer(ShopListView::class.java)
+                        }
+                    }
                 }
             }
         render.layoutSlot('B', MenuHeads.CROSS.clone().apply {

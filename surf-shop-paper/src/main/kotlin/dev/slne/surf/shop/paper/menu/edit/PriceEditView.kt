@@ -6,6 +6,7 @@ import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
@@ -116,7 +117,7 @@ object PriceEditView : View() {
         displayName {
             shopColored("Preis: ", TextDecoration.BOLD)
             appendSpace()
-            shopColored(localPriceState.get(context))
+            shopColored(formatPriceNice(localPriceState.get(context)))
         }
     }
 

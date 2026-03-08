@@ -13,10 +13,13 @@ import dev.slne.surf.transaction.api.currency.Currency
 import dev.slne.surf.transaction.api.transaction.TransactionResult
 import dev.slne.surf.transaction.api.user.TransactionUser
 import it.unimi.dsi.fastutil.objects.ObjectSet
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.kyori.adventure.util.Services
 import org.bukkit.entity.Player
 import java.time.OffsetDateTime
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 @AutoService(DealService::class)
 class DealServiceImpl : DealService, Services.Fallback {
@@ -24,20 +27,26 @@ class DealServiceImpl : DealService, Services.Fallback {
     private val _deals = mutableObject2ObjectMapOf<UUID, Deal>()
     override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
 
+    private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
+
+    private fun getLock(shopUuid: UUID): Mutex {
+        return shopLocks.computeIfAbsent(shopUuid) { Mutex() }
+    }
+
     override suspend fun buyInternal(
         shop: Shop,
         amount: Int,
         buyer: UUID
     ): Deal {
-        val boughtByRepository = dealRepository.buy(
+        val bought = dealRepository.buy(
             shop,
             amount,
             buyer,
             OffsetDateTime.now()
         )
 
-        _deals[boughtByRepository.dealUuid] = boughtByRepository
-        return boughtByRepository
+        _deals[bought.dealUuid] = bought
+        return bought
     }
 
     override suspend fun buy(
@@ -45,25 +54,38 @@ class DealServiceImpl : DealService, Services.Fallback {
         shop: Shop,
         amount: Int
     ): Deal.DealResult {
+
         val actualShop =
             shopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
                 ?: return Deal.DealResult.ShopDeleted
 
-        val storedAmount = actualShop.storedItemCount
+        val lock = getLock(actualShop.shopUuid)
 
-        if (storedAmount == 0) {
-            return Deal.DealResult.InsufficientStock
-        }
+        return lock.withLock {
+            if (actualShop.isBlocked) {
+                return@withLock Deal.DealResult.ShopBlocked
+            }
 
-        return if (storedAmount < amount) {
-            buy0(player, actualShop, storedAmount)
-        } else {
-            buy0(player, actualShop, amount)
+            val storedAmount = actualShop.storedItemCount
+
+            if (storedAmount == 0) {
+                return@withLock Deal.DealResult.InsufficientStock
+            }
+
+            val buyAmount = if (storedAmount < amount) storedAmount else amount
+
+            buy0(player, actualShop, buyAmount)
         }
     }
 
-    private suspend fun buy0(player: Player, shop: Shop, amount: Int): Deal.DealResult {
+    private suspend fun buy0(
+        player: Player,
+        shop: Shop,
+        amount: Int
+    ): Deal.DealResult {
+
         val receiverAccount = TransactionUser[shop.seller].getDefaultAccount()
+
         val transactionResult = TransactionUser[player.uniqueId].transfer(
             (shop.pricePerItem * amount).toBigDecimal(),
             Currency.default(),
@@ -75,18 +97,42 @@ class DealServiceImpl : DealService, Services.Fallback {
             is TransactionResult.ReceiverInsufficientFunds -> return Deal.DealResult.SelfInsufficientFounds
             is TransactionResult.SenderInsufficientFunds -> return Deal.DealResult.OtherInsufficientFounds
             else -> {
-                shopService.saveShop(shop.copy(storedItemCount = shop.storedItemCount - amount))
 
-                val boughtByRepository = dealRepository.buy(
-                    shop,
+                val updatedShop = shop.copy(
+                    storedItemCount = shop.storedItemCount - amount
+                )
+
+                shopService.saveShop(updatedShop)
+
+                val deal = dealRepository.buy(
+                    updatedShop,
                     amount,
                     player.uniqueId,
                     OffsetDateTime.now()
                 )
 
-                _deals[boughtByRepository.dealUuid] = boughtByRepository
+                _deals[deal.dealUuid] = deal
 
-                return Deal.DealResult.Success(boughtByRepository)
+                val itemStack = shop.item
+                var remaining = amount
+
+                while (remaining > 0) {
+                    val stackSize = minOf(remaining, 64)
+                    val stack = itemStack.clone()
+                    stack.amount = stackSize
+
+                    val leftover = player.inventory.addItem(stack)
+
+                    if (leftover.isNotEmpty()) {
+                        leftover.values.forEach {
+                            player.world.dropItem(player.location, it).owner = player.uniqueId
+                        }
+                    }
+
+                    remaining -= stackSize
+                }
+
+                return Deal.DealResult.Success(deal)
             }
         }
     }
@@ -100,5 +146,9 @@ class DealServiceImpl : DealService, Services.Fallback {
         loadedDeals.forEach { _deals[it.dealUuid] = it }
 
         logger.info("Loaded ${_deals.size} deals")
+    }
+
+    fun removeShopLock(shopUuid: UUID) {
+        shopLocks.remove(shopUuid)
     }
 }

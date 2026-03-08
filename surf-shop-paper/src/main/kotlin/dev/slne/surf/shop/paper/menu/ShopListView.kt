@@ -12,6 +12,7 @@ import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.displayKey
+import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
@@ -302,7 +303,7 @@ object ShopListView : View() {
 
 fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
     amount = 1
-    
+
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
     val newEntries = mutableListOf<Component>()
 
@@ -315,7 +316,7 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
         spacer("-")
         appendSpace()
         shopColored("Preis: ")
-        variableValue("${shop.pricePerItem}/Item")
+        variableValue("${formatPriceNice(shop.pricePerItem)}/Item")
     })
 
     newEntries.add(buildText {

@@ -9,6 +9,7 @@ import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -188,7 +189,7 @@ object CreateShopView : View() {
                 if (priceState.get(context) <= 0) {
                     variableValue("Kein Preis festgelegt")
                 } else {
-                    variableValue(priceState.get(context))
+                    variableValue(formatPriceNice(priceState.get(context)))
                 }
             }
         }

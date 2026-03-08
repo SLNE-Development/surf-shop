@@ -27,5 +27,5 @@ fun formatPriceNice(price: Int): String {
         stringBuilder.append(priceString[i])
     }
 
-    return "$stringBuilder CC"
+    return "${stringBuilder}CC"
 }

@@ -12,6 +12,7 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -53,7 +54,15 @@ object EditShopView : View() {
                     line {
                         spacer("-")
                         appendSpace()
-                        shopColored("Aktueller Preis Pro Item: ${shopState.get(render).pricePerItem}")
+                        shopColored(
+                            "Aktueller Preis Pro Item: ${
+                                formatPriceNice(
+                                    shopState.get(
+                                        render
+                                    ).pricePerItem
+                                )
+                            }"
+                        )
                     }
                 }
             }
@@ -156,7 +165,7 @@ object EditShopView : View() {
                 if (shopState.get(context).pricePerItem <= 0) {
                     variableValue("Kein Preis festgelegt")
                 } else {
-                    variableValue(shopState.get(context).pricePerItem)
+                    variableValue(formatPriceNice(shopState.get(context).pricePerItem))
                 }
             }
         }
