@@ -51,11 +51,11 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     }
 
     override fun blockShop(shop: Shop) {
-        _shops[shop.shopUuid] = shop.apply { isBlocked = true }
+        _shops[shop.shopUuid]?.let { it.isBlocked = true }
     }
 
     override fun unblockShop(shop: Shop) {
-        _shops[shop.shopUuid] = shop.apply { isBlocked = false }
+        _shops[shop.shopUuid]?.let { it.isBlocked = false }
     }
 
     override suspend fun saveShop(shop: Shop): Shop {
