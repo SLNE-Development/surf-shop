@@ -41,12 +41,13 @@ object BuyShopItemView : View() {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('I')
             .renderWith {
-                shopState.get(render).item.clone().apply {
+                val initialShop = shopState.get(render)
+                val shop = initialShop.updatedShop ?: initialShop
+                shop.item.clone().apply {
                     val oldLore = lore()?.toMutableList() ?: mutableListOf()
                     val newEntries = mutableListOf<Component>()
 
                     val amount = amountState.get(render)
-                    val shop = shopState.get(render)
 
                     newEntries.add(Component.empty())
                     newEntries.add(buildText {
@@ -105,11 +106,47 @@ object BuyShopItemView : View() {
             .onClick { context ->
                 context.playGeneralClickSound()
 
-                val shop = shopState.get(context)
-                val amount = amountState.get(context)
+                val currentShop = shopState.get(context).updatedShop ?: run {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Dieser Shop existiert nicht mehr!")
+                    }
+
+                    context.player.playNoSound()
+                    context.openForPlayer(ShopListView::class.java)
+                    return@onClick
+                }
+
+                var amount = amountState.get(context)
+
+                if (currentShop.storedItemCount <= 0) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Dieser Shop ist ausverkauft!")
+                    }
+
+                    context.player.playNoSound()
+                    return@onClick
+                }
+
+                if (amount > currentShop.storedItemCount) {
+                    amount = currentShop.storedItemCount
+                    amountState.set(amount, context)
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Die Anzahl wurde auf den verfügbaren Lagerbestand (${currentShop.storedItemCount}) angepasst!")
+                    }
+
+                    context.player.playNoSound()
+
+                    // For increment actions the cap is sufficient; only allow decrement to continue.
+                    if (!context.isRightClick && !context.isShiftRightClick) {
+                        return@onClick
+                    }
+                }
 
                 if (context.isShiftLeftClick) {
-                    if (shop.storedItemCount < amount + 64) {
+                    if (currentShop.storedItemCount < amount + 64) {
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Es sind nicht genügend Items auf Lager!")
@@ -123,7 +160,7 @@ object BuyShopItemView : View() {
                 }
 
                 if (context.isLeftClick) {
-                    if (shop.storedItemCount < amount + 1) {
+                    if (currentShop.storedItemCount < amount + 1) {
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Es sind nicht genügend Items auf Lager!")
