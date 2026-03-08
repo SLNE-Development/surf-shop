@@ -13,6 +13,7 @@ surfPaperPluginApi {
     authors.add("red")
 
     serverDependencies {
+        registerSoft("surf-npc-paper")
         registerSoft("AuxProtect")
         registerRequired("surf-transaction-paper")
     }
@@ -25,6 +26,7 @@ dependencies {
         isTransitive = false
     }
     compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
+    compileOnly("dev.slne.surf.npc:surf-npc-api:1.21.11-1.6.1-SNAPSHOT")
 }
 
 configurations.all {

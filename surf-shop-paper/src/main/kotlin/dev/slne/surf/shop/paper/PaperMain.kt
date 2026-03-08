@@ -7,6 +7,7 @@ import dev.slne.surf.shop.core.service.dealService
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.hook.SurfNpcHook
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
@@ -18,6 +19,7 @@ import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.surfapi.bukkit.api.event.register
 import dev.slne.surf.surfapi.bukkit.api.extensions.pluginManager
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
@@ -57,6 +59,12 @@ class PaperMain : SuspendingJavaPlugin() {
             AuxProtectHook.create()
         }
 
+        if (surfNpcHook) {
+            SurfNpcHook.create()
+
+            SurfNpcHook.NpcListener.register()
+        }
+
         shopCommand()
     }
 
@@ -65,4 +73,5 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     val auxProtectHook get() = pluginManager.isPluginEnabled("AuxProtect")
+    val surfNpcHook get() = pluginManager.isPluginEnabled("surf-npc-paper")
 }
