@@ -8,4 +8,5 @@ surfRawPaperApi {
 
 dependencies {
     api(project(":surf-shop-core"))
+    compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
 }

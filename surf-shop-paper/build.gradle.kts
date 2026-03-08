@@ -1,3 +1,4 @@
+import dev.slne.surf.surfapi.gradle.util.registerRequired
 import dev.slne.surf.surfapi.gradle.util.registerSoft
 
 plugins {
@@ -13,6 +14,7 @@ surfPaperPluginApi {
 
     serverDependencies {
         registerSoft("AuxProtect")
+        registerRequired("surf-transaction-paper")
     }
 }
 
@@ -22,6 +24,7 @@ dependencies {
     compileOnly("com.github.Heliosares:AuxProtect:1.3.1") {
         isTransitive = false
     }
+    compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
 }
 
 configurations.all {

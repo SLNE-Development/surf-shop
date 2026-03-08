@@ -12,7 +12,7 @@ val dealService = requiredService<DealService>()
 interface DealService {
     val loadedDeals: ObjectSet<Deal>
     suspend fun buyInternal(shop: Shop, amount: Int, buyer: UUID): Deal
-    suspend fun buy(player: Player, shop: Shop, amount: Int): Deal?
+    suspend fun buy(player: Player, shop: Shop, amount: Int): Deal.DealResult
 
     suspend fun fetchDeals()
 }

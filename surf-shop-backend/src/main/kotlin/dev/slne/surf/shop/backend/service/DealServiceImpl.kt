@@ -7,11 +7,12 @@ import dev.slne.surf.shop.backend.repository.dealRepository
 import dev.slne.surf.shop.core.service.DealService
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.util.logger
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
+import dev.slne.surf.transaction.api.currency.Currency
+import dev.slne.surf.transaction.api.transaction.TransactionResult
+import dev.slne.surf.transaction.api.user.TransactionUser
 import it.unimi.dsi.fastutil.objects.ObjectSet
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.util.Services
 import org.bukkit.entity.Player
 import java.time.OffsetDateTime
@@ -43,46 +44,51 @@ class DealServiceImpl : DealService, Services.Fallback {
         player: Player,
         shop: Shop,
         amount: Int
-    ): Deal? {
-        val updatedShop =
+    ): Deal.DealResult {
+        val actualShop =
             shopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
-                ?: return null
+                ?: return Deal.DealResult.ShopDeleted
 
-        shopService.blockShop(updatedShop)
+        val storedAmount = actualShop.storedItemCount
 
-        if (shop.storedItemCount < amount) {
-            buyInternal(shop, shop.storedItemCount, player.uniqueId)
-            shopService.saveShop(updatedShop.copy(storedItemCount = 0))
-
-            player.sendText {
-                appendSuccessPrefix()
-                success("Du konntest nur ")
-                variableValue("${shop.storedItemCount}x")
-                success(" von ")
-                variableValue("${amount}x ")
-                append {
-                    append(Component.translatable(shop.item.type.translationKey()))
-                    hoverEvent(shop.item.asHoverEvent())
-                }
-                success("Items kaufen.")
-            }
-        } else {
-            shopService.saveShop(updatedShop.copy(storedItemCount = updatedShop.storedItemCount - amount))
-
-            player.sendText {
-                appendSuccessPrefix()
-                success("Du hast ")
-                variableValue("${amount}x ")
-                append {
-                    append(Component.translatable(shop.item.type.translationKey()))
-                    hoverEvent(shop.item.asHoverEvent())
-                }
-
-                success("  gekauft.")
-            }
+        if (storedAmount == 0) {
+            return Deal.DealResult.InsufficientStock
         }
 
-        return buyInternal(shop, amount, player.uniqueId)
+        return if (storedAmount < amount) {
+            buy0(player, actualShop, storedAmount)
+        } else {
+            buy0(player, actualShop, amount)
+        }
+    }
+
+    private suspend fun buy0(player: Player, shop: Shop, amount: Int): Deal.DealResult {
+        val receiverAccount = TransactionUser[shop.seller].getDefaultAccount()
+        val transactionResult = TransactionUser[player.uniqueId].transfer(
+            (shop.pricePerItem * amount).toBigDecimal(),
+            Currency.default(),
+            receiverAccount
+        )
+
+        when (transactionResult) {
+            is TransactionResult.DatabaseError -> return Deal.DealResult.TransactionFailed
+            is TransactionResult.ReceiverInsufficientFunds -> return Deal.DealResult.SelfInsufficientFounds
+            is TransactionResult.SenderInsufficientFunds -> return Deal.DealResult.OtherInsufficientFounds
+            else -> {
+                shopService.saveShop(shop.copy(storedItemCount = shop.storedItemCount - amount))
+
+                val boughtByRepository = dealRepository.buy(
+                    shop,
+                    amount,
+                    player.uniqueId,
+                    OffsetDateTime.now()
+                )
+
+                _deals[boughtByRepository.dealUuid] = boughtByRepository
+
+                return Deal.DealResult.Success(boughtByRepository)
+            }
+        }
     }
 
     override suspend fun fetchDeals() {
