@@ -5,6 +5,7 @@ import dev.slne.surf.npc.api.event.NpcInteractEvent
 import dev.slne.surf.npc.api.npc.skin.NpcSkin
 import dev.slne.surf.npc.api.npc.skin.NpcSkinPart
 import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
@@ -62,6 +63,7 @@ object SurfNpcHook {
         @EventHandler
         fun onNpcInteract(event: NpcInteractEvent) {
             if (event.npc.uniqueName.startsWith("surf_shop_npc-")) {
+                searchInputCache.remove(event.player.uniqueId)
                 viewFrame.open(ShopListView::class.java, event.player)
             }
         }
