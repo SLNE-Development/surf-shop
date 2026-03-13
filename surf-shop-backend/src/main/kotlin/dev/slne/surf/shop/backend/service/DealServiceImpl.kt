@@ -1,5 +1,8 @@
 package dev.slne.surf.shop.backend.service
 
+import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
@@ -15,6 +18,7 @@ import dev.slne.surf.transaction.api.user.TransactionUser
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.util.Services
 import org.bukkit.entity.Player
 import java.time.OffsetDateTime
@@ -26,6 +30,11 @@ class DealServiceImpl : DealService, Services.Fallback {
 
     private val _deals = mutableObject2ObjectMapOf<UUID, Deal>()
     override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
+    private lateinit var plugin: SuspendingJavaPlugin
+
+    override fun create(plugin: SuspendingJavaPlugin) {
+        this.plugin = plugin
+    }
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
 
@@ -120,13 +129,19 @@ class DealServiceImpl : DealService, Services.Fallback {
                     val stack = itemStack.clone()
                     stack.amount = stackSize
 
-                    val leftover = player.inventory.addItem(stack)
+                    withContext(plugin.entityDispatcher(player)) {
+                        val leftover = player.inventory.addItem(stack)
 
-                    if (leftover.isNotEmpty()) {
-                        leftover.values.forEach {
-                            player.world.dropItem(player.location, it).owner = player.uniqueId
+                        withContext(plugin.regionDispatcher(player.location)) {
+                            if (leftover.isNotEmpty()) {
+                                leftover.values.forEach {
+                                    player.world.dropItem(player.location, it).owner =
+                                        player.uniqueId
+                                }
+                            }
                         }
                     }
+
 
                     remaining -= stackSize
                 }

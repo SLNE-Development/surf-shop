@@ -38,6 +38,8 @@ class PaperMain : SuspendingJavaPlugin() {
     override suspend fun onLoadAsync() {
         databaseLoader.connect(plugin.dataPath)
 
+        dealService.create(this)
+
         shopService.fetchShops()
         dealService.fetchDeals()
 

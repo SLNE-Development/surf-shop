@@ -14,6 +14,7 @@ import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
@@ -370,6 +371,6 @@ object BuyShopItemView : View() {
 
     private suspend fun openListView(context: RenderContext) =
         withContext(plugin.entityDispatcher(context.player)) {
-            context.openForPlayer(ShopListView::class.java)
+            viewFrame.open(ShopListView::class.java, context.player)
         }
 }
