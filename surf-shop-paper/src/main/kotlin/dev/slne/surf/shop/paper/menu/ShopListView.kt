@@ -235,6 +235,7 @@ object ShopListView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
+        val pagination = paginationState.get(render)
 
         render
             .layoutSlot('S')
@@ -278,25 +279,39 @@ object ShopListView : View() {
         render
             .layoutSlot('P')
             .renderWith {
-                previousItem
+                if (pagination.canBack()) {
+                    previousItem
+                } else {
+                    outlineItem
+                }
             }
             .watch(paginationState)
-            .displayIf { _ -> paginationState.get(render).canBack() }
             .onClick { context ->
+                if (!pagination.canBack()) {
+                    return@onClick
+                }
+
                 context.playNewPageSound()
-                paginationState.get(render).back()
+                pagination.back()
             }
 
         render
             .layoutSlot('N')
             .renderWith {
-                nextItem
+                if (pagination.canAdvance()) {
+                    nextItem
+                } else {
+                    outlineItem
+                }
             }
             .watch(paginationState)
-            .displayIf { _ -> paginationState.get(render).canAdvance() }
             .onClick { context ->
+                if (!pagination.canAdvance()) {
+                    return@onClick
+                }
+
                 context.playNewPageSound()
-                paginationState.get(render).advance()
+                pagination.advance()
             }
     }
 }
