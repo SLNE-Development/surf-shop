@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.util.Services
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -124,26 +125,27 @@ class DealServiceImpl : DealService, Services.Fallback {
                 val itemStack = shop.item
                 var remaining = amount
 
+                val stacks = mutableListOf<ItemStack>()
+
                 while (remaining > 0) {
                     val stackSize = minOf(remaining, 64)
                     val stack = itemStack.clone()
+                    
                     stack.amount = stackSize
+                    stacks += stack
+                    remaining -= stackSize
+                }
 
-                    withContext(plugin.entityDispatcher(player)) {
-                        val leftover = player.inventory.addItem(stack)
+                withContext(plugin.entityDispatcher(player)) {
+                    val leftover = player.inventory.addItem(*stacks.toTypedArray())
 
+                    if (leftover.isNotEmpty()) {
                         withContext(plugin.regionDispatcher(player.location)) {
-                            if (leftover.isNotEmpty()) {
-                                leftover.values.forEach {
-                                    player.world.dropItem(player.location, it).owner =
-                                        player.uniqueId
-                                }
+                            leftover.values.forEach {
+                                player.world.dropItem(player.location, it).owner = player.uniqueId
                             }
                         }
                     }
-
-
-                    remaining -= stackSize
                 }
 
                 return Deal.DealResult.Success(deal)
