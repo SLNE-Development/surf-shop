@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu.buy
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
@@ -16,6 +17,7 @@ import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -286,7 +288,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         Deal.DealResult.OtherInsufficientFounds -> {
@@ -296,7 +298,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         Deal.DealResult.SelfInsufficientFounds -> {
@@ -306,7 +308,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         Deal.DealResult.ShopBlocked -> {
@@ -316,7 +318,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         Deal.DealResult.ShopDeleted -> {
@@ -326,7 +328,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         is Deal.DealResult.Success -> {
@@ -341,7 +343,7 @@ object BuyShopItemView : View() {
                                 )
                             }
 
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
 
                         Deal.DealResult.TransactionFailed -> {
@@ -351,7 +353,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            context.openForPlayer(ShopListView::class.java)
+                            openListView(render)
                         }
                     }
                 }
@@ -365,4 +367,9 @@ object BuyShopItemView : View() {
             context.openForPlayer(ShopListView::class.java)
         }
     }
+
+    private suspend fun openListView(context: RenderContext) =
+        withContext(plugin.entityDispatcher(context.player)) {
+            context.openForPlayer(ShopListView::class.java)
+        }
 }

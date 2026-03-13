@@ -21,7 +21,7 @@ object SurfNpcHook {
 
     fun create() {
         ShopNpcLocations.entries.forEach {
-            val npc = npc {
+            npc {
                 displayName {
                     variableValue("Shops".toSmallCaps(), TextDecoration.BOLD)
                 }
