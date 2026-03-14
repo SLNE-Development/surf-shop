@@ -37,7 +37,6 @@ object AuxProtectHook {
     }.getOrNull() ?: EntryAction.getAction(key)
 
     fun logBuy(player: Player, shop: Shop, amount: Int) {
-        println("Logging buy action for player ${player.name}, shop owned by ${shop.seller}, amount $amount, price per item ${shop.pricePerItem}, item ${shop.item.serialize()}")
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
@@ -45,13 +44,11 @@ object AuxProtectHook {
                     shopBoughtAction,
                     true,
                     null,
-                    "#shop",
-                    "shopOwner=${shop.seller}; amount=$amount; pricePerItem=${shop.pricePerItem}; item=${shop.item.serialize()} "
+                    "${amount}x ${shop.item.type} by ${shop.sellerName}",
+                    "pricePerItem=${shop.pricePerItem}, paidPrice=${shop.pricePerItem * amount}; item=${shop.item}"
                 )
             )
         }
-
-        println("Logged buy action for player ${player.name}, shop owned by ${shop.seller}, amount $amount, price per item ${shop.pricePerItem}, item ${shop.item.serialize()}")
     }
 
     fun logCreate(player: Player, shop: Shop) {
@@ -62,8 +59,8 @@ object AuxProtectHook {
                     shopCreatedAction,
                     true,
                     null,
-                    "#shop",
-                    "shopOwner=${shop.seller}; item=${shop.item.serialize()}"
+                    shop.item.type.toString(),
+                    "pricePerItem=${shop.pricePerItem}; item=${shop.item}"
                 )
             )
         }
@@ -77,8 +74,8 @@ object AuxProtectHook {
                     shopDeletedAction,
                     true,
                     null,
-                    "#shop",
-                    "shopOwner=${shop.seller}; item=${shop.item.serialize()}"
+                    shop.item.type.toString(),
+                    "item=${shop.item}"
                 )
             )
         }
@@ -92,8 +89,8 @@ object AuxProtectHook {
                     shopDepositedAction,
                     true,
                     null,
-                    "#shop",
-                    "shopOwner=${shop.seller}; amount=$amount; item=${shop.item.serialize()}"
+                    shop.item.type.toString(),
+                    "amount=$amount; item=${shop.item}"
                 )
             )
         }
@@ -107,8 +104,8 @@ object AuxProtectHook {
                     shopWithdrawnAction,
                     true,
                     null,
-                    "#shop",
-                    "shopOwner=${shop.seller}; amount=$amount; item=${shop.item.serialize()}"
+                    shop.item.type.toString(),
+                    "amount=$amount; item=${shop.item}"
                 )
             )
         }
