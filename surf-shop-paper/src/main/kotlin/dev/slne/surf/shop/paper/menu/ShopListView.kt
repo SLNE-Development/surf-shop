@@ -379,6 +379,11 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
         })
     }
 
+    newEntries.add(Component.empty())
+    newEntries.add(buildText {
+        darkSpacer(shop.shopUuid.toString())
+    })
+
     lore(oldLore + newEntries)
 }
 
