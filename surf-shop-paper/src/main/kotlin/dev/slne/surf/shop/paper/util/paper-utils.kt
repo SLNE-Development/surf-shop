@@ -5,6 +5,8 @@ import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.*
 
 val searchInputCache = mutableObject2ObjectMapOf<UUID, String>()
@@ -16,16 +18,10 @@ fun SurfComponentBuilder.displayKey(key: String) =
 
 fun SurfComponentBuilder.translatable(key: String) = append(Component.translatable(key))
 
-fun formatPriceNice(price: Int): String {
-    val priceString = price.toString()
-    val stringBuilder = StringBuilder()
+fun formatPriceNice(price: Int): String = castCoinFormat.format(price)
 
-    for (i in priceString.indices) {
-        if (i > 0 && (priceString.length - i) % 3 == 0) {
-            stringBuilder.append('.')
-        }
-        stringBuilder.append(priceString[i])
-    }
-
-    return "${stringBuilder}CC"
-}
+val castCoinFormat = DecimalFormat("#,##0.## ¤", DecimalFormatSymbols(Locale.GERMANY).apply {
+    decimalSeparator = ','
+    groupingSeparator = '.'
+    currencySymbol = "CC"
+})
