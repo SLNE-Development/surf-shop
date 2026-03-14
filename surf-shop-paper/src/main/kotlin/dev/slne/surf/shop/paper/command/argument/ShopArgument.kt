@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.paper.command.argument
 
-import com.sk89q.worldguard.WorldGuard
 import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.CommandTree
 import dev.jorel.commandapi.arguments.Argument
@@ -10,22 +9,21 @@ import dev.jorel.commandapi.arguments.StringArgument
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
+import java.util.*
 
 class ShopArgument(nodeName: String) :
     CustomArgument<Shop, String>(StringArgument(nodeName), { info ->
-        WorldGuard.getInstance().platform.regionContainer.loaded.flatMap { it.regions.values }
-            .filter { it.getFlag(ProtectionFlagsRegistry.SURF_PROTECTION) != null }
-            .firstOrNull { it.id == info.input }
+        shopService.loadedShops.find { it.shopUuid == runCatching { UUID.fromString(info.input) }.getOrNull() }
             ?: throw CustomArgumentException.fromAdventureComponent(
                 buildText {
                     appendErrorPrefix()
-                    error("Das Grundstück wurde nicht gefunden.")
+                    error("Der Shop wurde nicht gefunden.")
                 })
     }) {
     init {
         this.replaceSuggestions(
             ArgumentSuggestions.stringCollection {
-                shopService.loadedShops.map { it.shopUuid }
+                shopService.loadedShops.map { it.shopUuid.toString() }
             }
         )
     }
