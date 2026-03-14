@@ -1,7 +1,9 @@
 package dev.slne.surf.shop.paper.command
 
 import dev.jorel.commandapi.kotlindsl.*
+import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.command.argument.shopArgument
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
@@ -24,7 +26,7 @@ fun shopCommand() = commandTree("shop") {
     literalArgument("admin") {
         withPermission(PermissionRegistry.SHOP_COMMAND_ADMIN)
         literalArgument("clearCacheAndFetch") {
-            anyExecutorSuspend { sender, arguments ->
+            anyExecutorSuspend { sender, _ ->
                 shopService.fetchShops()
 
                 sender.sendText {
@@ -35,13 +37,31 @@ fun shopCommand() = commandTree("shop") {
         }
 
         literalArgument("clearPlayerDataCache") {
-            anyExecutor { sender, arguments ->
+            anyExecutor { sender, _ ->
                 searchInputCache.clear()
                 plugin.sorts.clear()
 
                 sender.sendText {
                     appendSuccessPrefix()
                     success("Der Player-Daten-Cache wurde geleert.")
+                }
+            }
+        }
+
+        literalArgument("forceDelete") {
+            shopArgument("shop") {
+                anyExecutorSuspend { sender, args ->
+                    val shop: Shop by args
+                    val success = shopService.deleteShop(shop)
+
+                    sender.sendText {
+                        appendSuccessPrefix()
+                        if (success) {
+                            success("Der Shop von ${shop.sellerName} wurde erfolgreich gelöscht.")
+                        } else {
+                            error("Der Shop von ${shop.sellerName} konnte nicht gelöscht werden.")
+                        }
+                    }
                 }
             }
         }

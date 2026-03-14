@@ -71,7 +71,6 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     }
 
     override suspend fun deleteShop(shop: Shop): Boolean {
-
         val lock = getLock(shop.shopUuid)
 
         return lock.withLock {
