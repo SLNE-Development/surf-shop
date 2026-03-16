@@ -124,7 +124,9 @@ object CreateShopView : View() {
             }
 
             plugin.launch {
-                val shop = shopService.createShop(item, 0, price, context.player.uniqueId)
+                val shop = shopService.createShop(item.clone().apply {
+                    amount = 1
+                }, 0, price, context.player.uniqueId)
 
                 if (plugin.auxProtectHook) {
                     AuxProtectHook.logCreate(context.player, shop)
