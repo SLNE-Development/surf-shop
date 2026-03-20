@@ -61,6 +61,14 @@ object DeleteShopView : View() {
                 info("Der Shop wird gelöscht...")
             }
 
+            if (shop.storedItemCount > 0) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Der Shop enthält noch ${shop.storedItemCount} gelagerte Items. Bitte entferne diese zuerst, bevor du den Shop löschen kannst.")
+                }
+                return@onClick
+            }
+
             plugin.launch {
                 shopService.deleteShop(shop)
 
