@@ -10,6 +10,7 @@ import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -100,6 +101,40 @@ object BuyShopItemView : View() {
                         appendSpace()
                         shopColored("Gesamtpreis: ")
                         variableValue(formatPriceNice(amount * shop.pricePerItem))
+                    })
+
+                    newEntries.add(Component.empty())
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        displayKey("key.mouse.left")
+                        darkSpacer(":")
+                        variableValue(" +1".toSmallCaps())
+                    })
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        displayKey("key.mouse.left")
+                        spacer(" + ")
+                        displayKey("key.sneak")
+                        darkSpacer(":")
+                        variableValue(" +64".toSmallCaps())
+                    })
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        displayKey("key.mouse.right")
+                        darkSpacer(":")
+                        variableValue(" -1".toSmallCaps())
+                    })
+                    newEntries.add(buildText {
+                        spacer("-")
+                        appendSpace()
+                        displayKey("key.mouse.right")
+                        spacer(" + ")
+                        displayKey("key.sneak")
+                        darkSpacer(":")
+                        variableValue(" -64".toSmallCaps())
                     })
 
                     lore(oldLore + newEntries)

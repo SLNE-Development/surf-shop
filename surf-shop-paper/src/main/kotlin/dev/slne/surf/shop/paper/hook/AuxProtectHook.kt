@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.paper.hook
 
+import dev.heliosares.auxprotect.AuxProtectPaper
 import dev.heliosares.auxprotect.api.AuxProtectAPI
 import dev.heliosares.auxprotect.database.DbEntry
 import dev.heliosares.auxprotect.database.EntryAction
-import dev.heliosares.auxprotect.spigot.AuxProtectSpigot
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.plugin
 import org.bukkit.Bukkit
@@ -40,10 +40,9 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
-                    AuxProtectSpigot.getLabel(player),
+                    AuxProtectPaper.getLabel(player),
                     shopBoughtAction,
                     true,
-                    null,
                     "${amount}x ${shop.item.type} by ${shop.sellerName}",
                     "pricePerItem=${shop.pricePerItem}, paidPrice=${shop.pricePerItem * amount}; item=${shop.item}"
                 )
@@ -55,10 +54,9 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
-                    AuxProtectSpigot.getLabel(player),
+                    AuxProtectPaper.getLabel(player),
                     shopCreatedAction,
                     true,
-                    null,
                     shop.item.type.toString(),
                     "pricePerItem=${shop.pricePerItem}; item=${shop.item}"
                 )
@@ -70,10 +68,9 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
-                    AuxProtectSpigot.getLabel(player),
+                    AuxProtectPaper.getLabel(player),
                     shopDeletedAction,
                     true,
-                    null,
                     shop.item.type.toString(),
                     "item=${shop.item}"
                 )
@@ -85,10 +82,9 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
-                    AuxProtectSpigot.getLabel(player),
+                    AuxProtectPaper.getLabel(player),
                     shopDepositedAction,
                     true,
-                    null,
                     shop.item.type.toString(),
                     "amount=$amount; item=${shop.item}"
                 )
@@ -100,10 +96,9 @@ object AuxProtectHook {
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(
                 DbEntry(
-                    AuxProtectSpigot.getLabel(player),
+                    AuxProtectPaper.getLabel(player),
                     shopWithdrawnAction,
                     true,
-                    null,
                     shop.item.type.toString(),
                     "amount=$amount; item=${shop.item}"
                 )

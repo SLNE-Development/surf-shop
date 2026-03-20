@@ -14,7 +14,7 @@ surfPaperPluginApi {
 
     serverDependencies {
         registerSoft("surf-npc-paper")
-        registerSoft("AuxProtect")
+        registerSoft("auxprotect-paper")
         registerRequired("surf-transaction-paper")
     }
 }
@@ -22,9 +22,7 @@ surfPaperPluginApi {
 dependencies {
     api(project(":surf-shop-core"))
     runtimeOnly(project(":surf-shop-backend"))
-    compileOnly("com.github.Heliosares:AuxProtect:1.3.1") {
-        isTransitive = false
-    }
+    compileOnly(files("libs/auxprotect-paper-1.3.4-pre6-all.jar"))
     compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
     compileOnly("dev.slne.surf.npc:surf-npc-api:1.21.11-1.6.1-SNAPSHOT")
 }
