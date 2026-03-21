@@ -257,7 +257,7 @@ object OwnShopsListView : View() {
                 render.openForPlayer(OwnShopsListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
             }
         render.layoutSlot('U', updateItem).onClick { context ->
-            render.update()
+            context.openForPlayer(OwnShopsListView::class.java)
             context.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
@@ -266,7 +266,7 @@ object OwnShopsListView : View() {
 
             if (context.isShiftClick) {
                 searchInputCache.remove(context.player.uniqueId)
-                render.update()
+                context.openForPlayer(OwnShopsListView::class.java)
                 return@onClick
             }
 
