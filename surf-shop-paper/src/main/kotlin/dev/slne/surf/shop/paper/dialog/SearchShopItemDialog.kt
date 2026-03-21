@@ -1,5 +1,7 @@
 package dev.slne.surf.shop.paper.dialog
 
+import dev.slne.surf.shop.paper.menu.OwnShopState
+import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.searchInputCache
@@ -21,10 +23,19 @@ fun searchShopItemDialog() = searchDialog(
     },
     onSearch = { player, query ->
         searchInputCache[player.uniqueId] = query
-        viewFrame.open(ShopListView::class.java, player)
+
+        if (OwnShopState.isInOwn(player.uniqueId)) {
+            viewFrame.open(OwnShopsListView::class.java, player)
+        } else {
+            viewFrame.open(ShopListView::class.java, player)
+        }
     },
     onClose = { player, query ->
         searchInputCache[player.uniqueId] = query
-        viewFrame.open(ShopListView::class.java, player)
+        if (OwnShopState.isInOwn(player.uniqueId)) {
+            viewFrame.open(OwnShopsListView::class.java, player)
+        } else {
+            viewFrame.open(ShopListView::class.java, player)
+        }
     }
 )
