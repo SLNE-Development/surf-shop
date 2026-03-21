@@ -5,11 +5,8 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
-import dev.slne.surf.shop.paper.menu.outlineItem
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
@@ -123,10 +120,11 @@ object EditShopView : View() {
 
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
-                    viewFrame.open(
-                        ShopListView::class.java,
-                        context.player
-                    )
+                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                        viewFrame.open(OwnShopsListView::class.java, context.player)
+                    } else {
+                        viewFrame.open(ShopListView::class.java, context.player)
+                    }
                 }
             }
         }
@@ -134,10 +132,11 @@ object EditShopView : View() {
             context.playGeneralClickSound()
             context.player.closeInventory()
 
-            viewFrame.open(
-                ShopListView::class.java,
-                context.player
-            )
+            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                viewFrame.open(OwnShopsListView::class.java, context.player)
+            } else {
+                viewFrame.open(ShopListView::class.java, context.player)
+            }
         }
     }
 

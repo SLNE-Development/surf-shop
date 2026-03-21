@@ -4,6 +4,7 @@ import dev.jorel.commandapi.kotlindsl.*
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.argument.shopArgument
+import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
@@ -75,6 +76,7 @@ fun shopCommand() = commandTree("shop") {
                 ShopListView::class.java,
                 player
             )
+            OwnShopState.setInOwn(player.uniqueId, false)
         }
     }
 }

@@ -10,12 +10,12 @@ import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
@@ -105,15 +105,17 @@ object BuyShopItemView : View() {
 
                     newEntries.add(Component.empty())
                     newEntries.add(buildText {
-                        spacer("-")
-                        appendSpace()
+                        shopColored("Anzahl".toSmallCaps(), TextDecoration.BOLD)
+                    })
+
+                    newEntries.add(buildText {
+                        appendBlob()
                         displayKey("key.mouse.left")
                         darkSpacer(":")
                         variableValue(" +1".toSmallCaps())
                     })
                     newEntries.add(buildText {
-                        spacer("-")
-                        appendSpace()
+                        appendBlob()
                         displayKey("key.mouse.left")
                         spacer(" + ")
                         displayKey("key.sneak")
@@ -121,15 +123,13 @@ object BuyShopItemView : View() {
                         variableValue(" +64".toSmallCaps())
                     })
                     newEntries.add(buildText {
-                        spacer("-")
-                        appendSpace()
+                        appendBlob()
                         displayKey("key.mouse.right")
                         darkSpacer(":")
                         variableValue(" -1".toSmallCaps())
                     })
                     newEntries.add(buildText {
-                        spacer("-")
-                        appendSpace()
+                        appendBlob()
                         displayKey("key.mouse.right")
                         spacer(" + ")
                         displayKey("key.sneak")
@@ -151,7 +151,11 @@ object BuyShopItemView : View() {
                     }
 
                     context.player.playNoSound()
-                    context.openForPlayer(ShopListView::class.java)
+                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                        context.openForPlayer(OwnShopsListView::class.java)
+                    } else {
+                        context.openForPlayer(ShopListView::class.java)
+                    }
                     return@onClick
                 }
 
@@ -177,7 +181,6 @@ object BuyShopItemView : View() {
 
                     context.player.playNoSound()
 
-                    // For increment actions the cap is sufficient; only allow decrement to continue.
                     if (!context.isRightClick && !context.isShiftRightClick) {
                         return@onClick
                     }
@@ -250,9 +253,11 @@ object BuyShopItemView : View() {
                     buildLore {
                         emptyLine()
                         line {
-                            spacer("-")
-                            appendSpace()
-                            shopColored("Klicke um die Items zu kaufen.")
+                            appendBlob()
+                            spacer(
+                                "Klicke um die Items zu kaufen.".toSmallCaps(),
+                                TextDecoration.BOLD
+                            )
                         }
 
                         emptyLine()
@@ -283,7 +288,11 @@ object BuyShopItemView : View() {
                     }
 
                     context.player.playNoSound()
-                    context.openForPlayer(ShopListView::class.java)
+                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                        context.openForPlayer(OwnShopsListView::class.java)
+                    } else {
+                        context.openForPlayer(ShopListView::class.java)
+                    }
                     return@onClick
                 }
 
@@ -400,12 +409,20 @@ object BuyShopItemView : View() {
             }
         }).onClick { context ->
             context.playGeneralClickSound()
-            context.openForPlayer(ShopListView::class.java)
+            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                context.openForPlayer(OwnShopsListView::class.java)
+            } else {
+                context.openForPlayer(ShopListView::class.java)
+            }
         }
     }
 
     private suspend fun openListView(context: RenderContext) =
         withContext(plugin.entityDispatcher(context.player)) {
-            viewFrame.open(ShopListView::class.java, context.player)
+            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                context.openForPlayer(OwnShopsListView::class.java)
+            } else {
+                context.openForPlayer(ShopListView::class.java)
+            }
         }
 }

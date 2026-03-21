@@ -10,42 +10,30 @@ import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.*
+import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.appendBlob
+import dev.slne.surf.shop.paper.util.displayKey
+import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
-import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
-import dev.slne.surf.surfapi.core.api.util.dateTimeFormatter
+import dev.slne.surf.surfapi.core.api.util.mutableObjectSetOf
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.context.SlotClickContext
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
-import org.bukkit.Sound
-import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
 
 @Suppress("UnstableApiUsage")
-object ShopListView : View() {
+object OwnShopsListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
-        }
-    }
-
-    private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
-        displayName {
-            shopColored("Shop erstellen")
         }
     }
 
@@ -71,32 +59,7 @@ object ShopListView : View() {
             line {
                 appendBlob()
                 displayKey("key.sneak")
-                spacer(" zum resetten".toSmallCaps(), TextDecoration.BOLD)
-            }
-        }
-    }
-
-    private fun ownShopsItem(context: RenderContext) = buildItem(Material.PLAYER_HEAD) {
-        displayName {
-            shopColored("Eigene Shops")
-        }
-
-        editMeta(SkullMeta::class.java) {
-            it.owningPlayer = context.player
-        }
-
-        buildLore {
-            emptyLine()
-            line {
-                appendBlob()
-                spacer(
-                    "Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps(),
-                    TextDecoration.BOLD
-                )
-            }
-            line {
-                appendBlob()
-                spacer("Klicke, um alle deine Shops anzuzeigen.".toSmallCaps(), TextDecoration.BOLD)
+                spacer(" zum resetten")
             }
         }
     }
@@ -203,6 +166,12 @@ object ShopListView : View() {
         }
     }
 
+    private val backItem = MenuHeads.CROSS.clone().apply {
+        displayName {
+            error("Zurück")
+        }
+    }
+
     private val updateItem = buildItem(Material.REPEATER) {
         displayName {
             shopColored("Aktualisieren")
@@ -211,6 +180,7 @@ object ShopListView : View() {
 
     private val paginationState = buildLazyPaginationState { context ->
         getLoadedShopsSortedFiltered(
+            context.player.uniqueId,
             plugin.getSorting(context.player.uniqueId),
             searchInputCache[context.player.uniqueId]
         ).toMutableList()
@@ -251,7 +221,7 @@ object ShopListView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                shopColored("Shops".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Meine Shops".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(6)
             .layout(
@@ -260,7 +230,7 @@ object ShopListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "UAOPCNO}S"
+                "UAOPCNOOS"
             )
             .cancelInteractions()
     }
@@ -284,7 +254,7 @@ object ShopListView : View() {
 
                 plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
 
-                render.openForPlayer(ShopListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
+                render.openForPlayer(OwnShopsListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
             }
         render.layoutSlot('U', updateItem).onClick { context ->
             render.update()
@@ -303,17 +273,10 @@ object ShopListView : View() {
             context.player.closeInventory()
             context.player.showDialog(searchShopItemDialog())
         }
-        render.layoutSlot('C', createItem).onClick { context ->
+        render.layoutSlot('C', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.openForPlayer(
-                CreateShopView::class.java,
-                ImmutableMap.of(
-                    "create-item",
-                    ItemStack.empty(),
-                    "create-price",
-                    0
-                )
-            )
+            context.openForPlayer(ShopListView::class.java)
+            OwnShopState.setInOwn(context.player.uniqueId, false)
         }
         render
             .layoutSlot('P')
@@ -352,106 +315,15 @@ object ShopListView : View() {
                 context.playNewPageSound()
                 pagination.advance()
             }
-        render.layoutSlot('}', ownShopsItem(render)).onClick { click ->
-            click.openForPlayer(OwnShopsListView::class.java)
-            click.playGeneralClickSound()
-
-            OwnShopState.setInOwn(click.player.uniqueId, true)
-        }
-    }
-}
-
-fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
-    amount = 1
-
-    val oldLore = lore()?.toMutableList() ?: mutableListOf()
-    val newEntries = mutableListOf<Component>()
-
-    newEntries.add(Component.empty())
-    newEntries.add(buildText {
-        shopColored("Verkaufsinformation".toSmallCaps(), TextDecoration.BOLD)
-    })
-
-    newEntries.add(buildText {
-        spacer("-")
-        appendSpace()
-        shopColored("Preis: ")
-        variableValue("${formatPriceNice(shop.pricePerItem)}/Item")
-    })
-
-    newEntries.add(buildText {
-        spacer("-")
-        appendSpace()
-        shopColored("Auf Lager: ")
-        if (shop.storedItemCount > 0) {
-            variableValue("${shop.storedItemCount} Items")
-        } else {
-            error("Ausverkauft")
-        }
-    })
-
-    newEntries.add(buildText {
-        spacer("-")
-        appendSpace()
-        shopColored("Verkäufer: ")
-        variableValue(shop.sellerName)
-    })
-
-    newEntries.add(buildText {
-        spacer("-")
-        appendSpace()
-        shopColored("Erstellt am: ")
-        variableValue(shop.createdAt.format(dateTimeFormatter))
-    })
-
-    newEntries.add(Component.empty())
-
-    if (shop.seller == viewer) {
-        newEntries.add(buildText {
-            appendBlob()
-            spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps(), TextDecoration.BOLD)
-        })
-
-        newEntries.add(buildText {
-            appendBlob()
-            spacer("Drücke ".toSmallCaps(), TextDecoration.BOLD)
-            displayKey("key.sneak")
-            spacer(" + ")
-            displayKey("key.mouse.left")
-            spacer(" um den Shop zu löschen.".toSmallCaps(), TextDecoration.BOLD)
-        })
-    } else {
-        newEntries.add(buildText {
-            appendBlob()
-            spacer("Klicke, um Items zu kaufen.".toSmallCaps(), TextDecoration.BOLD)
-        })
-    }
-
-    newEntries.add(Component.empty())
-    newEntries.add(buildText {
-        darkSpacer(shop.shopUuid.toString())
-    })
-
-    lore(oldLore + newEntries)
-}
-
-fun SlotClickContext.playGeneralClickSound() {
-    player.playSound(true) {
-        type(Sound.UI_BUTTON_CLICK)
-    }
-}
-
-fun SlotClickContext.playNewPageSound() {
-    player.playSound(true) {
-        type(Sound.ENTITY_CHICKEN_EGG)
     }
 }
 
 private fun getLoadedShopsSortedFiltered(
+    seller: UUID,
     sortType: ShopSortingType,
     search: String?
 ): List<Shop> {
-    val base = shopService.loadedShops
+    val base = shopService.loadedShops.filter { it.seller == seller }
 
     val filtered = if (search.isNullOrBlank()) {
         base
@@ -497,6 +369,15 @@ private fun getLoadedShopsSortedFiltered(
     }
 }
 
+object OwnShopState {
+    private val inOwn = mutableObjectSetOf<UUID>()
+    fun isInOwn(playerUuid: UUID) = inOwn.contains(playerUuid)
 
-fun SurfComponentBuilder.shopColored(text: Any, vararg decoration: TextDecoration) =
-    coloredComponent(text.toString(), TextColor.color(252, 233, 121), *decoration)
+    fun setInOwn(playerUuid: UUID, inOwn: Boolean) {
+        if (inOwn) {
+            this.inOwn.add(playerUuid)
+        } else {
+            this.inOwn.remove(playerUuid)
+        }
+    }
+}

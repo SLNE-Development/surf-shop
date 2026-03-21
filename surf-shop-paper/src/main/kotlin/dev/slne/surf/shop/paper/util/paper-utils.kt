@@ -25,3 +25,8 @@ val castCoinFormat = DecimalFormat("#,##0.## ¤", DecimalFormatSymbols(Locale.GE
     groupingSeparator = '.'
     currencySymbol = "CC"
 })
+
+fun SurfComponentBuilder.appendBlob() = append {
+    darkSpacer("▪")
+    appendSpace()
+}

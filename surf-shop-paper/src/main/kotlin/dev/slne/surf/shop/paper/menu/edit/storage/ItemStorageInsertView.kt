@@ -10,7 +10,7 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
-import dev.slne.surf.shop.paper.util.translatable
+import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
@@ -139,13 +139,11 @@ object ItemStorageInsertView : View() {
         buildLore {
             emptyLine()
             line {
-                spacer("-")
-                appendSpace()
+                appendBlob()
                 shopColored("Klicke auf ein Item, um es einzulagern.")
             }
             line {
-                spacer("-")
-                appendSpace()
+                appendBlob()
                 shopColored("Das ausgewählte Item wird sofort in deinen Shop eingelagert")
             }
             line {

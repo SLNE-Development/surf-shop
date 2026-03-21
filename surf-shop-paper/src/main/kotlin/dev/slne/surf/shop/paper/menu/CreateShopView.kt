@@ -153,7 +153,12 @@ object CreateShopView : View() {
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
-            viewFrame.open(ShopListView::class.java, context.player)
+
+            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                viewFrame.open(OwnShopsListView::class.java, context.player)
+            } else {
+                viewFrame.open(ShopListView::class.java, context.player)
+            }
         }
     }
 

@@ -5,10 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
-import dev.slne.surf.shop.paper.menu.ShopListView
-import dev.slne.surf.shop.paper.menu.outlineItem
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -42,7 +39,11 @@ object DeleteShopView : View() {
             }
         }).onClick { context ->
             context.playGeneralClickSound()
-            context.openForPlayer(ShopListView::class.java)
+            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                context.openForPlayer(OwnShopsListView::class.java)
+            } else {
+                context.openForPlayer(ShopListView::class.java)
+            }
         }
 
         val shop = shopState.get(render)
@@ -82,7 +83,11 @@ object DeleteShopView : View() {
                 }
 
                 withContext(plugin.entityDispatcher(context.player)) {
-                    context.openForPlayer(ShopListView::class.java)
+                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                        context.openForPlayer(OwnShopsListView::class.java)
+                    } else {
+                        context.openForPlayer(ShopListView::class.java)
+                    }
                 }
             }
         }
