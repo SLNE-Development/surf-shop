@@ -451,7 +451,7 @@ private fun getLoadedShopsSortedFiltered(
     sortType: ShopSortingType,
     search: String?
 ): List<Shop> {
-    val base = shopService.loadedShops
+    val base = shopService.loadedShops.filter { it.storedItemCount > 0 }
 
     val filtered = if (search.isNullOrBlank()) {
         base
