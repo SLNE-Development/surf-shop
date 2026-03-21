@@ -14,7 +14,7 @@ surfPaperPluginApi {
 
     serverDependencies {
         registerSoft("surf-npc-paper")
-        registerSoft("auxprotect-paper")
+        registerSoft("AuxProtect")
         registerRequired("surf-transaction-paper")
     }
 }
