@@ -61,13 +61,24 @@ object ShopListView : View() {
         }
     }
 
-    private val searchItem = buildItem(Material.BRUSH) {
+    private fun searchItem(playerUuid: UUID) = buildItem(Material.BRUSH) {
         displayName {
             shopColored("Suchen")
         }
 
         buildLore {
             emptyLine()
+
+            if (searchInputCache.containsKey(playerUuid)) {
+                line {
+                    appendBlob()
+                    spacer("Aktueller Suchbegriff: ".toSmallCaps())
+                    variableValue(searchInputCache[playerUuid] ?: "#null")
+                }
+
+                emptyLine()
+            }
+
             line {
                 appendBlob()
                 displayKey("key.sneak")
@@ -288,7 +299,7 @@ object ShopListView : View() {
             context.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('A', searchItem).onClick { context ->
+        render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
             context.playGeneralClickSound()
 
             if (context.isShiftClick) {
@@ -298,7 +309,14 @@ object ShopListView : View() {
             }
 
             context.player.closeInventory()
-            context.player.showDialog(searchShopItemDialog())
+            context.player.showDialog(
+                searchShopItemDialog(
+                    searchInputCache.getOrDefault(
+                        context.player.uniqueId,
+                        ""
+                    )
+                )
+            )
         }
         render.layoutSlot('C', createItem).onClick { context ->
             context.playGeneralClickSound()

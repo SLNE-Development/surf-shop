@@ -77,7 +77,9 @@ object CreateShopView : View() {
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        priceState.get(context)
+                        priceState.get(context),
+                        "create-item",
+                        ItemStack.empty()
                     )
                 )
             }
@@ -90,7 +92,9 @@ object CreateShopView : View() {
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        priceState.get(context)
+                        priceState.get(context),
+                        "create-item",
+                        ItemStack.empty()
                     )
                 )
             }

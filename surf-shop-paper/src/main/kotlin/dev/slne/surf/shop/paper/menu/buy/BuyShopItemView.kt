@@ -26,6 +26,7 @@ import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Bukkit
 
 object BuyShopItemView : View() {
     private val shopState = initialState<Shop>("buy-shop")
@@ -387,6 +388,21 @@ object BuyShopItemView : View() {
                                         )
                                     } gekauft!"
                                 )
+                            }
+
+                            Bukkit.getPlayer(shop.seller)?.sendText {
+                                appendInfoPrefix()
+                                variableValue(context.player.name)
+                                info(" hat gerade ")
+                                append {
+                                    if (result.deal.amount > 1) {
+                                        variableValue("${amount}x ")
+                                    }
+                                    append(shop.item.displayName())
+                                    hoverEvent(shop.item.asHoverEvent())
+                                }
+                                info(" gekauft.")
+                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)})")
                             }
 
                             openListView(render)

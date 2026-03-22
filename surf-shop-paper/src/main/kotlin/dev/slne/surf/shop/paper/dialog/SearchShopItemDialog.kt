@@ -9,12 +9,12 @@ import dev.slne.surf.surfapi.bukkit.api.dialog.search.searchDialog
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 
 @Suppress("UnstableApiUsage")
-fun searchShopItemDialog() = searchDialog(
+fun searchShopItemDialog(initial: String) = searchDialog(
     title = {
         shopColored("Suche ein Item...")
     },
     searchInput = {
-
+        initial
     },
     body = {
         plainMessage {

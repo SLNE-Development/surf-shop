@@ -9,7 +9,6 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import me.devnatan.inventoryframework.View
@@ -70,9 +69,8 @@ object PlayerInventorySelectItemView : View() {
         render.layoutSlot('Q', explainItem)
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.player.closeInventory()
-            viewFrame.open(
-                CreateShopView::class.java, context.player, ImmutableMap.of(
+            context.openForPlayer(
+                CreateShopView::class.java, ImmutableMap.of(
                     "create-price", priceState.get(context),
                     "create-item", itemState.get(context)
                 )
