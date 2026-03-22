@@ -5,6 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -43,7 +44,7 @@ object ItemStorageRemoveView : View() {
                 "O   W   O",
                 "O21 P 34O",
                 "O       O",
-                "OOOOBOOOO"
+                "QOOOBOOOO"
             )
             .cancelInteractions()
             .build()
@@ -60,6 +61,14 @@ object ItemStorageRemoveView : View() {
                 createEditSpecificRemoveAmountPriceDialog(
                     shopState.get(render)
                 )
+            )
+        }
+
+        render.layoutSlot('Q', quitItem).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(
+                ItemStorageView::class.java,
+                ImmutableMap.of("edit-shop", shopState.get(render))
             )
         }
 
@@ -217,12 +226,22 @@ object ItemStorageRemoveView : View() {
                 shopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(context.player)) {
+                    val updatedShop = shopState.get(render).updatedShop
+
+                    if (updatedShop == null) {
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Der Shop existiert nicht mehr.")
+                        }
+                        context.player.closeInventory()
+                        return@withContext
+                    }
+
                     context.openForPlayer(
                         ItemStorageView::class.java,
                         ImmutableMap.of(
                             "edit-shop",
-                            shopState.get(render)
-                                .copy(pricePerItem = localAmountState.get(context))
+                            updatedShop
                         )
                     )
                 }
@@ -232,6 +251,10 @@ object ItemStorageRemoveView : View() {
         render.layoutSlot('P').watch(localAmountState).renderWith {
             valueItem(render)
         }
+    }
+
+    private val quitItem = buildItem(Material.RED_STAINED_GLASS_PANE) {
+        displayName { error("Abbrechen".toSmallCaps(), TextDecoration.BOLD) }
     }
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {

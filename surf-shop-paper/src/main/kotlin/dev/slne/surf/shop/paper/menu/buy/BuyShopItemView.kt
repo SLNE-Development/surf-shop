@@ -16,6 +16,7 @@ import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
@@ -339,7 +340,7 @@ object BuyShopItemView : View() {
                         Deal.DealResult.OtherInsufficientFounds -> {
                             context.player.sendText {
                                 appendErrorPrefix()
-                                error("Es ist ein Fehler aufgetreten. (SELLER_INSUFFICIENT_FOUNDS)")
+                                error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
                             }
 
                             context.player.playNoSound()
@@ -420,9 +421,9 @@ object BuyShopItemView : View() {
     private suspend fun openListView(context: RenderContext) =
         withContext(plugin.entityDispatcher(context.player)) {
             if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                context.openForPlayer(OwnShopsListView::class.java)
+                viewFrame.open(OwnShopsListView::class.java, context.player)
             } else {
-                context.openForPlayer(ShopListView::class.java)
+                viewFrame.open(ShopListView::class.java, context.player)
             }
         }
 }

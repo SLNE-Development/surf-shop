@@ -71,7 +71,7 @@ object ShopListView : View() {
             line {
                 appendBlob()
                 displayKey("key.sneak")
-                spacer(" zum resetten".toSmallCaps(), TextDecoration.BOLD)
+                spacer(" zum resetten".toSmallCaps())
             }
         }
     }
@@ -89,14 +89,11 @@ object ShopListView : View() {
             emptyLine()
             line {
                 appendBlob()
-                spacer(
-                    "Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps(),
-                    TextDecoration.BOLD
-                )
+                spacer("Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps())
             }
             line {
                 appendBlob()
-                spacer("Klicke, um alle deine Shops anzuzeigen.".toSmallCaps(), TextDecoration.BOLD)
+                spacer("Klicke, um alle deine Shops anzuzeigen.".toSmallCaps())
             }
         }
     }
@@ -409,21 +406,21 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
     if (shop.seller == viewer) {
         newEntries.add(buildText {
             appendBlob()
-            spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps(), TextDecoration.BOLD)
+            spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps())
         })
 
         newEntries.add(buildText {
             appendBlob()
-            spacer("Drücke ".toSmallCaps(), TextDecoration.BOLD)
+            spacer("Drücke ".toSmallCaps())
             displayKey("key.sneak")
             spacer(" + ")
             displayKey("key.mouse.left")
-            spacer(" um den Shop zu löschen.".toSmallCaps(), TextDecoration.BOLD)
+            spacer(" um den Shop zu löschen.".toSmallCaps())
         })
     } else {
         newEntries.add(buildText {
             appendBlob()
-            spacer("Klicke, um Items zu kaufen.".toSmallCaps(), TextDecoration.BOLD)
+            spacer("Klicke, um Items zu kaufen.".toSmallCaps())
         })
     }
 

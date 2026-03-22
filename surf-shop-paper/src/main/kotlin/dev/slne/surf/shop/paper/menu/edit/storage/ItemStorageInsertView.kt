@@ -69,40 +69,38 @@ object ItemStorageInsertView : View() {
 
     override fun onClick(click: SlotClickContext) {
         if (click.clickedContainer.isEntityContainer) {
-            if (click.isShiftLeftClick) {
-                val item = click.item ?: return
-                val shop = localShopState.get(click)
+            val item = click.item ?: return
+            val shop = localShopState.get(click)
 
-                if (!item.isSimilar(shop.item)) {
-                    return
+            if (!item.isSimilar(shop.item)) {
+                return
+            }
+
+            click.isCancelled = false
+            click.clickOrigin.currentItem = ItemStack.empty()
+
+            plugin.launch {
+                val amount = item.amount
+                val newShop =
+                    shop.copy(storedItemCount = shop.storedItemCount + amount)
+                localShopState.set(newShop, click)
+
+                shopService.saveShop(newShop)
+                itemInsertedState.set(itemInsertedState.get(click) + amount, click)
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logDeposit(click.player, shop, amount)
                 }
 
-                click.isCancelled = false
-                click.clickOrigin.currentItem = ItemStack.empty()
+                click.player.sendActionBar(buildText {
+                    appendSuccessPrefix()
+                    success("Du hast ")
+                    variableValue("$amount Items")
+                    success(" eingelagert.")
+                })
 
-                plugin.launch {
-                    val amount = item.amount
-                    val newShop =
-                        shop.copy(storedItemCount = shop.storedItemCount + amount)
-                    localShopState.set(newShop, click)
-
-                    shopService.saveShop(newShop)
-                    itemInsertedState.set(itemInsertedState.get(click) + amount, click)
-
-                    if (plugin.auxProtectHook) {
-                        AuxProtectHook.logDeposit(click.player, shop, amount)
-                    }
-
-                    click.player.sendActionBar(buildText {
-                        appendSuccessPrefix()
-                        success("Du hast ")
-                        variableValue("$amount Items")
-                        success(" eingelagert.")
-                    })
-
-                    click.player.playSound(true) {
-                        type(Sound.ENTITY_PLAYER_LEVELUP)
-                    }
+                click.player.playSound(true) {
+                    type(Sound.ENTITY_PLAYER_LEVELUP)
                 }
             }
         }

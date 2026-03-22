@@ -5,6 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
@@ -144,8 +145,9 @@ object CreateShopView : View() {
                 withContext(plugin.globalRegionDispatcher) {
                     context.player.closeInventory()
                     viewFrame.open(
-                        ShopListView::class.java,
-                        context.player
+                        EditShopView::class.java,
+                        context.player,
+                        ImmutableMap.of("edit-shop", shop)
                     )
                 }
             }
