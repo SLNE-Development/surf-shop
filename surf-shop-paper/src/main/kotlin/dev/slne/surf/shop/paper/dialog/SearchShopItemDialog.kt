@@ -14,7 +14,7 @@ fun searchShopItemDialog(initial: String) = searchDialog(
         shopColored("Suche ein Item...")
     },
     searchInput = {
-        initial
+        initialValue = initial
     },
     body = {
         plainMessage {
