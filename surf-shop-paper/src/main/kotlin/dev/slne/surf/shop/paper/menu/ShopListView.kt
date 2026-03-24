@@ -81,7 +81,7 @@ object ShopListView : View() {
 
             line {
                 appendBlob()
-                white("SHIFT")
+                white("SHIFT".toSmallCaps())
                 spacer(" zum resetten".toSmallCaps())
             }
         }
@@ -430,7 +430,7 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
         newEntries.add(buildText {
             appendBlob()
             spacer("Drücke ".toSmallCaps())
-            white("SHIFT")
+            white("SHIFT".toSmallCaps())
             spacer(" + ")
             displayKey("key.mouse.left")
             spacer(" um den Shop zu löschen.".toSmallCaps())

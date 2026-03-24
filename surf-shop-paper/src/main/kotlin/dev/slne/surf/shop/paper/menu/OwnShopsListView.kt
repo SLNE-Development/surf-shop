@@ -68,7 +68,7 @@ object OwnShopsListView : View() {
 
             line {
                 appendBlob()
-                white("SHIFT")
+                white("SHIFT".toSmallCaps())
                 spacer(" zum resetten".toSmallCaps())
             }
         }
