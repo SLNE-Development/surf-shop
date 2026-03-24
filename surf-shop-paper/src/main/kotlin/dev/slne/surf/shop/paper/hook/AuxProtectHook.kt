@@ -43,7 +43,7 @@ object AuxProtectHook {
                     AuxProtectPaper.getLabel(player),
                     shopBoughtAction,
                     true,
-                    "${amount}x ${shop.item.type} by ${shop.sellerName}",
+                    AuxProtectPaper.getLabel(shop.seller),
                     "pricePerItem=${shop.pricePerItem}, paidPrice=${shop.pricePerItem * amount}; item=${shop.item}"
                 )
             )
