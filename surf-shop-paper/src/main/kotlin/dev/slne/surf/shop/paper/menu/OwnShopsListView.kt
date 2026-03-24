@@ -12,7 +12,6 @@ import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
-import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.searchInputCache
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
@@ -69,7 +68,7 @@ object OwnShopsListView : View() {
 
             line {
                 appendBlob()
-                displayKey("key.sneak")
+                white("SHIFT")
                 spacer(" zum resetten".toSmallCaps())
             }
         }
