@@ -2,9 +2,7 @@ package dev.slne.surf.shop.paper
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.shop.api.shop.ShopSortingType
-import dev.slne.surf.shop.core.database.databaseLoader
-import dev.slne.surf.shop.core.service.dealService
-import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
@@ -37,7 +35,7 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     override suspend fun onLoadAsync() {
-        databaseLoader.connect(plugin.dataPath)
+        PaperShopInstance.paperLoader.onLoad()
 
         dealService.create(this)
 
@@ -59,6 +57,7 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     override suspend fun onEnableAsync() {
+        PaperShopInstance.paperLoader.onEnable()
         if (auxProtectHook) {
             AuxProtectHook.create()
         }
@@ -73,7 +72,7 @@ class PaperMain : SuspendingJavaPlugin() {
     }
 
     override suspend fun onDisableAsync() {
-        databaseLoader.disconnect()
+        PaperShopInstance.paperLoader.onDisable()
     }
 
     val auxProtectHook get() = pluginManager.isPluginEnabled("AuxProtect")

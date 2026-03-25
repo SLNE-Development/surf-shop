@@ -4,8 +4,8 @@ import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.util.updatedShop
 import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.core.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
