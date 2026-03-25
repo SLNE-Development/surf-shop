@@ -1,7 +1,35 @@
 package dev.slne.surf.shop.core.paper.util
 
+import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.service.shopService
 import org.bukkit.Bukkit
+import org.bukkit.inventory.meta.EnchantmentStorageMeta
+
+val Shop.dealCount get() = dealService.loadedDeals.count { it.shopInternalId == this.internalId }
+val Shop.updatedShop
+    get() = shopService.loadedShops.firstOrNull { it.internalId == this.internalId }
 
 val Shop.sellerName get() = Bukkit.getOfflinePlayer(seller).name ?: "#Unbekannt"
-val Shop.item get() =
+val Shop.item get() = itemStackFromString(itemString)
+
+val Deal.boughtByName get() = Bukkit.getOfflinePlayer(boughtBy).name
+
+fun Shop.rebuildSearchTokens() {
+    searchableTokens = buildSet {
+        add(item.type.name.lowercase())
+
+        item.enchantments.keys.forEach {
+            add(it.key.toString().lowercase())
+        }
+
+        val meta = item.itemMeta ?: return@buildSet
+
+        if (meta is EnchantmentStorageMeta) {
+            meta.storedEnchants.keys.forEach {
+                add(it.key.toString().lowercase())
+            }
+        }
+    }
+}

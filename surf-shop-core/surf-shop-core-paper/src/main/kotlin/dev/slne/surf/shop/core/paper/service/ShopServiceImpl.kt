@@ -2,8 +2,13 @@ package dev.slne.surf.shop.core.paper.service
 
 import com.google.auto.service.AutoService
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.backend.repository.shopRepository
+import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.CreateShopRequestPacket
+import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopRequestPacket
+import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
+import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
 import dev.slne.surf.shop.core.common.util.logger
+import dev.slne.surf.shop.core.paper.PaperShopInstance
+import dev.slne.surf.shop.core.paper.util.rebuildSearchTokens
 import dev.slne.surf.shop.core.service.ShopService
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
@@ -14,7 +19,6 @@ import net.kyori.adventure.util.Services
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.apply
 import kotlin.system.measureTimeMillis
 
 @AutoService(ShopService::class)
@@ -36,14 +40,16 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         seller: UUID
     ): Shop {
 
-        val created = shopRepository.createShop(
-            item,
-            storedItemCount,
-            pricePerItem,
-            seller,
-            OffsetDateTime.now()
-        ).apply {
-            Shop.rebuildSearchTokens()
+        val created = PaperShopInstance.rabbitApi.sendRequest(
+            CreateShopRequestPacket(
+                itemString,
+                storedItemCount,
+                pricePerItem,
+                seller,
+                OffsetDateTime.now()
+            )
+        ).shop.apply {
+            rebuildSearchTokens()
         }
 
         _shops[created.shopUuid] = created
@@ -65,7 +71,11 @@ class ShopServiceImpl : ShopService, Services.Fallback {
 
         _shops[shop.shopUuid] = updatedShop
 
-        shopRepository.saveShop(updatedShop)
+        PaperShopInstance.rabbitApi.sendRequest(
+            SaveShopRequestPacket(
+                updatedShop
+            )
+        )
 
         return updatedShop
     }
@@ -75,7 +85,11 @@ class ShopServiceImpl : ShopService, Services.Fallback {
 
         return lock.withLock {
 
-            val deleted = shopRepository.deleteShop(shop)
+            val deleted = PaperShopInstance.rabbitApi.sendRequest(
+                DeleteShopRequestPacket(
+                    shop
+                )
+            ).value
 
             if (deleted) {
                 _shops.remove(shop.shopUuid)
@@ -92,13 +106,13 @@ class ShopServiceImpl : ShopService, Services.Fallback {
 
         val ms = measureTimeMillis {
 
-            val loadedShops = shopRepository.loadShops()
+            val loadedShops = PaperShopInstance.rabbitApi.sendRequest(LoadShopsRequestPacket).shops
 
             _shops.clear()
 
             loadedShops.forEach {
                 _shops[it.shopUuid] = it.apply {
-                    Shop.rebuildSearchTokens()
+                    rebuildSearchTokens()
                 }
             }
         }

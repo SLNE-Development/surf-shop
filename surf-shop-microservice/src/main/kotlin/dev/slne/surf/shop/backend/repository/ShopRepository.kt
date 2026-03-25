@@ -14,7 +14,6 @@ import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
-import org.bukkit.inventory.ItemStack
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -28,7 +27,7 @@ class ShopRepository {
     }
 
     suspend fun createShop(
-        item: ItemStack,
+        itemString: String,
         storedItemCount: Int,
         pricePerItem: Int,
         seller: UUID,
@@ -36,7 +35,7 @@ class ShopRepository {
     ): Shop = suspendTransaction {
         ShopsTable.insertReturning {
             it[this.shopUuid] = UUID.randomUUID()
-            it[this.item] = item
+            it[this.item] = itemString
             it[this.storedItemCount] = storedItemCount
             it[this.pricePerItem] = pricePerItem
             it[this.seller] = seller
@@ -49,7 +48,7 @@ class ShopRepository {
     suspend fun saveShop(shop: Shop) = suspendTransaction {
         ShopsTable.upsert {
             it[shopUuid] = shop.shopUuid
-            it[item] = shop.item
+            it[item] = shop.itemString
             it[storedItemCount] = shop.storedItemCount
             it[pricePerItem] = shop.pricePerItem
             it[seller] = shop.seller
@@ -64,7 +63,7 @@ class ShopRepository {
     private fun createShop(row: ResultRow) = Shop(
         internalId = row[ShopsTable.id].value,
         shopUuid = row[ShopsTable.shopUuid],
-        item = row[ShopsTable.item],
+        itemString = row[ShopsTable.item],
         storedItemCount = row[ShopsTable.storedItemCount],
         pricePerItem = row[ShopsTable.pricePerItem],
         seller = row[ShopsTable.seller],

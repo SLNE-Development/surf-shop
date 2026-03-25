@@ -24,7 +24,7 @@ class DealRepository {
         }.toSet().toObjectSet()
     }
 
-    suspend fun buy(
+    suspend fun save(
         shop: Shop,
         amount: Int,
         buyer: UUID,

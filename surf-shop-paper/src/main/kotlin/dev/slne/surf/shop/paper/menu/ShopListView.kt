@@ -3,7 +3,7 @@ package dev.slne.surf.shop.paper.menu
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
-import dev.slne.surf.shop.core.common.util.dealCount
+import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView

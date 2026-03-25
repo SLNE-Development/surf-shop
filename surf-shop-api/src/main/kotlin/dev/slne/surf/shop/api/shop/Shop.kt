@@ -1,18 +1,20 @@
 package dev.slne.surf.shop.api.shop
 
-import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.EnchantmentStorageMeta
+import dev.slne.surf.surfapi.core.api.serializer.java.datetime.datetime.offset.SerializableOffsetDateTime
+import dev.slne.surf.surfapi.core.api.serializer.java.uuid.SerializableUUID
+import kotlinx.serialization.Serializable
 import java.time.OffsetDateTime
 import java.util.*
 
+@Serializable
 data class Shop(
     val internalId: ULong,
-    val shopUuid: UUID,
+    val shopUuid: SerializableUUID,
     val itemString: String,
     val storedItemCount: Int,
     val pricePerItem: Int,
-    val seller: UUID,
-    val createdAt: OffsetDateTime,
+    val seller: SerializableUUID,
+    val createdAt: SerializableOffsetDateTime,
 ) {
     var isBlocked: Boolean = false
 
@@ -20,29 +22,11 @@ data class Shop(
 
     lateinit var searchableTokens: Set<String>
 
-    fun rebuildSearchTokens() {
-        searchableTokens = buildSet {
-            add(item.type.name.lowercase())
-
-            item.enchantments.keys.forEach {
-                add(it.key.toString().lowercase())
-            }
-
-            val meta = item.itemMeta ?: return@buildSet
-
-            if (meta is EnchantmentStorageMeta) {
-                meta.storedEnchants.keys.forEach {
-                    add(it.key.toString().lowercase())
-                }
-            }
-        }
-    }
-
     companion object {
         fun empty() = Shop(
             internalId = 0uL,
             shopUuid = UUID.randomUUID(),
-            item = ItemStack.empty(),
+            itemString = "",
             storedItemCount = 0,
             pricePerItem = 0,
             seller = UUID.randomUUID(),

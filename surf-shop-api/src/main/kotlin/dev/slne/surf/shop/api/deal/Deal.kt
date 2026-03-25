@@ -1,19 +1,18 @@
 package dev.slne.surf.shop.api.deal
 
-import org.bukkit.Bukkit
-import java.time.OffsetDateTime
-import java.util.*
+import dev.slne.surf.surfapi.core.api.serializer.java.datetime.datetime.offset.SerializableOffsetDateTime
+import dev.slne.surf.surfapi.core.api.serializer.java.uuid.SerializableUUID
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Deal(
     val dealInternalId: ULong,
-    val dealUuid: UUID,
+    val dealUuid: SerializableUUID,
     val shopInternalId: ULong,
     val amount: Int,
-    val boughtBy: UUID,
-    val boughtAt: OffsetDateTime
+    val boughtBy: SerializableUUID,
+    val boughtAt: SerializableOffsetDateTime
 ) {
-    val boughtByName get() = Bukkit.getOfflinePlayer(boughtBy).name
-
     sealed class DealResult {
         data class Success(val deal: Deal) : DealResult()
         object ShopBlocked : DealResult()
@@ -22,5 +21,6 @@ data class Deal(
         object SelfInsufficientFounds : DealResult()
         object OtherInsufficientFounds : DealResult()
         object TransactionFailed : DealResult()
+        object PlayerNotFound : DealResult()
     }
 }

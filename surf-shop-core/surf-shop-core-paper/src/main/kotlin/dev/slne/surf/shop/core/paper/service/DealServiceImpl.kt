@@ -6,16 +6,24 @@ import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.BuyRequestPacket
+import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.LoadDealsRequestPacket
 import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.util.logger
+import dev.slne.surf.shop.core.paper.PaperShopInstance
+import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
+import dev.slne.surf.transaction.api.currency.Currency
+import dev.slne.surf.transaction.api.transaction.TransactionResult
+import dev.slne.surf.transaction.api.user.TransactionUser
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.util.Services
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.time.OffsetDateTime
@@ -24,14 +32,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 @AutoService(DealService::class)
 class DealServiceImpl : DealService, Services.Fallback {
-
     private val _deals = mutableObject2ObjectMapOf<UUID, Deal>()
     override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
     private lateinit var plugin: SuspendingJavaPlugin
-
-    override fun create(plugin: SuspendingJavaPlugin) {
-        this.plugin = plugin
-    }
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
 
@@ -44,22 +47,25 @@ class DealServiceImpl : DealService, Services.Fallback {
         amount: Int,
         buyer: UUID
     ): Deal {
-        val bought = dealRepository.buy(
-            shop,
-            amount,
-            buyer,
-            OffsetDateTime.now()
-        )
+        val bought = PaperShopInstance.rabbitApi.sendRequest(
+            BuyRequestPacket(
+                shop,
+                amount,
+                buyer,
+                OffsetDateTime.now()
+            )
+        ).deal
 
         _deals[bought.dealUuid] = bought
         return bought
     }
 
     override suspend fun buy(
-        player: Player,
+        playerUuid: UUID,
         shop: Shop,
         amount: Int
     ): Deal.DealResult {
+        val player = Bukkit.getPlayer(playerUuid) ?: return Deal.DealResult.PlayerNotFound
 
         val actualShop =
             shopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
@@ -109,12 +115,14 @@ class DealServiceImpl : DealService, Services.Fallback {
 
                 shopService.saveShop(updatedShop)
 
-                val deal = dealRepository.buy(
-                    updatedShop,
-                    amount,
-                    player.uniqueId,
-                    OffsetDateTime.now()
-                )
+                val deal = PaperShopInstance.rabbitApi.sendRequest(
+                    BuyRequestPacket(
+                        updatedShop,
+                        amount,
+                        player.uniqueId,
+                        OffsetDateTime.now()
+                    )
+                ).deal
 
                 _deals[deal.dealUuid] = deal
 
@@ -152,7 +160,7 @@ class DealServiceImpl : DealService, Services.Fallback {
     override suspend fun fetchDeals() {
         logger.info("Fetching deals from database... (this may take a while!)")
 
-        val loadedDeals = dealRepository.loadDeals()
+        val loadedDeals = PaperShopInstance.rabbitApi.sendRequest(LoadDealsRequestPacket).deals
 
         _deals.clear()
         loadedDeals.forEach { _deals[it.dealUuid] = it }

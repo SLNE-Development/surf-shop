@@ -5,7 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.dealService
-import dev.slne.surf.shop.core.common.util.updatedShop
+import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
