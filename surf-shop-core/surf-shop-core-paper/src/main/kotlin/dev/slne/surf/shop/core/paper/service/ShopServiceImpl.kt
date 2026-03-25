@@ -11,7 +11,6 @@ import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.kyori.adventure.util.Services
-import org.bukkit.inventory.ItemStack
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -31,7 +30,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     }
 
     override suspend fun createShop(
-        item: ItemStack,
+        itemString: String,
         storedItemCount: Int,
         pricePerItem: Int,
         seller: UUID

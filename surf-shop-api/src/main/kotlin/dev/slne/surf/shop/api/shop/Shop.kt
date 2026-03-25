@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.api.shop
 
-import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import java.time.OffsetDateTime
@@ -9,7 +8,7 @@ import java.util.*
 data class Shop(
     val internalId: ULong,
     val shopUuid: UUID,
-    val item: ItemStack,
+    val itemString: String,
     val storedItemCount: Int,
     val pricePerItem: Int,
     val seller: UUID,
@@ -17,7 +16,6 @@ data class Shop(
 ) {
     var isBlocked: Boolean = false
 
-    val sellerName get() = Bukkit.getOfflinePlayer(seller).name ?: "#Unbekannt"
     fun isEmpty() = storedItemCount <= 0
 
     lateinit var searchableTokens: Set<String>
