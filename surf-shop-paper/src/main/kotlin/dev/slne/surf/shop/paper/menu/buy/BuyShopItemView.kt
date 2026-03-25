@@ -5,6 +5,8 @@ import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
@@ -327,7 +329,7 @@ object BuyShopItemView : View() {
                 }
 
                 plugin.launch {
-                    when (val result = dealService.buy(context.player, shop, amount)) {
+                    when (val result = dealService.buy(context.player.uniqueId, shop, amount)) {
                         Deal.DealResult.InsufficientStock -> {
                             context.player.sendText {
                                 appendErrorPrefix()
@@ -412,6 +414,16 @@ object BuyShopItemView : View() {
                             context.player.sendText {
                                 appendErrorPrefix()
                                 error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
+                            }
+
+                            context.player.playNoSound()
+                            openListView(render)
+                        }
+
+                        Deal.DealResult.PlayerNotFound -> {
+                            context.player.sendText {
+                                appendErrorPrefix()
+                                error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
                             }
 
                             context.player.playNoSound()

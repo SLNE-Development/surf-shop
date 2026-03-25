@@ -7,24 +7,22 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.table.DealsTable
-import dev.slne.surf.surfapi.core.api.util.toObjectSet
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toSet
+import kotlinx.coroutines.flow.toList
 import java.time.OffsetDateTime
 import java.util.*
 
 val dealRepository = DealRepository()
 
 class DealRepository {
-    suspend fun loadDeals(): ObjectSet<Deal> = suspendTransaction {
+    suspend fun loadDeals(): List<Deal> = suspendTransaction {
         DealsTable.selectAll().map {
             createDeal(it)
-        }.toSet().toObjectSet()
+        }.toList()
     }
 
-    suspend fun save(
+    suspend fun buy(
         shop: Shop,
         amount: Int,
         buyer: UUID,

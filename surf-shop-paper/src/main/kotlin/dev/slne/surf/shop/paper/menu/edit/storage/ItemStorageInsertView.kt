@@ -3,6 +3,7 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.outlineItem

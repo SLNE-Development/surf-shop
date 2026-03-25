@@ -3,6 +3,7 @@ package dev.slne.surf.shop.paper.menu
 import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
@@ -131,7 +132,7 @@ object CreateShopView : View() {
             plugin.launch {
                 val shop = shopService.createShop(item.clone().apply {
                     amount = 1
-                }, 0, price, context.player.uniqueId)
+                }.base64, 0, price, context.player.uniqueId)
 
                 if (plugin.auxProtectHook) {
                     AuxProtectHook.logCreate(context.player, shop)

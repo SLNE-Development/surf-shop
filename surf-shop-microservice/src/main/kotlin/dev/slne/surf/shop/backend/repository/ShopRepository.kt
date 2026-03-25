@@ -9,21 +9,19 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.upsert
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.table.ShopsTable
-import dev.slne.surf.surfapi.core.api.util.toObjectSet
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toSet
+import kotlinx.coroutines.flow.toList
 import java.time.OffsetDateTime
 import java.util.*
 
 val shopRepository = ShopRepository()
 
 class ShopRepository {
-    suspend fun loadShops(): ObjectSet<Shop> = suspendTransaction {
+    suspend fun loadShops(): List<Shop> = suspendTransaction {
         ShopsTable.selectAll().map {
             createShop(it)
-        }.toSet().toObjectSet()
+        }.toList()
     }
 
     suspend fun createShop(

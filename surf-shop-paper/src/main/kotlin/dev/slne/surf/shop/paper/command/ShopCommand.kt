@@ -2,6 +2,7 @@ package dev.slne.surf.shop.paper.command
 
 import dev.jorel.commandapi.kotlindsl.*
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.argument.shopArgument
 import dev.slne.surf.shop.paper.menu.OwnShopState

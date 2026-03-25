@@ -5,6 +5,7 @@ import dev.heliosares.auxprotect.api.AuxProtectAPI
 import dev.heliosares.auxprotect.database.DbEntry
 import dev.heliosares.auxprotect.database.EntryAction
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.plugin
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
