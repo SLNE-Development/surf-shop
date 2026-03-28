@@ -4,7 +4,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
-import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.StaticShopState
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
@@ -128,12 +128,14 @@ object ShopChestListener : Listener {
         }
 
         if (shop.seller == player.uniqueId) {
+            StaticShopState.setInStaticShop(player.uniqueId, false)
             viewFrame.open(
                 ShopChestSetupView::class.java,
                 player,
                 ImmutableMap.of("shop-chest", chest)
             )
         } else {
+            StaticShopState.setInStaticShop(player.uniqueId, true)
             viewFrame.open(
                 BuyShopItemView::class.java,
                 player,

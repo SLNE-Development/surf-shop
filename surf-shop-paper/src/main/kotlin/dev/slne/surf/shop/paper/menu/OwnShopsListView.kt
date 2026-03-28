@@ -399,3 +399,16 @@ object OwnShopState {
         }
     }
 }
+
+object StaticShopState {
+    private val inStaticShop = mutableObjectSetOf<UUID>()
+    fun isInStaticShop(playerUuid: UUID) = inStaticShop.contains(playerUuid)
+
+    fun setInStaticShop(playerUuid: UUID, inStaticShop: Boolean) {
+        if (inStaticShop) {
+            this.inStaticShop.add(playerUuid)
+        } else {
+            this.inStaticShop.remove(playerUuid)
+        }
+    }
+}

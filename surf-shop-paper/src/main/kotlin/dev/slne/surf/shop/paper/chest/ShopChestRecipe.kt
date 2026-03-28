@@ -5,7 +5,6 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -13,6 +12,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.RecipeChoice
 import org.bukkit.inventory.ShapedRecipe
+import org.bukkit.persistence.PersistentDataType
 
 object ShopChestRecipe {
     val SHOP_CHEST_KEY = NamespacedKey(plugin, "shop_chest")
@@ -33,11 +33,9 @@ object ShopChestRecipe {
             }
         }
 
-        setData(DataComponentTypes.CUSTOM_MODEL_DATA,
-            io.papermc.paper.datacomponent.item.CustomModelData.customModelData()
-                .addFlag(true)
-                .build()
-        )
+        editMeta {
+            it.persistentDataContainer.set(SHOP_CHEST_KEY, PersistentDataType.BOOLEAN, true)
+        }
     }
 
     fun createRecipe(): ShapedRecipe {
@@ -51,7 +49,7 @@ object ShopChestRecipe {
 
     fun isShopChest(item: ItemStack): Boolean {
         if (item.type != Material.CHEST) return false
-        val customModelData = item.getData(DataComponentTypes.CUSTOM_MODEL_DATA) ?: return false
-        return customModelData.flags().isNotEmpty() && customModelData.flags().first()
+        val meta = item.itemMeta ?: return false
+        return meta.persistentDataContainer.getOrDefault(SHOP_CHEST_KEY, PersistentDataType.BOOLEAN, false)
     }
 }
