@@ -18,20 +18,24 @@ object FancyHologramsHook {
     ) {
         val manager = FancyHologramsPlugin.get().hologramManager
 
-        manager.getHologram("shop-$chestUuid").getOrNull()?.deleteHologram()
+        manager.getHologram("shop-$chestUuid").getOrNull()?.let {
+            manager.removeHologram(it)
+        }
 
         val holoData =
-            TextHologramData("shop-$chestUuid", shopLocation.clone().add(0.0, 1.0, 0.0))
+            TextHologramData("shop-$chestUuid", shopLocation.clone().add(0.0, 1.5, 0.0))
         holoData.billboard = Display.Billboard.VERTICAL
+        holoData.removeLine(0)
         holoData.addLine("<#6B9BD1>1x <reset>${miniMessage.serialize(linkedShop.item.displayName())}")
 
         manager.addHologram(manager.create(holoData))
     }
 
     fun deleteHologramIfExists(chestUuid: UUID) {
-        val holoName = "shop-$chestUuid"
         val manager = FancyHologramsPlugin.get().hologramManager
 
-        manager.getHologram(holoName).getOrNull()?.deleteHologram()
+        manager.getHologram("shop-$chestUuid").getOrNull()?.let {
+            manager.removeHologram(it)
+        }
     }
 }
