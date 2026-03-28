@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap
 class DealServiceImpl : DealService, Services.Fallback {
     private val _deals = mutableObject2ObjectMapOf<UUID, Deal>()
     override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
-    private lateinit var plugin: SuspendingJavaPlugin
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
 
@@ -170,5 +169,9 @@ class DealServiceImpl : DealService, Services.Fallback {
 
     fun removeShopLock(shopUuid: UUID) {
         shopLocks.remove(shopUuid)
+    }
+
+    companion object {
+        lateinit var plugin: SuspendingJavaPlugin
     }
 }

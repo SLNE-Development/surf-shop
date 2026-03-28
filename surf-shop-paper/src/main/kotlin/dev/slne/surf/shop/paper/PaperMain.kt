@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.dealService
 import dev.slne.surf.shop.core.paper.PaperShopInstance
+import dev.slne.surf.shop.core.paper.service.DealServiceImpl
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.chest.ShopChestListener
@@ -48,6 +49,8 @@ class PaperMain : SuspendingJavaPlugin() {
         shopService.fetchShops()
         dealService.fetchDeals()
         staticShopChestService.fetchChests()
+
+        DealServiceImpl.plugin = this
 
         viewFrame.with(ShopListView)
         viewFrame.with(CreateShopView)
