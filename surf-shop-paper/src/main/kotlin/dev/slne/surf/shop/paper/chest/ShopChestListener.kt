@@ -6,6 +6,7 @@ import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
+import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.StaticShopState
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
@@ -121,6 +122,10 @@ object ShopChestListener : Listener {
             }
 
             staticShopChestService.deleteChest(chest.chestUuid)
+
+            if (plugin.hasFancyHolograms) {
+                FancyHologramsHook.deleteHologramIfExists(chest.chestUuid)
+            }
 
             player.sendText {
                 appendSuccessPrefix()

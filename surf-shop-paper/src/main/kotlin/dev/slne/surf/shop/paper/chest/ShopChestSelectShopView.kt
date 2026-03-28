@@ -7,12 +7,14 @@ import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
+import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.createShopItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNewPageSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.location
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
@@ -81,6 +83,12 @@ object ShopChestSelectShopView : View() {
                         context.closeForPlayer()
                     }
                     return@launch
+                }
+
+                if (plugin.hasFancyHolograms) {
+                    chest.location?.let {
+                        FancyHologramsHook.createAndOrDelete(chest.chestUuid, it, shop)
+                    }
                 }
 
                 context.player.sendText {

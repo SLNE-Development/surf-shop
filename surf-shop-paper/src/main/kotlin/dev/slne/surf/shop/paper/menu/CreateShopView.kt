@@ -6,14 +6,16 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
-import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
+import dev.slne.surf.shop.paper.util.location
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
@@ -142,9 +144,16 @@ object CreateShopView : View() {
 
                 val chest = ChestShopEditState.getChest(context.player.uniqueId)
                 if (chest != null) {
-                    val updatedChest = staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+                    val updatedChest =
+                        staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
                     if (updatedChest != null) {
                         ChestShopEditState.setChest(context.player.uniqueId, updatedChest)
+                    }
+
+                    if (plugin.hasFancyHolograms) {
+                        chest.location?.let {
+                            FancyHologramsHook.createAndOrDelete(chest.chestUuid, it, shop)
+                        }
                     }
                 }
 

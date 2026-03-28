@@ -90,6 +90,7 @@ class PaperMain : SuspendingJavaPlugin() {
         PaperShopInstance.paperLoader.onDisable()
     }
 
+    val hasFancyHolograms get() = pluginManager.isPluginEnabled("FancyHolograms")
     val auxProtectHook get() = pluginManager.isPluginEnabled("AuxProtect")
     val surfNpcHook get() = pluginManager.isPluginEnabled("surf-npc-paper")
 }

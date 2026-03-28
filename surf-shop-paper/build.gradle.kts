@@ -17,6 +17,7 @@ surfPaperPluginApi {
         registerSoft("AuxProtect")
         registerRequired("surf-transaction-paper")
         registerRequired("surf-rabbitmq-paper")
+        registerSoft("FancyHolograms")
     }
 }
 
@@ -26,6 +27,7 @@ dependencies {
     compileOnly(files("libs/auxprotect-paper-1.3.4-pre6-all.jar"))
     compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
     compileOnly("dev.slne.surf.npc:surf-npc-api:1.21.11-1.6.1-SNAPSHOT")
+    compileOnly("de.oliver:FancyHolograms:2.9.1")
 }
 
 configurations.all {
