@@ -9,18 +9,22 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.update
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import dev.slne.surf.shop.backend.table.StaticShopChestsTable
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 import java.util.*
 
 val staticShopChestRepository = StaticShopChestRepository()
 
 class StaticShopChestRepository {
-    suspend fun loadAll(): List<StaticShopChest> = suspendTransaction {
-        StaticShopChestsTable.selectAll().map {
-            createStaticShopChest(it)
-        }.toList()
+    suspend fun loadAll(): List<StaticShopChest> = withContext(NonCancellable) {
+        suspendTransaction {
+            StaticShopChestsTable.selectAll().map {
+                createStaticShopChest(it)
+            }.toList()
+        }
     }
 
     suspend fun create(
@@ -30,28 +34,34 @@ class StaticShopChestRepository {
         x: Int,
         y: Int,
         z: Int
-    ): StaticShopChest = suspendTransaction {
-        StaticShopChestsTable.insertReturning {
-            it[this.chestUuid] = UUID.randomUUID()
-            it[this.shopUuid] = shopUuid
-            it[this.placedBy] = placedBy
-            it[this.worldName] = worldName
-            it[this.x] = x
-            it[this.y] = y
-            it[this.z] = z
-        }.map {
-            createStaticShopChest(it)
-        }.firstOrNull() ?: error("Failed to create static shop chest")
-    }
-
-    suspend fun updateShopUuid(chestUuid: UUID, shopUuid: UUID?) = suspendTransaction {
-        StaticShopChestsTable.update({ StaticShopChestsTable.chestUuid eq chestUuid }) {
-            it[this.shopUuid] = shopUuid
+    ): StaticShopChest = withContext(NonCancellable) {
+        suspendTransaction {
+            StaticShopChestsTable.insertReturning {
+                it[this.chestUuid] = UUID.randomUUID()
+                it[this.shopUuid] = shopUuid
+                it[this.placedBy] = placedBy
+                it[this.worldName] = worldName
+                it[this.x] = x
+                it[this.y] = y
+                it[this.z] = z
+            }.map {
+                createStaticShopChest(it)
+            }.firstOrNull() ?: error("Failed to create static shop chest")
         }
     }
 
-    suspend fun delete(chestUuid: UUID) = suspendTransaction {
-        StaticShopChestsTable.deleteWhere { StaticShopChestsTable.chestUuid eq chestUuid } > 0
+    suspend fun updateShopUuid(chestUuid: UUID, shopUuid: UUID?) = withContext(NonCancellable) {
+        suspendTransaction {
+            StaticShopChestsTable.update({ StaticShopChestsTable.chestUuid eq chestUuid }) {
+                it[this.shopUuid] = shopUuid
+            }
+        }
+    }
+
+    suspend fun delete(chestUuid: UUID) = withContext(NonCancellable) {
+        suspendTransaction {
+            StaticShopChestsTable.deleteWhere { StaticShopChestsTable.chestUuid eq chestUuid } > 0
+        }
     }
 
     private fun createStaticShopChest(row: ResultRow) = StaticShopChest(

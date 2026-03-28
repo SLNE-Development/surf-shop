@@ -6,6 +6,8 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import dev.slne.surf.microservice.api.microservice.Microservice
 import dev.slne.surf.rabbitmq.api.ServerRabbitMQApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import dev.slne.surf.shop.backend.rabbit.handler.DealHandler
 import dev.slne.surf.shop.backend.rabbit.handler.ShopHandler
 import dev.slne.surf.shop.backend.rabbit.handler.StaticShopChestHandler
@@ -21,12 +23,14 @@ class ShopMicroservice : Microservice() {
     private val rabbitApi = ServerRabbitMQApi.create("surf-shop", dataPath)
 
     override suspend fun onBootstrap(args: List<String>) {
-        suspendTransaction {
-            SchemaUtils.create(
-                DealsTable,
-                ShopsTable,
-                StaticShopChestsTable
-            )
+        withContext(NonCancellable) {
+            suspendTransaction {
+                SchemaUtils.create(
+                    DealsTable,
+                    ShopsTable,
+                    StaticShopChestsTable
+                )
+            }
         }
 
         rabbitApi.registerRequestHandler(DealHandler)
