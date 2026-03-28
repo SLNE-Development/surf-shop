@@ -18,6 +18,7 @@ import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.edit.PriceEditView
@@ -61,6 +62,7 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(OwnShopsListView)
         viewFrame.with(ShopChestSetupView)
         viewFrame.with(ShopChestSelectShopView)
+        viewFrame.with(DoneDealsView)
     }
 
     override suspend fun onEnableAsync() {

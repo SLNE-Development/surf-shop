@@ -9,6 +9,7 @@ import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
@@ -42,6 +43,11 @@ object ShopListView : View() {
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
+        }
+    }
+    private val dealLogItem = buildItem(Material.CHEST) {
+        displayName {
+            shopColored("Abgeschlossene Deals")
         }
     }
 
@@ -269,7 +275,7 @@ object ShopListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "ORRRRRRRO",
+                "ORRRRRRRD",
                 "UAOPCNO}S"
             )
             .cancelInteractions()
@@ -299,6 +305,10 @@ object ShopListView : View() {
         render.layoutSlot('U', updateItem).onClick { context ->
             context.openForPlayer(ShopListView::class.java)
             context.playGeneralClickSound()
+        }
+        render.layoutSlot('D', dealLogItem).onClick { click ->
+            click.openForPlayer(DoneDealsView::class.java)
+            click.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
