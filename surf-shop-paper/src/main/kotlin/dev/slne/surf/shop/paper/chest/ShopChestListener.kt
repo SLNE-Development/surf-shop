@@ -1,16 +1,20 @@
 package dev.slne.surf.shop.paper.chest
 
 import com.github.shynixn.mccoroutine.folia.launch
+import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.StaticShopState
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import kotlinx.coroutines.withContext
+import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.Block
 import org.bukkit.event.EventHandler
@@ -48,8 +52,14 @@ object ShopChestListener : Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    fun onBlockBreak(event: BlockBreakEvent) {
-        val block = event.block
+    fun onShopBreak(event: PlayerInteractEvent) {
+        val block = event.clickedBlock ?: return
+
+
+        if (!event.action.isLeftClick) {
+            return
+        }
+
         val chest = staticShopChestService.getChestAt(
             block.world.name,
             block.x,
@@ -59,8 +69,9 @@ object ShopChestListener : Listener {
 
         val player = event.player
 
-        if (chest.placedBy != player.uniqueId) {
-            event.isCancelled = true
+        event.isCancelled = true
+
+        if (chest.placedBy != player.uniqueId && !player.hasPermission(PermissionRegistry.CHEST_SHOP_BREAK_BYPASS)) {
             player.sendText {
                 appendErrorPrefix()
                 error("Du kannst diese Shop Chest nicht abbauen, da du sie nicht platziert hast.")
@@ -72,7 +83,6 @@ object ShopChestListener : Listener {
         }
 
         if (!player.isSneaking) {
-            event.isCancelled = true
             player.sendText {
                 appendErrorPrefix()
                 error("Du musst schleichen (Shift + Klick), um eine Shop Chest abzubauen.")
@@ -84,6 +94,12 @@ object ShopChestListener : Listener {
         }
 
         plugin.launch {
+            withContext(plugin.regionDispatcher(block.location)) {
+                block.type = Material.AIR
+                block.world.dropItemNaturally(block.location, ShopChestRecipe.shopChestItem).owner =
+                    player.uniqueId
+            }
+
             staticShopChestService.deleteChest(chest.chestUuid)
 
             player.sendText {
@@ -91,6 +107,40 @@ object ShopChestListener : Listener {
                 success("Shop Chest entfernt.")
             }
         }
+    }
+
+    @EventHandler
+    fun onShopDestroy(event: BlockBreakEvent) {
+        val block = event.block
+        val chest = staticShopChestService.getChestAt(
+            block.world.name,
+            block.x,
+            block.y,
+            block.z
+        ) ?: return
+
+        val player = event.player
+
+        event.isCancelled = true
+
+        if (chest.placedBy != player.uniqueId && !player.hasPermission(PermissionRegistry.CHEST_SHOP_BREAK_BYPASS)) {
+            player.sendText {
+                appendErrorPrefix()
+                error("Du kannst diese Shop Chest nicht abbauen.")
+            }
+            return
+        }
+
+        if (!player.isSneaking) {
+            player.sendText {
+                appendErrorPrefix()
+                error("Du musst schleichen (Shift + Klick), um eine Shop Chest abzubauen.")
+            }
+            player.playSound(true) {
+                type(Sound.ENTITY_VILLAGER_NO)
+            }
+        }
+
     }
 
     @EventHandler(priority = EventPriority.HIGH)
