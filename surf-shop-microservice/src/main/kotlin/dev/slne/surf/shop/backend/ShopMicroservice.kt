@@ -8,8 +8,10 @@ import dev.slne.surf.microservice.api.microservice.Microservice
 import dev.slne.surf.rabbitmq.api.ServerRabbitMQApi
 import dev.slne.surf.shop.backend.rabbit.handler.DealHandler
 import dev.slne.surf.shop.backend.rabbit.handler.ShopHandler
+import dev.slne.surf.shop.backend.rabbit.handler.StaticShopChestHandler
 import dev.slne.surf.shop.backend.table.DealsTable
 import dev.slne.surf.shop.backend.table.ShopsTable
+import dev.slne.surf.shop.backend.table.StaticShopChestsTable
 import kotlin.io.path.Path
 
 @AutoService(Microservice::class)
@@ -21,12 +23,14 @@ class ShopMicroservice : Microservice() {
         suspendTransaction {
             SchemaUtils.create(
                 DealsTable,
-                ShopsTable
+                ShopsTable,
+                StaticShopChestsTable
             )
         }
 
         rabbitApi.registerRequestHandler(DealHandler)
         rabbitApi.registerRequestHandler(ShopHandler)
+        rabbitApi.registerRequestHandler(StaticShopChestHandler)
         rabbitApi.freezeAndConnect()
     }
 
