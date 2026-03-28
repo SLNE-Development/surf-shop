@@ -9,23 +9,19 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.upsert
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.table.ShopsTable
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.withContext
 import java.time.OffsetDateTime
 import java.util.*
 
 val shopRepository = ShopRepository()
 
 class ShopRepository {
-    suspend fun loadShops(): List<Shop> = withContext(NonCancellable) {
-        suspendTransaction {
-            ShopsTable.selectAll().map {
-                createShop(it)
-            }.toList()
-        }
+    suspend fun loadShops(): List<Shop> = suspendTransaction {
+        ShopsTable.selectAll().map {
+            createShop(it)
+        }.toList()
     }
 
     suspend fun createShop(
@@ -34,38 +30,32 @@ class ShopRepository {
         pricePerItem: Int,
         seller: UUID,
         createdAt: OffsetDateTime
-    ): Shop = withContext(NonCancellable) {
-        suspendTransaction {
-            ShopsTable.insertReturning {
-                it[this.shopUuid] = UUID.randomUUID()
-                it[this.item] = itemString
-                it[this.storedItemCount] = storedItemCount
-                it[this.pricePerItem] = pricePerItem
-                it[this.seller] = seller
-                it[this.createdAt] = createdAt
-            }.map {
-                createShop(it)
-            }.firstOrNull() ?: error("Failed to create shop")
+    ): Shop = suspendTransaction {
+        ShopsTable.insertReturning {
+            it[this.shopUuid] = UUID.randomUUID()
+            it[this.item] = itemString
+            it[this.storedItemCount] = storedItemCount
+            it[this.pricePerItem] = pricePerItem
+            it[this.seller] = seller
+            it[this.createdAt] = createdAt
+        }.map {
+            createShop(it)
+        }.firstOrNull() ?: error("Failed to create shop")
+    }
+
+    suspend fun saveShop(shop: Shop) = suspendTransaction {
+        ShopsTable.upsert {
+            it[shopUuid] = shop.shopUuid
+            it[item] = shop.itemString
+            it[storedItemCount] = shop.storedItemCount
+            it[pricePerItem] = shop.pricePerItem
+            it[seller] = shop.seller
+            it[createdAt] = shop.createdAt
         }
     }
 
-    suspend fun saveShop(shop: Shop) = withContext(NonCancellable) {
-        suspendTransaction {
-            ShopsTable.upsert {
-                it[shopUuid] = shop.shopUuid
-                it[item] = shop.itemString
-                it[storedItemCount] = shop.storedItemCount
-                it[pricePerItem] = shop.pricePerItem
-                it[seller] = shop.seller
-                it[createdAt] = shop.createdAt
-            }
-        }
-    }
-
-    suspend fun deleteShop(shop: Shop) = withContext(NonCancellable) {
-        suspendTransaction {
-            ShopsTable.deleteWhere { ShopsTable.shopUuid eq shop.shopUuid } > 0
-        }
+    suspend fun deleteShop(shop: Shop) = suspendTransaction {
+        ShopsTable.deleteWhere { ShopsTable.shopUuid eq shop.shopUuid } > 0
     }
 
     private fun createShop(row: ResultRow) = Shop(

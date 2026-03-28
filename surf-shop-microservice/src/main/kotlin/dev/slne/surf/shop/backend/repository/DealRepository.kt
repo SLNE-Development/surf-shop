@@ -7,23 +7,19 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.backend.table.DealsTable
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.withContext
 import java.time.OffsetDateTime
 import java.util.*
 
 val dealRepository = DealRepository()
 
 class DealRepository {
-    suspend fun loadDeals(): List<Deal> = withContext(NonCancellable) {
-        suspendTransaction {
-            DealsTable.selectAll().map {
-                createDeal(it)
-            }.toList()
-        }
+    suspend fun loadDeals(): List<Deal> = suspendTransaction {
+        DealsTable.selectAll().map {
+            createDeal(it)
+        }.toList()
     }
 
     suspend fun buy(
@@ -31,18 +27,16 @@ class DealRepository {
         amount: Int,
         buyer: UUID,
         boughtAt: OffsetDateTime
-    ): Deal = withContext(NonCancellable) {
-        suspendTransaction {
-            DealsTable.insertReturning {
-                it[this.dealUuid] = UUID.randomUUID()
-                it[this.shopInternalId] = shop.internalId
-                it[this.amount] = amount
-                it[this.boughtBy] = buyer
-                it[this.boughtAt] = boughtAt
-            }.map {
-                createDeal(it)
-            }.firstOrNull() ?: error("Failed to create deal")
-        }
+    ): Deal = suspendTransaction {
+        DealsTable.insertReturning {
+            it[this.dealUuid] = UUID.randomUUID()
+            it[this.shopInternalId] = shop.internalId
+            it[this.amount] = amount
+            it[this.boughtBy] = buyer
+            it[this.boughtAt] = boughtAt
+        }.map {
+            createDeal(it)
+        }.firstOrNull() ?: error("Failed to create deal")
     }
 
     private fun createDeal(row: ResultRow) = Deal(
