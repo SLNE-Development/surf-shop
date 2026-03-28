@@ -5,6 +5,11 @@ import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.dealService
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.service.staticShopChestService
+import dev.slne.surf.shop.paper.chest.ShopChestListener
+import dev.slne.surf.shop.paper.chest.ShopChestRecipe
+import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
+import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
@@ -24,6 +29,7 @@ import dev.slne.surf.surfapi.bukkit.api.event.register
 import dev.slne.surf.surfapi.bukkit.api.extensions.pluginManager
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
+import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
 
@@ -41,6 +47,7 @@ class PaperMain : SuspendingJavaPlugin() {
 
         shopService.fetchShops()
         dealService.fetchDeals()
+        staticShopChestService.fetchChests()
 
         viewFrame.with(ShopListView)
         viewFrame.with(CreateShopView)
@@ -54,6 +61,8 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(BuyShopItemView)
         viewFrame.with(DeleteShopView)
         viewFrame.with(OwnShopsListView)
+        viewFrame.with(ShopChestSetupView)
+        viewFrame.with(ShopChestSelectShopView)
     }
 
     override suspend fun onEnableAsync() {
@@ -67,6 +76,9 @@ class PaperMain : SuspendingJavaPlugin() {
 
             SurfNpcHook.NpcListener.register()
         }
+
+        Bukkit.addRecipe(ShopChestRecipe.createRecipe())
+        ShopChestListener.register()
 
         shopCommand()
     }

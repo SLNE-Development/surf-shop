@@ -1,0 +1,150 @@
+package dev.slne.surf.shop.paper.chest
+
+import com.github.shynixn.mccoroutine.folia.launch
+import com.google.common.collect.ImmutableMap
+import dev.slne.surf.shop.api.shopchest.StaticShopChest
+import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.service.staticShopChestService
+import dev.slne.surf.shop.paper.menu.createShopItem
+import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.playNewPageSound
+import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
+import dev.slne.surf.surfapi.bukkit.api.builder.displayName
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
+import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
+import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import me.devnatan.inventoryframework.View
+import me.devnatan.inventoryframework.ViewConfigBuilder
+import me.devnatan.inventoryframework.context.RenderContext
+import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Material
+import org.bukkit.Sound
+
+object ShopChestSelectShopView : View() {
+    private val chestState = initialState<StaticShopChest>("shop-chest")
+
+    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
+        displayName {
+            spacer("")
+        }
+    }
+
+    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
+        displayName {
+            shopColored("Vorherige Seite")
+        }
+    }
+
+    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply {
+        displayName {
+            shopColored("Nächste Seite")
+        }
+    }
+
+    private val backItem = MenuHeads.CROSS.clone().apply {
+        displayName {
+            error("Zurück")
+        }
+    }
+
+    private val paginationState = buildLazyPaginationState { context ->
+        shopService.loadedShops
+            .filter { it.seller == context.player.uniqueId }
+            .sortedBy { it.item.type.name }
+            .toMutableList()
+    }.elementFactory { context, builder, _, shop ->
+        builder.withItem(createShopItem(shop, context.player.uniqueId)).onClick { context ->
+            context.playGeneralClickSound()
+
+            val chest = chestState.get(context)
+
+            plugin.launch {
+                staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+
+                context.player.sendText {
+                    appendSuccessPrefix()
+                    success("Shop wurde dieser Kiste zugewiesen!")
+                }
+                context.player.playSound(true) {
+                    type(Sound.ENTITY_PLAYER_LEVELUP)
+                }
+                context.player.closeInventory()
+            }
+        }
+    }.layoutTarget('R').build()
+
+    override fun onInit(config: ViewConfigBuilder) {
+        config
+            .titleBuilder {
+                shopColored("Shop auswählen".toSmallCaps(), TextDecoration.BOLD)
+            }
+            .size(6)
+            .layout(
+                "OOOOOOOOO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
+                "ORRRRRRRO",
+                "OOO<B>OOO"
+            )
+            .cancelInteractions()
+    }
+
+    override fun onFirstRender(render: RenderContext) {
+        val pagination = paginationState.get(render)
+
+        render.layoutSlot('O', outlineItem)
+
+        render.layoutSlot('B', backItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(
+                ShopChestSetupView::class.java,
+                ImmutableMap.of("shop-chest", chestState.get(context))
+            )
+        }
+
+        render
+            .layoutSlot('<')
+            .renderWith {
+                if (pagination.canBack()) {
+                    previousItem
+                } else {
+                    outlineItem
+                }
+            }
+            .watch(paginationState)
+            .onClick { context ->
+                if (!pagination.canBack()) {
+                    return@onClick
+                }
+
+                context.playNewPageSound()
+                pagination.back()
+            }
+
+        render
+            .layoutSlot('>')
+            .renderWith {
+                if (pagination.canAdvance()) {
+                    nextItem
+                } else {
+                    outlineItem
+                }
+            }
+            .watch(paginationState)
+            .onClick { context ->
+                if (!pagination.canAdvance()) {
+                    return@onClick
+                }
+
+                context.playNewPageSound()
+                pagination.advance()
+            }
+    }
+}
