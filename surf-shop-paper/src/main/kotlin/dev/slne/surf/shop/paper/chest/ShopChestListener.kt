@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.chest
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.common.collect.ImmutableMap
@@ -47,6 +48,10 @@ object ShopChestListener : Listener {
             player.sendText {
                 appendSuccessPrefix()
                 success("Shop Chest platziert! Klicke auf die Kiste, um einen Shop zuzuweisen.")
+            }
+
+            player.playSound(true) {
+                type(Sound.BLOCK_LEVER_CLICK)
             }
         }
     }
@@ -96,8 +101,19 @@ object ShopChestListener : Listener {
         plugin.launch {
             withContext(plugin.regionDispatcher(block.location)) {
                 block.type = Material.AIR
-                block.world.dropItemNaturally(block.location, ShopChestRecipe.shopChestItem).owner =
-                    player.uniqueId
+            }
+
+            val hasToDrop = withContext(plugin.entityDispatcher(player)) {
+                player.inventory.addItem(ShopChestRecipe.shopChestItem).isNotEmpty()
+            }
+
+            if (hasToDrop) {
+                withContext(plugin.regionDispatcher(block.location)) {
+                    block.world.dropItem(
+                        block.location,
+                        ShopChestRecipe.shopChestItem
+                    ).owner = player.uniqueId
+                }
             }
 
             staticShopChestService.deleteChest(chest.chestUuid)
@@ -105,6 +121,9 @@ object ShopChestListener : Listener {
             player.sendText {
                 appendSuccessPrefix()
                 success("Shop Chest entfernt.")
+            }
+            player.playSound(true) {
+                type(Sound.ENTITY_ITEM_PICKUP)
             }
         }
     }
