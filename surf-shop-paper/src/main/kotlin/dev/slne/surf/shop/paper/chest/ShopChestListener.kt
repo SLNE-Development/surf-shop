@@ -35,6 +35,10 @@ object ShopChestListener : Listener {
         val block = event.blockPlaced
         val player = event.player
 
+        player.playSound(true) {
+            type(Sound.BLOCK_LEVER_CLICK)
+        }
+
         plugin.launch {
             staticShopChestService.createChest(
                 shopUuid = null,
@@ -48,10 +52,6 @@ object ShopChestListener : Listener {
             player.sendText {
                 appendSuccessPrefix()
                 success("Shop Chest platziert! Klicke auf die Kiste, um einen Shop zuzuweisen.")
-            }
-
-            player.playSound(true) {
-                type(Sound.BLOCK_LEVER_CLICK)
             }
         }
     }
@@ -98,6 +98,10 @@ object ShopChestListener : Listener {
             return
         }
 
+        player.playSound(true) {
+            type(Sound.ENTITY_ITEM_PICKUP)
+        }
+
         plugin.launch {
             withContext(plugin.regionDispatcher(block.location)) {
                 block.type = Material.AIR
@@ -120,10 +124,7 @@ object ShopChestListener : Listener {
 
             player.sendText {
                 appendSuccessPrefix()
-                success("Shop Chest entfernt.")
-            }
-            player.playSound(true) {
-                type(Sound.ENTITY_ITEM_PICKUP)
+                success("Die Shop Kiste wurde entfernt.")
             }
         }
     }
