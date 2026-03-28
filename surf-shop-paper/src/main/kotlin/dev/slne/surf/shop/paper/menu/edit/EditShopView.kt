@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.plugin
@@ -121,7 +122,14 @@ object EditShopView : View() {
 
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
-                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                    val chest = ChestShopEditState.getChest(context.player.uniqueId)
+                    if (chest != null) {
+                        viewFrame.open(
+                            ShopChestSetupView::class.java,
+                            context.player,
+                            ImmutableMap.of("shop-chest", chest)
+                        )
+                    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         viewFrame.open(OwnShopsListView::class.java, context.player)
                     } else {
                         viewFrame.open(ShopListView::class.java, context.player)
@@ -133,7 +141,14 @@ object EditShopView : View() {
             context.playGeneralClickSound()
             context.player.closeInventory()
 
-            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            val chest = ChestShopEditState.getChest(context.player.uniqueId)
+            if (chest != null) {
+                viewFrame.open(
+                    ShopChestSetupView::class.java,
+                    context.player,
+                    ImmutableMap.of("shop-chest", chest)
+                )
+            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 viewFrame.open(OwnShopsListView::class.java, context.player)
             } else {
                 viewFrame.open(ShopListView::class.java, context.player)

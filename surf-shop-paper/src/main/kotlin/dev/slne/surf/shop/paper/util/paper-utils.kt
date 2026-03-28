@@ -1,10 +1,13 @@
 package dev.slne.surf.shop.paper.util
 
+import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import dev.slne.surf.surfapi.core.api.messages.Colors
 import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import org.bukkit.Bukkit
+import org.bukkit.Location
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.*
@@ -30,3 +33,8 @@ fun SurfComponentBuilder.appendBlob() = append {
     darkSpacer("▪")
     appendSpace()
 }
+
+val StaticShopChest.location
+    get() = Bukkit.getWorld(worldName)?.let {
+        Location(it, x.toDouble() + 0.5, y.toDouble(), z.toDouble() + 0.5)
+    }

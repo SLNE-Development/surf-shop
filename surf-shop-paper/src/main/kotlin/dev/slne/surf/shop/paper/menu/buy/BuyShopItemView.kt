@@ -155,7 +155,10 @@ object BuyShopItemView : View() {
                     }
 
                     context.player.playNoSound()
-                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                    if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+                        StaticShopState.setInStaticShop(context.player.uniqueId, false)
+                        context.player.closeInventory()
+                    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
                         context.openForPlayer(ShopListView::class.java)
@@ -292,7 +295,10 @@ object BuyShopItemView : View() {
                     }
 
                     context.player.playNoSound()
-                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                    if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+                        StaticShopState.setInStaticShop(context.player.uniqueId, false)
+                        context.player.closeInventory()
+                    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
                         context.openForPlayer(ShopListView::class.java)
@@ -438,7 +444,10 @@ object BuyShopItemView : View() {
             }
         }).onClick { context ->
             context.playGeneralClickSound()
-            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+                StaticShopState.setInStaticShop(context.player.uniqueId, false)
+                context.player.closeInventory()
+            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 context.openForPlayer(OwnShopsListView::class.java)
             } else {
                 context.openForPlayer(ShopListView::class.java)
@@ -448,7 +457,10 @@ object BuyShopItemView : View() {
 
     private suspend fun openListView(context: RenderContext) =
         withContext(plugin.entityDispatcher(context.player)) {
-            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+                StaticShopState.setInStaticShop(context.player.uniqueId, false)
+                context.player.closeInventory()
+            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 viewFrame.open(OwnShopsListView::class.java, context.player)
             } else {
                 viewFrame.open(ShopListView::class.java, context.player)

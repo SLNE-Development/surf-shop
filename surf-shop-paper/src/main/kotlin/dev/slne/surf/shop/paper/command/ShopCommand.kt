@@ -2,9 +2,12 @@ package dev.slne.surf.shop.paper.command
 
 import dev.jorel.commandapi.kotlindsl.*
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.dealService
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.command.argument.shopArgument
+import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
@@ -19,6 +22,7 @@ fun shopCommand() = commandTree("shop") {
 
     playerExecutor { player, _ ->
         searchInputCache.remove(player.uniqueId)
+        ChestShopEditState.setChest(player.uniqueId, null)
         viewFrame.open(
             ShopListView::class.java,
             player
@@ -30,10 +34,12 @@ fun shopCommand() = commandTree("shop") {
         literalArgument("clearCacheAndFetch") {
             anyExecutorSuspend { sender, _ ->
                 shopService.fetchShops()
+                dealService.fetchDeals()
+                staticShopChestService.fetchChests()
 
                 sender.sendText {
                     appendSuccessPrefix()
-                    success("Der Shop-Cache wurde geleert und alle Shops wurden neu geladen.")
+                    success("Die Caches wurden geleert und alle Daten wurden neu geladen.")
                 }
             }
         }
@@ -73,6 +79,7 @@ fun shopCommand() = commandTree("shop") {
         playerExecutor { player, args ->
             val search: String by args
             searchInputCache[player.uniqueId] = search
+            ChestShopEditState.setChest(player.uniqueId, null)
             viewFrame.open(
                 ShopListView::class.java,
                 player

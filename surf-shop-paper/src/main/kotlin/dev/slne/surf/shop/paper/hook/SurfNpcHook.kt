@@ -4,6 +4,7 @@ import dev.slne.surf.npc.api.dsl.npc
 import dev.slne.surf.npc.api.event.NpcInteractEvent
 import dev.slne.surf.npc.api.npc.skin.NpcSkin
 import dev.slne.surf.npc.api.npc.skin.NpcSkinPart
+import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.util.searchInputCache
@@ -67,6 +68,7 @@ object SurfNpcHook {
                 searchInputCache.remove(event.player.uniqueId)
                 viewFrame.open(ShopListView::class.java, event.player)
                 OwnShopState.setInOwn(event.player.uniqueId, false)
+                ChestShopEditState.setChest(event.player.uniqueId, null)
             }
         }
     }

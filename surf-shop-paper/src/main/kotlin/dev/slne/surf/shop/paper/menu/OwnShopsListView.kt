@@ -19,7 +19,9 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import dev.slne.surf.surfapi.core.api.util.mutableObjectSetOf
+import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -398,4 +400,33 @@ object OwnShopState {
             this.inOwn.remove(playerUuid)
         }
     }
+}
+
+object StaticShopState {
+    private val inStaticShop = mutableObjectSetOf<UUID>()
+    fun isInStaticShop(playerUuid: UUID) = inStaticShop.contains(playerUuid)
+
+    fun setInStaticShop(playerUuid: UUID, inStaticShop: Boolean) {
+        if (inStaticShop) {
+            this.inStaticShop.add(playerUuid)
+        } else {
+            this.inStaticShop.remove(playerUuid)
+        }
+    }
+}
+
+object ChestShopEditState {
+    private val chestMap = mutableObject2ObjectMapOf<UUID, StaticShopChest>()
+
+    fun getChest(playerUuid: UUID): StaticShopChest? = chestMap[playerUuid]
+
+    fun setChest(playerUuid: UUID, chest: StaticShopChest?) {
+        if (chest != null) {
+            chestMap[playerUuid] = chest
+        } else {
+            chestMap.remove(playerUuid)
+        }
+    }
+
+    fun isInChestShop(playerUuid: UUID): Boolean = chestMap.containsKey(playerUuid)
 }

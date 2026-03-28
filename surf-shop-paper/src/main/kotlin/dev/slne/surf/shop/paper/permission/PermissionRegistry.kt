@@ -8,4 +8,5 @@ object PermissionRegistry : PermissionRegistry() {
 
     val SHOP_COMMAND = create("$PREFIX_COMMAND.shop")
     val SHOP_COMMAND_ADMIN = create("$PREFIX_COMMAND.shop.admin")
+    val CHEST_SHOP_BREAK_BYPASS = create("$PREFIX.chests.bypass")
 }

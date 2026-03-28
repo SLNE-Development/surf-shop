@@ -2,15 +2,18 @@ package dev.slne.surf.shop.paper.menu.delete
 
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
+import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
+import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import kotlinx.coroutines.withContext
@@ -40,7 +43,15 @@ object DeleteShopView : View() {
             }
         }).onClick { context ->
             context.playGeneralClickSound()
-            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            val chest = ChestShopEditState.getChest(context.player.uniqueId)
+            if (chest != null) {
+                context.player.closeInventory()
+                viewFrame.open(
+                    ShopChestSetupView::class.java,
+                    context.player,
+                    ImmutableMap.of("shop-chest", chest)
+                )
+            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 context.openForPlayer(OwnShopsListView::class.java)
             } else {
                 context.openForPlayer(ShopListView::class.java)
@@ -84,7 +95,15 @@ object DeleteShopView : View() {
                 }
 
                 withContext(plugin.entityDispatcher(context.player)) {
-                    if (OwnShopState.isInOwn(context.player.uniqueId)) {
+                    val chest = ChestShopEditState.getChest(context.player.uniqueId)
+                    if (chest != null) {
+                        context.player.closeInventory()
+                        viewFrame.open(
+                            ShopChestSetupView::class.java,
+                            context.player,
+                            ImmutableMap.of("shop-chest", chest)
+                        )
+                    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
                         context.openForPlayer(ShopListView::class.java)
