@@ -109,13 +109,13 @@ class DealServiceImpl : DealService, Services.Fallback {
                 TransactionData.of("reason", "bought item"),
                 TransactionData.of(
                     "shopData",
-                    "$amount x ${shop.item.serialize()} for ${shop.pricePerItem} each (total: ${shop.pricePerItem * amount})"
+                    "$amount x ${shop.item} for ${shop.pricePerItem} each (total: ${shop.pricePerItem * amount})"
                 )
             ),
             additionalReceiverData = objectSetOf(
                 TransactionData.of("reason", "sold item"), TransactionData.of(
                     "shopData",
-                    "$amount x ${shop.item.serialize()} for ${shop.pricePerItem} by ${player.name} (total: ${shop.pricePerItem * amount})"
+                    "$amount x ${shop.item} for ${shop.pricePerItem} by ${player.name} (total: ${shop.pricePerItem * amount})"
                 )
             )
         )
