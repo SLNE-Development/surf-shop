@@ -25,7 +25,7 @@ object FancyHologramsHook {
         holoData.billboard = Display.Billboard.VERTICAL
         holoData.addLine("<#6B9BD1>1x <reset>${miniMessage.serialize(linkedShop.item.displayName())}")
 
-        manager.create(holoData)
+        manager.addHologram(manager.create(holoData))
     }
 
     fun deleteHologramIfExists(chestUuid: UUID) {
