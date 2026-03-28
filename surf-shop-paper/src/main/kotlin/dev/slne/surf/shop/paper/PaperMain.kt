@@ -45,11 +45,6 @@ class PaperMain : SuspendingJavaPlugin() {
 
     override suspend fun onLoadAsync() {
         PaperShopInstance.paperLoader.onLoad()
-
-        shopService.fetchShops()
-        dealService.fetchDeals()
-        staticShopChestService.fetchChests()
-
         DealServiceImpl.plugin = this
 
         viewFrame.with(ShopListView)
@@ -76,9 +71,12 @@ class PaperMain : SuspendingJavaPlugin() {
 
         if (surfNpcHook) {
             SurfNpcHook.create()
-
             SurfNpcHook.NpcListener.register()
         }
+
+        shopService.fetchShops()
+        dealService.fetchDeals()
+        staticShopChestService.fetchChests()
 
         Bukkit.addRecipe(ShopChestRecipe.createRecipe())
         ShopChestListener.register()

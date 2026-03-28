@@ -39,7 +39,7 @@ fun shopCommand() = commandTree("shop") {
 
                 sender.sendText {
                     appendSuccessPrefix()
-                    success("Die Caches wurden geleert und alle Shops wurden neu geladen.")
+                    success("Die Caches wurden geleert und alle Daten wurden neu geladen.")
                 }
             }
         }
