@@ -106,7 +106,8 @@ class ShopServiceImpl : ShopService, Services.Fallback {
 
         val ms = measureTimeMillis {
 
-            val loadedShops = PaperShopInstance.rabbitApi.sendRequest(LoadShopsRequestPacket).shops
+            val loadedShops =
+                PaperShopInstance.rabbitApi.sendRequest(LoadShopsRequestPacket()).shops
 
             _shops.clear()
 

@@ -5,4 +5,4 @@ import dev.slne.surf.shop.core.common.rabbit.packet.response.shopchest.ManyStati
 import kotlinx.serialization.Serializable
 
 @Serializable
-object LoadStaticShopChestsRequestPacket : RabbitRequestPacket<ManyStaticShopChestsResponsePacket>()
+class LoadStaticShopChestsRequestPacket : RabbitRequestPacket<ManyStaticShopChestsResponsePacket>()

@@ -73,7 +73,7 @@ class StaticShopChestServiceImpl : StaticShopChestService, Services.Fallback {
 
         val ms = measureTimeMillis {
             val loaded =
-                PaperShopInstance.rabbitApi.sendRequest(LoadStaticShopChestsRequestPacket).chests
+                PaperShopInstance.rabbitApi.sendRequest(LoadStaticShopChestsRequestPacket()).chests
 
             _chests.clear()
             loaded.forEach {

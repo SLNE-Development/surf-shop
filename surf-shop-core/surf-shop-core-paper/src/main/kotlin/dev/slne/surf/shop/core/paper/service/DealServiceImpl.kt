@@ -159,7 +159,7 @@ class DealServiceImpl : DealService, Services.Fallback {
     override suspend fun fetchDeals() {
         logger.info("Fetching deals from database... (this may take a while!)")
 
-        val loadedDeals = PaperShopInstance.rabbitApi.sendRequest(LoadDealsRequestPacket).deals
+        val loadedDeals = PaperShopInstance.rabbitApi.sendRequest(LoadDealsRequestPacket()).deals
 
         _deals.clear()
         loadedDeals.forEach { _deals[it.dealUuid] = it }

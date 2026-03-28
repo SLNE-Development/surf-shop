@@ -5,4 +5,4 @@ import dev.slne.surf.shop.core.common.rabbit.packet.response.deal.ManyDealsRespo
 import kotlinx.serialization.Serializable
 
 @Serializable
-object LoadDealsRequestPacket : RabbitRequestPacket<ManyDealsResponsePacket>()
+class LoadDealsRequestPacket : RabbitRequestPacket<ManyDealsResponsePacket>()
