@@ -5,6 +5,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
@@ -137,6 +138,14 @@ object CreateShopView : View() {
 
                 if (plugin.auxProtectHook) {
                     AuxProtectHook.logCreate(context.player, shop)
+                }
+
+                val chest = ChestShopEditState.getChest(context.player.uniqueId)
+                if (chest != null) {
+                    val updatedChest = staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+                    if (updatedChest != null) {
+                        ChestShopEditState.setChest(context.player.uniqueId, updatedChest)
+                    }
                 }
 
                 context.player.playSound(true) {
