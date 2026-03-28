@@ -418,7 +418,7 @@ object StaticShopState {
 object ChestShopEditState {
     private val chestMap = mutableObject2ObjectMapOf<UUID, StaticShopChest>()
 
-    fun getChest(playerUuid: UUID): StaticShopChest? = chestMap.get(playerUuid)
+    fun getChest(playerUuid: UUID): StaticShopChest? = chestMap[playerUuid]
 
     fun setChest(playerUuid: UUID, chest: StaticShopChest?) {
         if (chest != null) {
