@@ -71,6 +71,18 @@ object ShopChestListener : Listener {
             return
         }
 
+        if (!player.isSneaking) {
+            event.isCancelled = true
+            player.sendText {
+                appendErrorPrefix()
+                error("Du musst schleichen (Shift + Klick), um eine Shop Chest abzubauen.")
+            }
+            player.playSound(true) {
+                type(Sound.ENTITY_VILLAGER_NO)
+            }
+            return
+        }
+
         plugin.launch {
             staticShopChestService.deleteChest(chest.chestUuid)
 
