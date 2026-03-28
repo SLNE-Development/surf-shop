@@ -14,9 +14,11 @@ import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
+import dev.slne.surf.surfapi.core.api.util.objectSetOf
 import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import dev.slne.surf.transaction.api.currency.Currency
 import dev.slne.surf.transaction.api.transaction.TransactionResult
+import dev.slne.surf.transaction.api.transaction.data.TransactionData
 import dev.slne.surf.transaction.api.user.TransactionUser
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
@@ -40,6 +42,8 @@ class DealServiceImpl : DealService, Services.Fallback {
     private fun getLock(shopUuid: UUID): Mutex {
         return shopLocks.computeIfAbsent(shopUuid) { Mutex() }
     }
+
+    private val taxRate: Double = 0.03
 
     override suspend fun buyInternal(
         shop: Shop,
@@ -94,13 +98,26 @@ class DealServiceImpl : DealService, Services.Fallback {
         shop: Shop,
         amount: Int
     ): Deal.DealResult {
-
         val receiverAccount = TransactionUser[shop.seller].getDefaultAccount()
-
         val transactionResult = TransactionUser[player.uniqueId].transfer(
             (shop.pricePerItem * amount).toBigDecimal(),
             Currency.default(),
-            receiverAccount
+            receiverAccount,
+            ignoreSenderMinimum = false,
+            ignoreReceiverMinimum = false,
+            additionalSenderData = objectSetOf(
+                TransactionData.of("reason", "bought item"),
+                TransactionData.of(
+                    "shopData",
+                    "$amount x ${shop.item.serialize()} for ${shop.pricePerItem} each (total: ${shop.pricePerItem * amount})"
+                )
+            ),
+            additionalReceiverData = objectSetOf(
+                TransactionData.of("reason", "sold item"), TransactionData.of(
+                    "shopData",
+                    "$amount x ${shop.item.serialize()} for ${shop.pricePerItem} by ${player.name} (total: ${shop.pricePerItem * amount})"
+                )
+            )
         )
 
         when (transactionResult) {
@@ -150,6 +167,13 @@ class DealServiceImpl : DealService, Services.Fallback {
                         }
                     }
                 }
+
+                TransactionUser[shop.seller].withdraw(
+                    (shop.pricePerItem * amount * taxRate).toBigDecimal(),
+                    Currency.default(),
+                    false,
+                    TransactionData.of("reason", "shop-tax")
+                )
 
                 return Deal.DealResult.Success(deal)
             }
