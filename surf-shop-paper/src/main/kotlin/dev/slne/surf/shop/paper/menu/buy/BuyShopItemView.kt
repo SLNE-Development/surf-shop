@@ -233,6 +233,7 @@ object BuyShopItemView : View() {
                     }
 
                     amountState.set(amount - 64, context)
+                    return@onClick
                 }
 
                 if (context.isRightClick) {
