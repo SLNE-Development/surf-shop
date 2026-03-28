@@ -16,6 +16,7 @@ surfPaperPluginApi {
         registerSoft("surf-npc-paper")
         registerSoft("AuxProtect")
         registerRequired("surf-transaction-paper")
+        registerRequired("surf-rabbitmq-paper")
     }
 }
 

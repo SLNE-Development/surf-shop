@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.chest
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
@@ -15,10 +16,10 @@ import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -65,7 +66,22 @@ object ShopChestSelectShopView : View() {
             val chest = chestState.get(context)
 
             plugin.launch {
-                staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+                val updated = staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+
+                if (updated == null) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Es gab einen Fehler beim Zuweisen des Shops zu dieser Kiste!")
+                    }
+                    context.player.playSound(true) {
+                        type(Sound.ENTITY_VILLAGER_NO)
+                    }
+
+                    withContext(plugin.entityDispatcher(context.player)) {
+                        context.closeForPlayer()
+                    }
+                    return@launch
+                }
 
                 context.player.sendText {
                     appendSuccessPrefix()
@@ -74,7 +90,12 @@ object ShopChestSelectShopView : View() {
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
                 }
-                context.player.closeInventory()
+                withContext(plugin.entityDispatcher(context.player)) {
+                    context.openForPlayer(
+                        ShopChestSetupView::class.java,
+                        ImmutableMap.of("shop-chest", updated)
+                    )
+                }
             }
         }
     }.layoutTarget('R').build()

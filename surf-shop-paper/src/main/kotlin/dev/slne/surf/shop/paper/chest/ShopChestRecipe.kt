@@ -40,9 +40,8 @@ object ShopChestRecipe {
 
     fun createRecipe(): ShapedRecipe {
         val recipe = ShapedRecipe(SHOP_CHEST_KEY, shopChestItem)
-        recipe.shape("ABA", "BCB", "ABA")
-        recipe.setIngredient('A', RecipeChoice.MaterialChoice(Material.AIR))
-        recipe.setIngredient('B', RecipeChoice.MaterialChoice(Material.EMERALD))
+        recipe.shape(" B ", "BCB", " B ")
+        recipe.setIngredient('B', RecipeChoice.MaterialChoice(Material.GOLD_INGOT))
         recipe.setIngredient('C', RecipeChoice.MaterialChoice(Material.CHEST))
         return recipe
     }
