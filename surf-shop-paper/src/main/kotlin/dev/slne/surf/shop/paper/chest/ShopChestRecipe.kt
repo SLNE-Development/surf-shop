@@ -41,7 +41,7 @@ object ShopChestRecipe {
     fun createRecipe(): ShapedRecipe {
         val recipe = ShapedRecipe(SHOP_CHEST_KEY, shopChestItem)
         recipe.shape("ABA", "BCB", "ABA")
-        recipe.setIngredient('A', RecipeChoice.MaterialChoice(Material.GOLD_INGOT))
+        recipe.setIngredient('A', RecipeChoice.MaterialChoice(Material.AIR))
         recipe.setIngredient('B', RecipeChoice.MaterialChoice(Material.EMERALD))
         recipe.setIngredient('C', RecipeChoice.MaterialChoice(Material.CHEST))
         return recipe
@@ -50,6 +50,10 @@ object ShopChestRecipe {
     fun isShopChest(item: ItemStack): Boolean {
         if (item.type != Material.CHEST) return false
         val meta = item.itemMeta ?: return false
-        return meta.persistentDataContainer.getOrDefault(SHOP_CHEST_KEY, PersistentDataType.BOOLEAN, false)
+        return meta.persistentDataContainer.getOrDefault(
+            SHOP_CHEST_KEY,
+            PersistentDataType.BOOLEAN,
+            false
+        )
     }
 }
