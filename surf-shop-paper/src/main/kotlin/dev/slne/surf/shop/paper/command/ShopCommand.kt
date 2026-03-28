@@ -5,6 +5,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.command.argument.shopArgument
+import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
@@ -19,6 +20,7 @@ fun shopCommand() = commandTree("shop") {
 
     playerExecutor { player, _ ->
         searchInputCache.remove(player.uniqueId)
+        ChestShopEditState.setChest(player.uniqueId, null)
         viewFrame.open(
             ShopListView::class.java,
             player
@@ -73,6 +75,7 @@ fun shopCommand() = commandTree("shop") {
         playerExecutor { player, args ->
             val search: String by args
             searchInputCache[player.uniqueId] = search
+            ChestShopEditState.setChest(player.uniqueId, null)
             viewFrame.open(
                 ShopListView::class.java,
                 player

@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
@@ -161,7 +162,14 @@ object CreateShopView : View() {
             context.playGeneralClickSound()
             context.player.closeInventory()
 
-            if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            val chest = ChestShopEditState.getChest(context.player.uniqueId)
+            if (chest != null) {
+                viewFrame.open(
+                    ShopChestSetupView::class.java,
+                    context.player,
+                    ImmutableMap.of("shop-chest", chest)
+                )
+            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 viewFrame.open(OwnShopsListView::class.java, context.player)
             } else {
                 viewFrame.open(ShopListView::class.java, context.player)
