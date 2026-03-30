@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.chest
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
@@ -12,6 +13,7 @@ import dev.slne.surf.shop.paper.menu.StaticShopState
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.surfapi.bukkit.api.event.cancel
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
 import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
@@ -22,9 +24,12 @@ import org.bukkit.block.Block
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.block.*
+import org.bukkit.event.entity.EntityChangeBlockEvent
+import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.world.PortalCreateEvent
+import org.bukkit.event.world.StructureGrowEvent
 
 object ShopChestListener : Listener {
 
@@ -234,4 +239,91 @@ object ShopChestListener : Listener {
             )
         }
     }
+
+    @EventHandler
+    fun onBlockDestroy(event: BlockDestroyEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onBlockExplode(event: BlockExplodeEvent) {
+        event.blockList().removeIf { isStaticChest(it) }
+    }
+
+    @EventHandler
+    fun onEntityExplode(event: EntityExplodeEvent) {
+        event.blockList().removeIf { isStaticChest(it) }
+    }
+
+    @EventHandler
+    fun onBlockFade(event: BlockFadeEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onBlockBurn(event: BlockBurnEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onBlockForm(event: BlockFormEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onEntityChangeBlock(event: EntityChangeBlockEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onEntityBlockForm(event: EntityBlockFormEvent) {
+        if (isStaticChest(event.block)) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onBlockPistonExtend(event: BlockPistonExtendEvent) {
+        if (event.blocks.any { isStaticChest(it) }) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onBlockPistonRetract(event: BlockPistonRetractEvent) {
+        if (event.blocks.any { isStaticChest(it) }) {
+            event.cancel()
+        }
+    }
+
+    @EventHandler
+    fun onStructureGrow(event: StructureGrowEvent) {
+        event.blocks.removeIf { isStaticChest(it.block) }
+    }
+
+    @EventHandler
+    fun onPortalCreate(event: PortalCreateEvent) {
+        if (event.blocks.any { isStaticChest(it.block) }) {
+            event.cancel()
+        }
+
+    }
+
+
+    fun isStaticChest(block: Block) = staticShopChestService.getChestAt(
+        block.world.name,
+        block.x,
+        block.y,
+        block.z
+    ) != null
 }
