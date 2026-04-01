@@ -388,7 +388,7 @@ object ShopListView : View() {
     }
 }
 
-fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
+fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.item.clone().apply {
     amount = 1
 
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
@@ -433,28 +433,35 @@ fun createShopItem(shop: Shop, viewer: UUID) = shop.item.clone().apply {
 
     newEntries.add(Component.empty())
 
-    if (shop.seller == viewer) {
-        newEntries.add(buildText {
-            appendBlob()
-            spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps())
-        })
+    if (!shopChest) {
+        if (shop.seller == viewer) {
+            newEntries.add(buildText {
+                appendBlob()
+                spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps())
+            })
 
-        newEntries.add(buildText {
-            appendBlob()
-            spacer("Drücke ".toSmallCaps())
-            white("SHIFT".toSmallCaps())
-            spacer(" + ")
-            displayKey("key.mouse.left")
-            spacer(" um den Shop zu löschen.".toSmallCaps())
-        })
+            newEntries.add(buildText {
+                appendBlob()
+                spacer("Drücke ".toSmallCaps())
+                white("SHIFT".toSmallCaps())
+                spacer(" + ")
+                displayKey("key.mouse.left")
+                spacer(" um den Shop zu löschen.".toSmallCaps())
+            })
+        } else {
+            newEntries.add(buildText {
+                appendBlob()
+                spacer("Klicke, um Items zu kaufen.".toSmallCaps())
+            })
+        }
+        newEntries.add(Component.empty())
     } else {
         newEntries.add(buildText {
             appendBlob()
-            spacer("Klicke, um Items zu kaufen.".toSmallCaps())
+            spacer("Klicke um die Chest Shop auszuwählen.".toSmallCaps())
         })
     }
 
-    newEntries.add(Component.empty())
     newEntries.add(buildText {
         darkSpacer(shop.shopUuid.toString())
     })

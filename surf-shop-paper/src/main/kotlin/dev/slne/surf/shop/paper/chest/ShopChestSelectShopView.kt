@@ -62,7 +62,7 @@ object ShopChestSelectShopView : View() {
             .sortedBy { it.item.type.name }
             .toMutableList()
     }.elementFactory { context, builder, _, shop ->
-        builder.withItem(createShopItem(shop, context.player.uniqueId)).onClick { context ->
+        builder.withItem(createShopItem(shop, context.player.uniqueId, true)).onClick { context ->
             context.playGeneralClickSound()
 
             val chest = chestState.get(context)
