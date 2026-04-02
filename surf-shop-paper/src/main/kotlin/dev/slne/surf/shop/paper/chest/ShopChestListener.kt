@@ -27,6 +27,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.*
 import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.world.PortalCreateEvent
 import org.bukkit.event.world.StructureGrowEvent
@@ -316,7 +317,22 @@ object ShopChestListener : Listener {
         if (event.blocks.any { isStaticChest(it.block) }) {
             event.cancel()
         }
+    }
 
+    @EventHandler
+    fun onHopper(event: InventoryMoveItemEvent) {
+        val source = event.source.holder
+        val destination = event.destination.holder
+
+        if (source is Block && isStaticChest(source)) {
+            event.cancel()
+            return
+        }
+
+        if (destination is Block && isStaticChest(destination)) {
+            event.cancel()
+            return
+        }
     }
 
 
