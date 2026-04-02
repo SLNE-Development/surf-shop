@@ -411,7 +411,7 @@ object BuyShopItemView : View() {
                                     hoverEvent(shop.item.asHoverEvent())
                                 }
                                 info(" gekauft.")
-                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern})")
+                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
                             }
 
                             openListView(render)
