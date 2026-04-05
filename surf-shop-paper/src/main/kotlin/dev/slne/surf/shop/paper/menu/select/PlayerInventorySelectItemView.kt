@@ -11,6 +11,8 @@ import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
 import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
+import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
+import dev.slne.surf.surfapi.core.api.util.objectListOf
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -20,6 +22,17 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
+/**
+ * A collection of [Material] types prohibited from being listed in the shop.
+ * This blacklist is primarily used to prevent fraudulent activity (scamming).
+ * For instance, [Material.PLAYER_HEAD] is restricted because it can often be
+ * obtained at no cost, which could lead to unfair pricing or deceptive
+ * trading practices within the server economy.
+ */
+private val blacklistedItems = objectListOf(
+    Material.PLAYER_HEAD
+)
+
 object PlayerInventorySelectItemView : View() {
     private val priceState: State<Int> = initialState("create-price")
     private val itemState = initialState<ItemStack>("create-item")
@@ -28,6 +41,19 @@ object PlayerInventorySelectItemView : View() {
         context.player.inventory.storageContents.filterNotNull().toMutableList()
     }.itemFactory { builder, item ->
         builder.withItem(item).onClick { context ->
+
+            if (blacklistedItems.contains(item.type)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_BASS)
+                    pitch(2f)
+                }
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Dieses Item kann nicht verkauft werden.")
+                }
+                return@onClick
+            }
+
             context.player.playSound(true) {
                 type(Sound.BLOCK_NOTE_BLOCK_PLING)
                 pitch(2f)
