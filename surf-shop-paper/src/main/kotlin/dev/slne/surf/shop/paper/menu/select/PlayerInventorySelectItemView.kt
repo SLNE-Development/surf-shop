@@ -22,13 +22,6 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-/**
- * A collection of [Material] types prohibited from being listed in the shop.
- * This blacklist is primarily used to prevent fraudulent activity (scamming).
- * For instance, [Material.PLAYER_HEAD] is restricted because it can often be
- * obtained at no cost, which could lead to unfair pricing or deceptive
- * trading practices within the server economy.
- */
 private val blacklistedItems = objectListOf(
     Material.PLAYER_HEAD
 )
