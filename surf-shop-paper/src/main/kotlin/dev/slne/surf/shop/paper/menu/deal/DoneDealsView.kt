@@ -13,9 +13,12 @@ import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
 import dev.slne.surf.surfapi.bukkit.api.builder.displayName
 import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
 import dev.slne.surf.surfapi.core.api.font.toSmallCaps
+import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
+import dev.slne.surf.surfapi.core.api.util.dateTimeFormatter
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
@@ -126,19 +129,53 @@ object DoneDealsView : View() {
         val deal = dealAndShop.first
         val shop = dealAndShop.second ?: return buildItem(Material.BARRIER) {
             displayName {
-                shopColored("Shop nicht gefunden")
+                error("Shop nicht gefunden")
             }
         }
 
         return shop.item.clone().apply {
-            displayName {
-                variableValue("${deal.amount}x ")
-                spacer("an ")
-                variableValue(deal.boughtByName ?: "#Unbekannt")
-                spacer(" für ")
-                variableValue(formatPriceNice(shop.pricePerItem * deal.amount))
-            }
             amount = 1
+
+            val oldLore = lore()?.toMutableList() ?: mutableListOf()
+            val newEntries = mutableListOf<Component>()
+
+            newEntries.add(Component.empty())
+            newEntries.add(buildText {
+                shopColored("Verkaufsprotokoll".toSmallCaps(), TextDecoration.BOLD)
+            })
+
+            newEntries.add(buildText {
+                spacer("-")
+                appendSpace()
+                shopColored("Menge: ")
+                variableValue("${deal.amount}x")
+            })
+
+            newEntries.add(buildText {
+                spacer("-")
+                appendSpace()
+                shopColored("Gesamtpreis: ")
+                variableValue(formatPriceNice(shop.pricePerItem * deal.amount))
+            })
+
+            newEntries.add(buildText {
+                spacer("-")
+                appendSpace()
+                shopColored("Käufer: ")
+                variableValue(deal.boughtByName ?: "#Unbekannt")
+            })
+
+            newEntries.add(buildText {
+                spacer("-")
+                appendSpace()
+                shopColored("Verkauft am: ")
+                variableValue(deal.boughtAt.format(dateTimeFormatter))
+            })
+
+            newEntries.add(Component.empty())
+
+
+            lore(oldLore + newEntries)
         }
     }
 }
