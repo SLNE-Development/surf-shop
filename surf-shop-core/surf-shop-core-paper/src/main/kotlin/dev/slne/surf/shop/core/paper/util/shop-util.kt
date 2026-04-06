@@ -2,15 +2,15 @@ package dev.slne.surf.shop.core.paper.util
 
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.dealService
-import dev.slne.surf.shop.core.service.shopService
+import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopService
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
 
-val Shop.dealCount get() = dealService.loadedDeals.count { it.shopInternalId == this.internalId }
+val Shop.dealCount get() = DealService.loadedDeals.count { it.shopInternalId == this.internalId }
 val Shop.updatedShop
-    get() = shopService.loadedShops.firstOrNull { it.internalId == this.internalId }
+    get() = ShopService.loadedShops.firstOrNull { it.internalId == this.internalId }
 
 val Shop.sellerName get() = Bukkit.getOfflinePlayer(seller).name ?: "#Unbekannt"
 private val itemCache = mutableMapOf<Shop, ItemStack>()

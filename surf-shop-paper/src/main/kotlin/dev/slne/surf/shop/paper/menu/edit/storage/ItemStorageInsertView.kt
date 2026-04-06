@@ -2,9 +2,16 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.builder.buildLore
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -12,13 +19,6 @@ import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
-import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.CloseContext
@@ -86,7 +86,7 @@ object ItemStorageInsertView : View() {
                     shop.copy(storedItemCount = shop.storedItemCount + amount)
                 localShopState.set(newShop, click)
 
-                shopService.saveShop(newShop)
+                ShopService.saveShop(newShop)
                 itemInsertedState.set(itemInsertedState.get(click) + amount, click)
 
                 if (plugin.auxProtectHook) {

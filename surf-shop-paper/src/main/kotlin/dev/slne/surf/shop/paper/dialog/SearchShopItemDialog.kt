@@ -1,12 +1,12 @@
 package dev.slne.surf.shop.paper.dialog
 
+import dev.slne.surf.api.paper.dialog.search.searchDialog
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.searchInputCache
-import dev.slne.surf.surfapi.bukkit.api.dialog.search.searchDialog
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
 
 @Suppress("UnstableApiUsage")
 fun searchShopItemDialog(initial: String) = searchDialog(

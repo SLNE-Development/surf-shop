@@ -4,18 +4,18 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
+import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
+import dev.slne.surf.api.core.util.objectSetOf
+import dev.slne.surf.api.core.util.toObjectSet
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.BuyRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.LoadDealsRequestPacket
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
-import dev.slne.surf.surfapi.core.api.util.objectSetOf
-import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import dev.slne.surf.transaction.api.currency.Currency
 import dev.slne.surf.transaction.api.transaction.TransactionResult
 import dev.slne.surf.transaction.api.transaction.data.TransactionData
@@ -71,7 +71,7 @@ class DealServiceImpl : DealService, Services.Fallback {
         val player = Bukkit.getPlayer(playerUuid) ?: return Deal.DealResult.PlayerNotFound
 
         val actualShop =
-            shopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
+            ShopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
                 ?: return Deal.DealResult.ShopDeleted
 
         val lock = getLock(actualShop.shopUuid)
@@ -129,7 +129,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                     storedItemCount = shop.storedItemCount - amount
                 )
 
-                shopService.saveShop(updatedShop)
+                ShopService.saveShop(updatedShop)
 
                 val deal = PaperShopInstance.rabbitApi.sendRequest(
                     BuyRequestPacket(

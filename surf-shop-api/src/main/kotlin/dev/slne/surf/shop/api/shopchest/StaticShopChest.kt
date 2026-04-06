@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.api.shopchest
 
-import dev.slne.surf.surfapi.core.api.serializer.java.uuid.SerializableUUID
+import dev.slne.surf.api.core.serializer.java.uuid.SerializableUUID
 import kotlinx.serialization.Serializable
 
 @Serializable

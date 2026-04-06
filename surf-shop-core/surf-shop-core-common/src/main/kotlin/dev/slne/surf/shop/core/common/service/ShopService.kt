@@ -1,11 +1,11 @@
-package dev.slne.surf.shop.core.service
+package dev.slne.surf.shop.core.common.service
 
+import dev.slne.surf.api.core.util.requiredService
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.surfapi.core.api.util.requiredService
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import java.util.*
 
-val shopService = requiredService<ShopService>()
+private val service = requiredService<ShopService>()
 
 interface ShopService {
     val loadedShops: ObjectSet<Shop>
@@ -23,4 +23,6 @@ interface ShopService {
     suspend fun saveShop(shop: Shop): Shop
     suspend fun deleteShop(shop: Shop): Boolean
     suspend fun fetchShops()
+
+    companion object : ShopService by service
 }

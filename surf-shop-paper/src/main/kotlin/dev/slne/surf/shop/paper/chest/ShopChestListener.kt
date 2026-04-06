@@ -5,18 +5,18 @@ import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.core.service.staticShopChestService
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.event.cancel
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
+import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.StaticShopState
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.surfapi.bukkit.api.event.cancel
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import kotlinx.coroutines.withContext
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -47,7 +47,7 @@ object ShopChestListener : Listener {
         }
 
         plugin.launch {
-            staticShopChestService.createChest(
+            StaticShopChestService.createChest(
                 shopUuid = null,
                 placedBy = player.uniqueId,
                 worldName = block.world.name,
@@ -72,7 +72,7 @@ object ShopChestListener : Listener {
             return
         }
 
-        val chest = staticShopChestService.getChestAt(
+        val chest = StaticShopChestService.getChestAt(
             block.world.name,
             block.x,
             block.y,
@@ -127,7 +127,7 @@ object ShopChestListener : Listener {
                 }
             }
 
-            staticShopChestService.deleteChest(chest.chestUuid)
+            StaticShopChestService.deleteChest(chest.chestUuid)
 
             if (plugin.hasFancyHolograms) {
                 FancyHologramsHook.deleteHologramIfExists(chest.chestUuid)
@@ -143,7 +143,7 @@ object ShopChestListener : Listener {
     @EventHandler
     fun onShopDestroy(event: BlockBreakEvent) {
         val block = event.block
-        val chest = staticShopChestService.getChestAt(
+        val chest = StaticShopChestService.getChestAt(
             block.world.name,
             block.x,
             block.y,
@@ -179,7 +179,7 @@ object ShopChestListener : Listener {
         if (!event.action.isRightClick) return
 
         val block: Block = event.clickedBlock ?: return
-        val chest = staticShopChestService.getChestAt(
+        val chest = StaticShopChestService.getChestAt(
             block.world.name,
             block.x,
             block.y,
@@ -210,7 +210,7 @@ object ShopChestListener : Listener {
             return
         }
 
-        val shop = shopService.loadedShops.firstOrNull { it.shopUuid == shopUuid }
+        val shop = ShopService.loadedShops.firstOrNull { it.shopUuid == shopUuid }
         if (shop == null) {
             player.sendText {
                 appendErrorPrefix()
@@ -336,7 +336,7 @@ object ShopChestListener : Listener {
     }
 
 
-    fun isStaticChest(block: Block) = staticShopChestService.getChestAt(
+    fun isStaticChest(block: Block) = StaticShopChestService.getChestAt(
         block.world.name,
         block.x,
         block.y,

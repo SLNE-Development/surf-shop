@@ -2,9 +2,16 @@ package dev.slne.surf.shop.paper.menu.buy
 
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.builder.buildLore
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.paper.util.updatedShop
@@ -15,13 +22,6 @@ import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
-import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -336,7 +336,7 @@ object BuyShopItemView : View() {
                 }
 
                 plugin.launch {
-                    when (val result = dealService.buy(context.player.uniqueId, shop, amount)) {
+                    when (val result = DealService.buy(context.player.uniqueId, shop, amount)) {
                         Deal.DealResult.InsufficientStock -> {
                             context.player.sendText {
                                 appendErrorPrefix()

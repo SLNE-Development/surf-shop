@@ -1,9 +1,9 @@
 package dev.slne.surf.shop.paper.util
 
+import dev.slne.surf.api.core.messages.Colors
+import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
+import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
-import dev.slne.surf.surfapi.core.api.messages.Colors
-import dev.slne.surf.surfapi.core.api.messages.builder.SurfComponentBuilder
-import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit

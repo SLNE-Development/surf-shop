@@ -1,12 +1,16 @@
 package dev.slne.surf.shop.paper
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
+import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
+import dev.slne.surf.api.paper.event.register
+import dev.slne.surf.api.paper.extensions.pluginManager
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.ShopSortingType
-import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.service.DealServiceImpl
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
@@ -27,10 +31,6 @@ import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
-import dev.slne.surf.surfapi.bukkit.api.event.register
-import dev.slne.surf.surfapi.bukkit.api.extensions.pluginManager
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -76,9 +76,9 @@ class PaperMain : SuspendingJavaPlugin() {
             SurfNpcHook.NpcListener.register()
         }
 
-        shopService.fetchShops()
-        dealService.fetchDeals()
-        staticShopChestService.fetchChests()
+        ShopService.fetchShops()
+        DealService.fetchDeals()
+        StaticShopChestService.fetchChests()
 
         Bukkit.addRecipe(ShopChestRecipe.createRecipe())
         ShopChestListener.register()

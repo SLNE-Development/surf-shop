@@ -3,9 +3,18 @@ package dev.slne.surf.shop.paper.menu
 import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.Colors
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.buildLore
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
+import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.base64
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
@@ -16,15 +25,6 @@ import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.shop.paper.util.location
-import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.Colors
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -134,7 +134,7 @@ object CreateShopView : View() {
             }
 
             plugin.launch {
-                val shop = shopService.createShop(item.clone().apply {
+                val shop = ShopService.createShop(item.clone().apply {
                     amount = 1
                 }.base64, 0, price, context.player.uniqueId)
 
@@ -145,7 +145,7 @@ object CreateShopView : View() {
                 val chest = ChestShopEditState.getChest(context.player.uniqueId)
                 if (chest != null) {
                     val updatedChest =
-                        staticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
+                        StaticShopChestService.updateChestShop(chest.chestUuid, shop.shopUuid)
                     if (updatedChest != null) {
                         ChestShopEditState.setChest(context.player.uniqueId, updatedChest)
                     }

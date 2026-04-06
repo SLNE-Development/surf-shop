@@ -6,14 +6,14 @@ import dev.jorel.commandapi.arguments.Argument
 import dev.jorel.commandapi.arguments.ArgumentSuggestions
 import dev.jorel.commandapi.arguments.CustomArgument
 import dev.jorel.commandapi.arguments.StringArgument
+import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
+import dev.slne.surf.shop.core.common.service.ShopService
 import java.util.*
 
 class ShopArgument(nodeName: String) :
     CustomArgument<Shop, String>(StringArgument(nodeName), { info ->
-        shopService.loadedShops.find { it.shopUuid == runCatching { UUID.fromString(info.input) }.getOrNull() }
+        ShopService.loadedShops.find { it.shopUuid == runCatching { UUID.fromString(info.input) }.getOrNull() }
             ?: throw CustomArgumentException.fromAdventureComponent(
                 buildText {
                     appendErrorPrefix()
@@ -23,7 +23,7 @@ class ShopArgument(nodeName: String) :
     init {
         this.replaceSuggestions(
             ArgumentSuggestions.stringCollection {
-                shopService.loadedShops.map { it.shopUuid.toString() }
+                ShopService.loadedShops.map { it.shopUuid.toString() }
             }
         )
     }

@@ -3,22 +3,22 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
-import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
-import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -114,10 +114,10 @@ object ItemStorageRemoveView : View() {
 
             plugin.launch {
                 val shop = shopState.get(context)
-                shopService.blockShop(shop)
+                ShopService.blockShop(shop)
 
                 val updatedShop =
-                    shopService.loadedShops.find { it.shopUuid == shop.shopUuid }
+                    ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
 
                 if (updatedShop == null) {
                     context.player.sendText {
@@ -160,7 +160,7 @@ object ItemStorageRemoveView : View() {
                         }
                     }
 
-                    shopService.saveShop(updatedShop.copy(storedItemCount = 0))
+                    ShopService.saveShop(updatedShop.copy(storedItemCount = 0))
 
                     context.player.sendText {
                         appendSuccessPrefix()
@@ -203,7 +203,7 @@ object ItemStorageRemoveView : View() {
                         }
                     }
 
-                    shopService.saveShop(
+                    ShopService.saveShop(
                         updatedShop.copy(
                             storedItemCount = updatedShop.storedItemCount - toRemove
                         )
@@ -224,7 +224,7 @@ object ItemStorageRemoveView : View() {
                 }
 
 
-                shopService.unblockShop(updatedShop)
+                ShopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(context.player)) {
                     val updatedShop = shopState.get(render).updatedShop
@@ -263,7 +263,7 @@ object ItemStorageRemoveView : View() {
     }
 
     private fun handleIncrement(render: RenderContext, context: SlotClickContext, delta: Int) {
-        val currentStock = shopService.loadedShops.find {
+        val currentStock = ShopService.loadedShops.find {
             it.shopUuid == shopState.get(context)?.shopUuid
         }?.storedItemCount ?: 0
 
@@ -289,7 +289,7 @@ object ItemStorageRemoveView : View() {
         displayName {
             shopColored("Anzahl: ", TextDecoration.BOLD)
             appendSpace()
-            shopColored(("${localAmountState.get(context)}/" + shopService.loadedShops.find {
+            shopColored(("${localAmountState.get(context)}/" + ShopService.loadedShops.find {
                 it.shopUuid == shopState.get(
                     context
                 )?.shopUuid

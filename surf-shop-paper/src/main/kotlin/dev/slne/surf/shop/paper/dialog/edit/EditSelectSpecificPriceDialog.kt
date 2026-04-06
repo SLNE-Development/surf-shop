@@ -1,15 +1,15 @@
 package dev.slne.surf.shop.paper.dialog.edit
 
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.messages.adventure.appendNewline
+import dev.slne.surf.api.paper.dialog.base
+import dev.slne.surf.api.paper.dialog.builder.actionButton
+import dev.slne.surf.api.paper.dialog.dialog
+import dev.slne.surf.api.paper.dialog.type
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.shopColored
-import dev.slne.surf.surfapi.bukkit.api.dialog.base
-import dev.slne.surf.surfapi.bukkit.api.dialog.builder.actionButton
-import dev.slne.surf.surfapi.bukkit.api.dialog.dialog
-import dev.slne.surf.surfapi.bukkit.api.dialog.type
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.messages.adventure.appendNewline
 
 @Suppress("UnstableApiUsage")
 fun createEditSpecificPriceDialog(

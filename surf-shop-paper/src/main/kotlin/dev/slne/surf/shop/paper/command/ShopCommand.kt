@@ -1,11 +1,14 @@
 package dev.slne.surf.shop.paper.command
 
 import dev.jorel.commandapi.kotlindsl.*
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.command.executors.anyExecutorSuspend
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.sellerName
-import dev.slne.surf.shop.core.service.shopService
-import dev.slne.surf.shop.core.service.staticShopChestService
 import dev.slne.surf.shop.paper.command.argument.shopArgument
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.OwnShopState
@@ -13,9 +16,6 @@ import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.searchInputCache
-import dev.slne.surf.surfapi.bukkit.api.command.executors.anyExecutorSuspend
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.messages.adventure.sendText
 
 fun shopCommand() = commandTree("shop") {
     withPermission(PermissionRegistry.SHOP_COMMAND)
@@ -33,9 +33,9 @@ fun shopCommand() = commandTree("shop") {
         withPermission(PermissionRegistry.SHOP_COMMAND_ADMIN)
         literalArgument("clearCacheAndFetch") {
             anyExecutorSuspend { sender, _ ->
-                shopService.fetchShops()
-                dealService.fetchDeals()
-                staticShopChestService.fetchChests()
+                ShopService.fetchShops()
+                DealService.fetchDeals()
+                StaticShopChestService.fetchChests()
 
                 sender.sendText {
                     appendSuccessPrefix()
@@ -60,7 +60,7 @@ fun shopCommand() = commandTree("shop") {
             shopArgument("shop") {
                 anyExecutorSuspend { sender, args ->
                     val shop: Shop by args
-                    val success = shopService.deleteShop(shop)
+                    val success = ShopService.deleteShop(shop)
 
                     sender.sendText {
                         appendSuccessPrefix()

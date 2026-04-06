@@ -1,20 +1,20 @@
 package dev.slne.surf.shop.paper.menu.deal
 
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.api.core.util.dateTimeFormatter
+import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.dealService
+import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.boughtByName
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
-import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.messages.adventure.buildText
-import dev.slne.surf.surfapi.core.api.util.dateTimeFormatter
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -43,8 +43,8 @@ object DoneDealsView : View() {
     }
 
     private val paginationState = buildLazyPaginationState { context ->
-        dealService.loadedDeals.asSequence()
-            .map { deal -> deal to shopService.loadedShops.find { it.internalId == deal.shopInternalId } }
+        DealService.loadedDeals.asSequence()
+            .map { deal -> deal to ShopService.loadedShops.find { it.internalId == deal.shopInternalId } }
             .filter { it.second != null }.filter { it.second?.seller == context.player.uniqueId }
             .sortedByDescending { it.first.boughtAt }
             .toMutableList()

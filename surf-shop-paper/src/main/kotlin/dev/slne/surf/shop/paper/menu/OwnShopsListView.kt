@@ -1,11 +1,19 @@
 package dev.slne.surf.shop.paper.menu
 
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
+import dev.slne.surf.api.core.util.mutableObjectSetOf
+import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.buildLore
+import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
+import dev.slne.surf.shop.api.shopchest.StaticShopChest
+import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.core.service.shopService
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
@@ -14,14 +22,6 @@ import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.searchInputCache
-import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.buildLore
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.titleBuilder
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.util.mutableObject2ObjectMapOf
-import dev.slne.surf.surfapi.core.api.util.mutableObjectSetOf
-import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
@@ -29,7 +29,6 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import java.util.*
 
-@Suppress("UnstableApiUsage")
 object OwnShopsListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
 
@@ -343,7 +342,7 @@ private fun getLoadedShopsSortedFiltered(
     sortType: ShopSortingType,
     search: String?
 ): List<Shop> {
-    val base = shopService.loadedShops.filter { it.seller == seller }
+    val base = ShopService.loadedShops.filter { it.seller == seller }
 
     val filtered = if (search.isNullOrBlank()) {
         base
@@ -427,6 +426,4 @@ object ChestShopEditState {
             chestMap.remove(playerUuid)
         }
     }
-
-    fun isInChestShop(playerUuid: UUID): Boolean = chestMap.containsKey(playerUuid)
 }

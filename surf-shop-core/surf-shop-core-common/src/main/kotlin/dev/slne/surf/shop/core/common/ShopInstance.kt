@@ -1,8 +1,7 @@
 package dev.slne.surf.shop.core.common
 
+import dev.slne.surf.api.core.util.requiredService
 import dev.slne.surf.rabbitmq.api.RabbitMQApi
-import dev.slne.surf.surfapi.core.api.util.requiredService
-
 
 private val instance = requiredService<ShopInstance>()
 

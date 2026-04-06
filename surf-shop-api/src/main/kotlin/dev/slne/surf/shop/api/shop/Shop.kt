@@ -1,7 +1,7 @@
 package dev.slne.surf.shop.api.shop
 
-import dev.slne.surf.surfapi.core.api.serializer.java.datetime.datetime.offset.SerializableOffsetDateTime
-import dev.slne.surf.surfapi.core.api.serializer.java.uuid.SerializableUUID
+import dev.slne.surf.api.core.serializer.java.datetime.datetime.offset.SerializableOffsetDateTime
+import dev.slne.surf.api.core.serializer.java.uuid.SerializableUUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.time.OffsetDateTime

@@ -1,8 +1,8 @@
 package dev.slne.surf.shop.paper.menu
 
-import dev.slne.surf.surfapi.bukkit.api.builder.buildItem
-import dev.slne.surf.surfapi.bukkit.api.builder.displayName
-import dev.slne.surf.surfapi.core.api.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.displayName
 import me.devnatan.inventoryframework.View
 import org.bukkit.Material
 import org.bukkit.Sound

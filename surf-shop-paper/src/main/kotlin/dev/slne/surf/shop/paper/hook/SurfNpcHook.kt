@@ -1,5 +1,8 @@
 package dev.slne.surf.shop.paper.hook
 
+import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.util.toObjectSet
+import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.npc.api.dsl.npc
 import dev.slne.surf.npc.api.event.NpcInteractEvent
 import dev.slne.surf.npc.api.npc.skin.NpcSkin
@@ -8,9 +11,6 @@ import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.util.searchInputCache
-import dev.slne.surf.surfapi.bukkit.api.inventory.framework.viewFrame
-import dev.slne.surf.surfapi.core.api.font.toSmallCaps
-import dev.slne.surf.surfapi.core.api.util.toObjectSet
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Location

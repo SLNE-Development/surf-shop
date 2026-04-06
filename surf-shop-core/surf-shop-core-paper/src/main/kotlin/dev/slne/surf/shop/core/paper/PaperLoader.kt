@@ -9,7 +9,6 @@ class PaperLoader(
     val rabbitApi = ClientRabbitMQApi.create("surf-shop", dataPath)
 
     suspend fun onLoad() {
-        // Rabbit
         rabbitApi.freezeAndConnect()
     }
 

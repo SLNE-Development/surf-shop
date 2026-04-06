@@ -2,9 +2,9 @@ package dev.slne.surf.shop.paper.hook
 
 import de.oliver.fancyholograms.api.FancyHologramsPlugin
 import de.oliver.fancyholograms.api.data.TextHologramData
+import dev.slne.surf.api.core.minimessage.miniMessage
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.surfapi.core.api.minimessage.miniMessage
 import org.bukkit.Location
 import org.bukkit.entity.Display
 import java.util.*

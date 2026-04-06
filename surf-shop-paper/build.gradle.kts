@@ -1,8 +1,8 @@
-import dev.slne.surf.surfapi.gradle.util.registerRequired
-import dev.slne.surf.surfapi.gradle.util.registerSoft
+import dev.slne.surf.api.gradle.util.registerRequired
+import dev.slne.surf.api.gradle.util.registerSoft
 
 plugins {
-    id("dev.slne.surf.surfapi.gradle.paper-plugin")
+    id("dev.slne.surf.api.gradle.paper-plugin")
 }
 
 surfPaperPluginApi {
@@ -25,13 +25,7 @@ dependencies {
     api(projects.surfShopCore.surfShopCorePaper)
 
     compileOnly(files("libs/auxprotect-paper-1.3.4-pre6-all.jar"))
-    compileOnly("dev.slne.surf.transaction:surf-transaction-api:1.21.11-3.0.1")
-    compileOnly("dev.slne.surf.npc:surf-npc-api:1.21.11-1.6.1-SNAPSHOT")
+    compileOnly("dev.slne.surf.transaction:surf-transaction-api:+")
+    compileOnly("dev.slne.surf.npc:surf-npc-api:+")
     compileOnly("de.oliver:FancyHolograms:2.9.1")
-}
-
-configurations.all {
-    resolutionStrategy.capabilitiesResolution.withCapability("org.spigotmc:spigot-api") {
-        select("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    }
 }
