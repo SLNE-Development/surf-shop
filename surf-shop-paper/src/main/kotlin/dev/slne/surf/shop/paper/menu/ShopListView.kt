@@ -12,8 +12,8 @@ import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
+import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
-import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
@@ -84,6 +84,13 @@ object ShopListView : View() {
                 }
 
                 emptyLine()
+            }
+
+            line {
+                appendBlob()
+                spacer("Nutze ".toSmallCaps())
+                white("@Name".toSmallCaps())
+                spacer(" für Verkäufersuche".toSmallCaps())
             }
 
             line {
@@ -213,6 +220,19 @@ object ShopListView : View() {
                     spacer("-")
                     appendSpace()
                     white("Meiste Verkäufe")
+                }
+            }
+
+            line {
+                if (state == ShopSortingType.SELLER_NAME) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Verkäufer")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Verkäufer")
                 }
             }
         }
@@ -502,16 +522,23 @@ private fun getLoadedShopsSortedFiltered(
                 val tokens = shop.searchableTokens
 
                 for (term in terms) {
-                    var matched = false
+                    if (term.startsWith("@")) {
+                        val sellerSearch = term.removePrefix("@")
+                        if (sellerSearch.isEmpty()) continue
+                        val sellerName = shop.sellerName.lowercase()
+                        if (!sellerName.contains(sellerSearch)) return@filter false
+                    } else {
+                        var matched = false
 
-                    for (token in tokens) {
-                        if (token.contains(term)) {
-                            matched = true
-                            break
+                        for (token in tokens) {
+                            if (token.contains(term)) {
+                                matched = true
+                                break
+                            }
                         }
-                    }
 
-                    if (!matched) return@filter false
+                        if (!matched) return@filter false
+                    }
                 }
 
                 true
@@ -525,8 +552,12 @@ private fun getLoadedShopsSortedFiltered(
         ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
         ShopSortingType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
         ShopSortingType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
-        ShopSortingType.MOST_DEALS -> filtered.sortedByDescending { it.dealCount }
+        ShopSortingType.MOST_DEALS -> {
+            val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
+            filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
+        }
         ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
+        ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
     }
 }
 
