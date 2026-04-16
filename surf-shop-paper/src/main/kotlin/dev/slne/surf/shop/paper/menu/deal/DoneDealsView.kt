@@ -43,12 +43,16 @@ object DoneDealsView : View() {
     }
 
     private val paginationState = buildLazyPaginationState { context ->
+        val shopsById = ShopService.loadedShops.associateBy { it.internalId }
+
         DealService.loadedDeals.asSequence()
-            .map { deal -> deal to ShopService.loadedShops.find { it.internalId == deal.shopInternalId } }
-            .filter { it.second != null }.filter { it.second?.seller == context.player.uniqueId }
+            .mapNotNull { deal ->
+                val shop = shopsById[deal.shopInternalId]
+                if (shop?.seller == context.player.uniqueId) deal to shop else null
+            }
             .sortedByDescending { it.first.boughtAt }
             .toMutableList()
-    }.elementFactory { context, builder, _, dealToShop ->
+    }.elementFactory { _, builder, _, dealToShop ->
         builder.withItem(createDealAndShopItem(dealToShop)).onClick { context ->
             context.playGeneralClickSound()
         }
