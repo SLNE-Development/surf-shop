@@ -109,6 +109,8 @@ object ShopChestListener : Listener {
             type(Sound.ENTITY_ITEM_PICKUP)
         }
 
+        StaticShopChestService.uncacheChest(chest.chestUuid)
+
         plugin.launch {
             withContext(plugin.regionDispatcher(block.location)) {
                 block.type = Material.AIR

@@ -89,4 +89,8 @@ class StaticShopChestServiceImpl : StaticShopChestService, Services.Fallback {
             it.worldName == worldName && it.x == x && it.y == y && it.z == z
         }
     }
+
+    override fun uncacheChest(chestUuid: UUID) {
+        _chests.remove(chestUuid)
+    }
 }
