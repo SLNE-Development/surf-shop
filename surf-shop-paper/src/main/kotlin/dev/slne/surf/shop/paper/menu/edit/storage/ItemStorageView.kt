@@ -2,10 +2,12 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -54,7 +56,13 @@ object ItemStorageView : View() {
             )
         }
 
-        render.layoutSlot('C', removeItemsItem).onClick { context ->
+        render.layoutSlot('C', removeItemsNotAvailable).displayIf { context ->
+            ChestShopEditState.getChest(context.player.uniqueId) != null
+        }
+
+        render.layoutSlot('C', removeItemsItem).displayIf { context ->
+            ChestShopEditState.getChest(context.player.uniqueId) == null
+        }.onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
                 ItemStorageRemoveView::class.java,
@@ -81,6 +89,19 @@ object ItemStorageView : View() {
     private val removeItemsItem = MenuHeads.MINUS.clone().apply {
         displayName {
             error("Items auslagern")
+        }
+    }
+
+    private val removeItemsNotAvailable = MenuHeads.CROSS.clone().apply {
+        displayName {
+            error("Items auslagern")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                error("Diese Funktion ist in Shop Kisten nicht verfügbar.")
+            }
         }
     }
 }

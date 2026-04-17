@@ -173,7 +173,6 @@ object ShopChestListener : Listener {
                 type(Sound.ENTITY_VILLAGER_NO)
             }
         }
-
     }
 
     @EventHandler(priority = EventPriority.HIGH)
