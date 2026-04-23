@@ -1,7 +1,6 @@
 package dev.slne.surf.shop.core.paper.service
 
 import com.google.auto.service.AutoService
-import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.core.util.toObjectSet
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shopchest.CreateStaticShopChestRequestPacket
@@ -14,12 +13,12 @@ import dev.slne.surf.shop.core.paper.PaperShopInstance
 import it.unimi.dsi.fastutil.objects.ObjectSet
 import net.kyori.adventure.util.Services
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.measureTimeMillis
 
 @AutoService(StaticShopChestService::class)
 class StaticShopChestServiceImpl : StaticShopChestService, Services.Fallback {
-
-    private val _chests = mutableObject2ObjectMapOf<UUID, StaticShopChest>()
+    private val _chests = ConcurrentHashMap<UUID, StaticShopChest>()
     override val loadedChests: ObjectSet<StaticShopChest> get() = _chests.values.toObjectSet()
 
     override suspend fun createChest(
@@ -88,5 +87,9 @@ class StaticShopChestServiceImpl : StaticShopChestService, Services.Fallback {
         return _chests.values.firstOrNull {
             it.worldName == worldName && it.x == x && it.y == y && it.z == z
         }
+    }
+
+    override fun uncacheChest(chestUuid: UUID) {
+        _chests.remove(chestUuid)
     }
 }

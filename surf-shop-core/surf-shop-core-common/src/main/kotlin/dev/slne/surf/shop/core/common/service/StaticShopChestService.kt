@@ -24,6 +24,7 @@ interface StaticShopChestService {
     suspend fun fetchChests()
 
     fun getChestAt(worldName: String, x: Int, y: Int, z: Int): StaticShopChest?
+    fun uncacheChest(chestUuid: UUID)
 
     companion object : StaticShopChestService by service
 }

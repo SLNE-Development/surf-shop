@@ -31,8 +31,27 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.world.PortalCreateEvent
 import org.bukkit.event.world.StructureGrowEvent
+import java.util.concurrent.ConcurrentHashMap
 
 object ShopChestListener : Listener {
+
+    private data class ChestBlockLocation(
+        val worldName: String,
+        val x: Int,
+        val y: Int,
+        val z: Int
+    )
+
+    private val transitioningChests = ConcurrentHashMap.newKeySet<ChestBlockLocation>()
+
+    private fun Block.chestBlockLocation() = ChestBlockLocation(
+        worldName = world.name,
+        x = x,
+        y = y,
+        z = z
+    )
+
+    private fun isTransitioningChest(block: Block) = block.chestBlockLocation() in transitioningChests
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
@@ -41,24 +60,34 @@ object ShopChestListener : Listener {
 
         val block = event.blockPlaced
         val player = event.player
+        val blockLocation = block.chestBlockLocation()
+
+        if (!transitioningChests.add(blockLocation)) {
+            event.isCancelled = true
+            return
+        }
 
         player.playSound(true) {
             type(Sound.BLOCK_LEVER_CLICK)
         }
 
         plugin.launch {
-            StaticShopChestService.createChest(
-                shopUuid = null,
-                placedBy = player.uniqueId,
-                worldName = block.world.name,
-                x = block.x,
-                y = block.y,
-                z = block.z
-            )
+            try {
+                StaticShopChestService.createChest(
+                    shopUuid = null,
+                    placedBy = player.uniqueId,
+                    worldName = block.world.name,
+                    x = block.x,
+                    y = block.y,
+                    z = block.z
+                )
 
-            player.sendText {
-                appendSuccessPrefix()
-                success("Shop Chest platziert! Klicke auf die Kiste, um einen Shop zuzuweisen.")
+                player.sendText {
+                    appendSuccessPrefix()
+                    success("Shop Chest platziert! Klicke auf die Kiste, um einen Shop zuzuweisen.")
+                }
+            } finally {
+                transitioningChests.remove(blockLocation)
             }
         }
     }
@@ -108,34 +137,46 @@ object ShopChestListener : Listener {
         player.playSound(true) {
             type(Sound.ENTITY_ITEM_PICKUP)
         }
+        val blockLocation = block.chestBlockLocation()
+
+        if (!transitioningChests.add(blockLocation)) {
+            return
+        }
 
         plugin.launch {
-            withContext(plugin.regionDispatcher(block.location)) {
-                block.type = Material.AIR
-            }
-
-            val hasToDrop = withContext(plugin.entityDispatcher(player)) {
-                player.inventory.addItem(ShopChestRecipe.shopChestItem).isNotEmpty()
-            }
-
-            if (hasToDrop) {
+            try {
                 withContext(plugin.regionDispatcher(block.location)) {
-                    block.world.dropItem(
-                        block.location,
-                        ShopChestRecipe.shopChestItem
-                    ).owner = player.uniqueId
+                    block.type = Material.AIR
                 }
-            }
 
-            StaticShopChestService.deleteChest(chest.chestUuid)
+                val hasToDrop = withContext(plugin.entityDispatcher(player)) {
+                    player.inventory.addItem(ShopChestRecipe.shopChestItem).isNotEmpty()
+                }
 
-            if (plugin.hasFancyHolograms) {
-                FancyHologramsHook.deleteHologramIfExists(chest.chestUuid)
-            }
+                if (hasToDrop) {
+                    withContext(plugin.regionDispatcher(block.location)) {
+                        block.world.dropItem(
+                            block.location,
+                            ShopChestRecipe.shopChestItem
+                        ).owner = player.uniqueId
+                    }
+                }
 
-            player.sendText {
-                appendSuccessPrefix()
-                success("Die Shop Kiste wurde entfernt.")
+                val deleted = StaticShopChestService.deleteChest(chest.chestUuid)
+                if (!deleted) {
+                    StaticShopChestService.uncacheChest(chest.chestUuid)
+                }
+
+                if (plugin.hasFancyHolograms) {
+                    FancyHologramsHook.deleteHologramIfExists(chest.chestUuid)
+                }
+
+                player.sendText {
+                    appendSuccessPrefix()
+                    success("Die Shop Kiste wurde entfernt.")
+                }
+            } finally {
+                transitioningChests.remove(blockLocation)
             }
         }
     }
@@ -143,6 +184,11 @@ object ShopChestListener : Listener {
     @EventHandler
     fun onShopDestroy(event: BlockBreakEvent) {
         val block = event.block
+        if (isTransitioningChest(block)) {
+            event.isCancelled = true
+            return
+        }
+
         val chest = StaticShopChestService.getChestAt(
             block.world.name,
             block.x,
@@ -171,7 +217,6 @@ object ShopChestListener : Listener {
                 type(Sound.ENTITY_VILLAGER_NO)
             }
         }
-
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -179,6 +224,11 @@ object ShopChestListener : Listener {
         if (!event.action.isRightClick) return
 
         val block: Block = event.clickedBlock ?: return
+        if (isTransitioningChest(block)) {
+            event.isCancelled = true
+            return
+        }
+
         val chest = StaticShopChestService.getChestAt(
             block.world.name,
             block.x,
@@ -341,5 +391,5 @@ object ShopChestListener : Listener {
         block.x,
         block.y,
         block.z
-    ) != null
+    ) != null || isTransitioningChest(block)
 }

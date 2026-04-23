@@ -14,11 +14,11 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
-import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
@@ -42,11 +42,6 @@ object ShopListView : View() {
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName {
             spacer("")
-        }
-    }
-    private val dealLogItem = buildItem(Material.CHEST) {
-        displayName {
-            shopColored("Abgeschlossene Deals")
         }
     }
 
@@ -294,7 +289,7 @@ object ShopListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "ORRRRRRRD",
+                "ORRRRRRRO",
                 "UAOPCNO}S"
             )
             .cancelInteractions()
@@ -324,10 +319,6 @@ object ShopListView : View() {
         render.layoutSlot('U', updateItem).onClick { context ->
             context.openForPlayer(ShopListView::class.java)
             context.playGeneralClickSound()
-        }
-        render.layoutSlot('D', dealLogItem).onClick { click ->
-            click.openForPlayer(DoneDealsView::class.java)
-            click.playGeneralClickSound()
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
@@ -443,6 +434,16 @@ fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.
         variableValue(shop.sellerName)
     })
 
+    val dealCount = shop.dealCount
+    if (dealCount > 0) {
+        newEntries.add(buildText {
+            spacer("-")
+            appendSpace()
+            shopColored("Bereits verkauft: ")
+            variableValue("$dealCount Items")
+        })
+    }
+
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
@@ -556,6 +557,7 @@ private fun getLoadedShopsSortedFiltered(
             val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
             filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
         }
+
         ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
         ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
     }

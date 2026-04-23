@@ -70,7 +70,7 @@ object DoneDealsView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "OOOPBNOOO"
+                "OOOPBNOOD"
             )
             .cancelInteractions()
     }
@@ -118,6 +118,11 @@ object DoneDealsView : View() {
                 pagination.advance()
             }
 
+        render.layoutSlot('D', dealLogItem).onClick { click ->
+            click.openForPlayer(DoneDealsView::class.java)
+            click.playGeneralClickSound()
+        }
+
         render.layoutSlot('B', backItem).onClick { click ->
             click.playGeneralClickSound()
 
@@ -126,6 +131,12 @@ object DoneDealsView : View() {
             } else {
                 click.openForPlayer(ShopListView::class.java)
             }
+        }
+    }
+
+    private val dealLogItem = buildItem(Material.CHEST) {
+        displayName {
+            shopColored("Abgeschlossene Deals")
         }
     }
 
