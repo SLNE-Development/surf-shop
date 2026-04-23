@@ -14,6 +14,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
@@ -432,6 +433,16 @@ fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.
         shopColored("Verkäufer: ")
         variableValue(shop.sellerName)
     })
+
+    val dealCount = shop.dealCount
+    if (dealCount > 0) {
+        newEntries.add(buildText {
+            spacer("-")
+            appendSpace()
+            shopColored("Bereits verkauft: ")
+            variableValue("$dealCount Items")
+        })
+    }
 
     newEntries.add(buildText {
         spacer("-")
