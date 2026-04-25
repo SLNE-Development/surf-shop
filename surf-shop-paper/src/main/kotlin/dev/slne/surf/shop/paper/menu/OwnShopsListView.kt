@@ -17,6 +17,7 @@ import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
@@ -263,7 +264,7 @@ object OwnShopsListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "UAOPCNOOS"
+                "WUOPCNOAS"
             )
             .cancelInteractions()
     }
@@ -292,6 +293,10 @@ object OwnShopsListView : View() {
         render.layoutSlot('U', updateItem).onClick { context ->
             context.openForPlayer(OwnShopsListView::class.java)
             context.playGeneralClickSound()
+        }
+        render.layoutSlot('W', doneDealsItem).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(DoneDealsView::class.java)
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
@@ -358,6 +363,12 @@ object OwnShopsListView : View() {
     }
 }
 
+private val doneDealsItem = buildItem(Material.CHEST) {
+    displayName {
+        shopColored("Abgeschlossene Deals")
+    }
+}
+
 private fun getLoadedShopsSortedFiltered(
     seller: UUID,
     sortType: ShopSortingType,
@@ -415,6 +426,7 @@ private fun getLoadedShopsSortedFiltered(
             val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
             filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
         }
+
         ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
         ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
     }
