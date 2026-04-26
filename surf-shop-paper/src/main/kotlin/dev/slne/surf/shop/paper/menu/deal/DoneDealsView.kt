@@ -140,12 +140,6 @@ object DoneDealsView : View() {
         }
     }
 
-    private val dealLogItem = buildItem(Material.CHEST) {
-        displayName {
-            shopColored("Abgeschlossene Deals")
-        }
-    }
-
     fun createDealAndShopItem(dealAndShop: Pair<Deal, Shop?>): ItemStack {
         val deal = dealAndShop.first
         val shop = dealAndShop.second ?: return buildItem(Material.BARRIER) {
