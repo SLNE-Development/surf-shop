@@ -560,6 +560,7 @@ private fun getLoadedShopsSortedFiltered(
 
         ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
         ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
+
     }
 }
 
