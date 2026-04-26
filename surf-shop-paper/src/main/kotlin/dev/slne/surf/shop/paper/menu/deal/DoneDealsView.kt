@@ -67,7 +67,7 @@ object DoneDealsView : View() {
     override fun onInit(config: ViewConfigBuilder) {
         config
             .titleBuilder {
-                shopColored("Du hast verkauft...".toSmallCaps(), TextDecoration.BOLD)
+                shopColored("Verkaufsverlauf".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(6)
             .layout(
