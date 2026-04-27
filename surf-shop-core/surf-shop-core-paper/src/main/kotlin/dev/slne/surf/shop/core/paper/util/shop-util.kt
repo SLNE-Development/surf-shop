@@ -13,6 +13,10 @@ import java.util.*
 import kotlin.time.Duration.Companion.hours
 
 val Shop.dealCount get() = DealService.loadedDeals.count { it.shopInternalId == this.internalId }
+val Shop.totalSoldItems
+    get() = DealService.loadedDeals
+        .filter { it.shopInternalId == this.internalId }
+        .sumOf { it.amount }
 val Shop.updatedShop
     get() = ShopService.loadedShops.firstOrNull { it.internalId == this.internalId }
 
