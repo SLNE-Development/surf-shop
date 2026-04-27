@@ -17,6 +17,7 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
+import dev.slne.surf.shop.core.paper.util.totalSoldItems
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
@@ -435,14 +436,28 @@ fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.
     })
 
     val dealCount = shop.dealCount
-    if (dealCount > 0) {
-        newEntries.add(buildText {
-            spacer("-")
-            appendSpace()
-            shopColored("Bereits verkauft: ")
-            variableValue("$dealCount Items")
-        })
-    }
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        shopColored("Abgeschlossene Käufe: ")
+        if (dealCount > 0) {
+            variableValue(dealCount)
+        } else {
+            error("Noch keine abgeschlossen")
+        }
+    })
+
+    val totalSold = shop.totalSoldItems
+    newEntries.add(buildText {
+        spacer("-")
+        appendSpace()
+        shopColored("Gesamt verkauft: ")
+        if (totalSold > 0) {
+            variableValue("$totalSold Items")
+        } else {
+            error("Noch keine verkauft")
+        }
+    })
 
     newEntries.add(buildText {
         spacer("-")
