@@ -42,12 +42,6 @@ object DoneDealsView : View() {
         }
     }
 
-    private val updateItem = buildItem(Material.REPEATER) {
-        displayName {
-            shopColored("Aktualisieren")
-        }
-    }
-
     private val paginationState = buildLazyPaginationState { context ->
         val shopsById = ShopService.loadedShops.associateBy { it.internalId }
 
@@ -76,7 +70,7 @@ object DoneDealsView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "UOOPBNOOO"
+                "OOOPBNOOD"
             )
             .cancelInteractions()
     }
@@ -124,6 +118,11 @@ object DoneDealsView : View() {
                 pagination.advance()
             }
 
+        render.layoutSlot('D', dealLogItem).onClick { click ->
+            click.openForPlayer(DoneDealsView::class.java)
+            click.playGeneralClickSound()
+        }
+
         render.layoutSlot('B', backItem).onClick { click ->
             click.playGeneralClickSound()
 
@@ -132,11 +131,6 @@ object DoneDealsView : View() {
             } else {
                 click.openForPlayer(ShopListView::class.java)
             }
-        }
-
-        render.layoutSlot('U', updateItem).onClick { context ->
-            context.openForPlayer(DoneDealsView::class.java)
-            context.playGeneralClickSound()
         }
     }
 
