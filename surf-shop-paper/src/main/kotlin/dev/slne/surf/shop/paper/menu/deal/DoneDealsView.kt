@@ -171,7 +171,7 @@ object DoneDealsView : View() {
                 spacer("-")
                 appendSpace()
                 shopColored("Käufer: ")
-                variableValue(deal.boughtByName ?: "#Unbekannt")
+                variableValue(deal.boughtByName)
             })
 
             newEntries.add(buildText {
