@@ -1,5 +1,7 @@
 package dev.slne.surf.shop.core.paper.util
 
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.sksamuel.aedile.core.expireAfterWrite
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.DealService
@@ -7,6 +9,8 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
+import java.util.*
+import kotlin.time.Duration.Companion.hours
 
 val Shop.dealCount get() = DealService.loadedDeals.count { it.shopInternalId == this.internalId }
 val Shop.totalSoldItems
@@ -16,14 +20,19 @@ val Shop.totalSoldItems
 val Shop.updatedShop
     get() = ShopService.loadedShops.firstOrNull { it.internalId == this.internalId }
 
-val Shop.sellerName get() = Bukkit.getOfflinePlayer(seller).name ?: "#Unbekannt"
+
+private val nameCache = Caffeine.newBuilder().expireAfterWrite(12.hours).build<UUID, String> {
+    Bukkit.getOfflinePlayer(it).name ?: "#Unbekannt"
+}
+
+val Shop.sellerName get() = nameCache.get(seller)
 private val itemCache = mutableMapOf<Shop, ItemStack>()
 val Shop.item: ItemStack
     get() = itemCache.getOrPut(this) {
         itemStackFromString(itemString)
     }
 
-val Deal.boughtByName get() = Bukkit.getOfflinePlayer(boughtBy).name
+val Deal.boughtByName get() = nameCache.get(boughtBy)
 
 fun Shop.rebuildSearchTokens() {
     searchableTokens = buildSet {
