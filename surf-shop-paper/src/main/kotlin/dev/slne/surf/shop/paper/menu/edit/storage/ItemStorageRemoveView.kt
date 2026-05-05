@@ -118,10 +118,10 @@ object ItemStorageRemoveView : View() {
                 return@onClick
             }
 
-            plugin.launch {
-                val shop = shopState.get(context)
-                ShopService.blockShop(shop)
+            val shop = shopState.get(context)
+            ShopService.blockShop(shop)
 
+            plugin.launch {
                 val updatedShop =
                     ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
 
