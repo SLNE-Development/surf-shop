@@ -12,6 +12,8 @@ import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.MenuHeads
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -36,9 +38,11 @@ object PlayerInventorySelectItemView : View() {
         builder.withItem(item).onClick { context ->
 
             if (blacklistedItems.contains(item.type)) {
-                context.player.playSound(true) {
-                    type(Sound.BLOCK_NOTE_BLOCK_BASS)
-                    pitch(2f)
+                if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                    context.player.playSound(true) {
+                        type(Sound.BLOCK_NOTE_BLOCK_BASS)
+                        pitch(2f)
+                    }
                 }
                 context.player.sendText {
                     appendErrorPrefix()
@@ -47,9 +51,11 @@ object PlayerInventorySelectItemView : View() {
                 return@onClick
             }
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_PLING)
-                pitch(2f)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_PLING)
+                    pitch(2f)
+                }
             }
 
             context.openForPlayer(

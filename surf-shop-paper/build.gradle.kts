@@ -26,6 +26,7 @@ dependencies {
 
     compileOnly(files("libs/auxprotect-paper-1.3.4-pre6-all.jar"))
     compileOnly("dev.slne.surf.transaction:surf-transaction-api:+")
+    compileOnlyApi("dev.slne.surf.settings:surf-settings-api:+")
     compileOnly("dev.slne.surf.npc:surf-npc-api:+")
     compileOnly("de.oliver:FancyHolograms:2.9.1")
 }

@@ -17,6 +17,8 @@ import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import me.devnatan.inventoryframework.View
@@ -100,8 +102,10 @@ object ItemStorageInsertView : View() {
                     success(" eingelagert.")
                 })
 
-                click.player.playSound(true) {
-                    type(Sound.ENTITY_PLAYER_LEVELUP)
+                if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(click.player.uniqueId)) {
+                    click.player.playSound(true) {
+                        type(Sound.ENTITY_PLAYER_LEVELUP)
+                    }
                 }
             }
         }
@@ -118,8 +122,10 @@ object ItemStorageInsertView : View() {
                 success(" eingelagert.")
             }
 
-            close.player.playSound(true) {
-                type(Sound.ENTITY_VILLAGER_YES)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(close.player.uniqueId)) {
+                close.player.playSound(true) {
+                    type(Sound.ENTITY_VILLAGER_YES)
+                }
             }
         }
     }

@@ -22,7 +22,10 @@ import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.settings.SettingsShopView
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.*
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -36,6 +39,7 @@ import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
+import kotlin.jvm.java
 
 object ShopListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
@@ -94,6 +98,11 @@ object ShopListView : View() {
                 white("SHIFT".toSmallCaps())
                 spacer(" zum resetten".toSmallCaps())
             }
+        }
+    }
+    private fun settingsItem() = buildItem(Material.REPEATING_COMMAND_BLOCK) {
+        displayName {
+            shopColored("Einstellungen")
         }
     }
 
@@ -286,7 +295,7 @@ object ShopListView : View() {
             }
             .size(6)
             .layout(
-                "OOOOOOOOO",
+                "OOOOOOOOQ",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
@@ -340,6 +349,11 @@ object ShopListView : View() {
                     )
                 )
             )
+        }
+        render.layoutSlot('Q', settingsItem()).onClick { context ->
+            context.playGeneralClickSound()
+
+            context.openForPlayer(SettingsShopView::class.java)
         }
         render.layoutSlot('C', createItem).onClick { context ->
             context.playGeneralClickSound()
@@ -505,14 +519,18 @@ fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.
 }
 
 fun SlotClickContext.playGeneralClickSound() {
-    player.playSound(true) {
-        type(Sound.UI_BUTTON_CLICK)
+    if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(player.uniqueId)) {
+        player.playSound(true) {
+            type(Sound.UI_BUTTON_CLICK)
+        }
     }
 }
 
 fun SlotClickContext.playNewPageSound() {
-    player.playSound(true) {
-        type(Sound.ENTITY_CHICKEN_EGG)
+    if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(player.uniqueId)) {
+        player.playSound(true) {
+            type(Sound.ENTITY_CHICKEN_EGG)
+        }
     }
 }
 
@@ -581,3 +599,4 @@ private fun getLoadedShopsSortedFiltered(
 
 fun SurfComponentBuilder.shopColored(text: Any, vararg decoration: TextDecoration) =
     coloredComponent(text.toString(), TextColor.color(252, 233, 121), *decoration)
+

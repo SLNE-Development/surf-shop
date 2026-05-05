@@ -31,6 +31,8 @@ import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -63,6 +65,10 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(ShopChestSetupView)
         viewFrame.with(ShopChestSelectShopView)
         viewFrame.with(DoneDealsView)
+
+        if (hasSettingsApi()) {
+            SettingsHook.registerSettings()
+        }
     }
 
     override suspend fun onEnableAsync() {

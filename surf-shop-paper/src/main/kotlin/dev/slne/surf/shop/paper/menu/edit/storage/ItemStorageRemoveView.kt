@@ -18,6 +18,8 @@ import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
@@ -77,8 +79,10 @@ object ItemStorageRemoveView : View() {
             localAmountState.set(max(0, localAmountState.get(render) - 1), render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            if (hasSettingsApi() && SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+                }
             }
         }
 
@@ -86,8 +90,10 @@ object ItemStorageRemoveView : View() {
             localAmountState.set(max(0, localAmountState.get(render) - 64), render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            if (hasSettingsApi() && SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+                }
             }
         }
 
@@ -155,8 +161,10 @@ object ItemStorageRemoveView : View() {
                             remainingAmount -= giveNow
                         }
 
-                        player.playSound(true) {
-                            type(Sound.ENTITY_CHICKEN_EGG)
+                        if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(player.uniqueId)) {
+                            player.playSound(true) {
+                                type(Sound.ENTITY_CHICKEN_EGG)
+                            }
                         }
                     }
 
@@ -198,8 +206,10 @@ object ItemStorageRemoveView : View() {
                             remainingAmount -= giveNow
                         }
 
-                        player.playSound(true) {
-                            type(Sound.ENTITY_CHICKEN_EGG)
+                        if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(player.uniqueId)) {
+                            player.playSound(true) {
+                                type(Sound.ENTITY_CHICKEN_EGG)
+                            }
                         }
                     }
 
@@ -280,8 +290,10 @@ object ItemStorageRemoveView : View() {
         localAmountState.set(newAmount, render)
         context.update()
 
-        context.player.playSound(true) {
-            type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+        if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+            context.player.playSound(true) {
+                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+            }
         }
     }
 

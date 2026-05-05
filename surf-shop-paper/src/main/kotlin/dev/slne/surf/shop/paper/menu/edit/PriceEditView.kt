@@ -10,6 +10,8 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import me.devnatan.inventoryframework.View
@@ -61,8 +63,10 @@ object PriceEditView : View() {
             localPriceState.set(max(0, localPriceState.get(render) - 1), render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+                }
             }
         }
 
@@ -70,8 +74,10 @@ object PriceEditView : View() {
             localPriceState.set(max(0, localPriceState.get(render) - 50), render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE)
+                }
             }
         }
 
@@ -79,8 +85,10 @@ object PriceEditView : View() {
             localPriceState.set(localPriceState.get(render) + 1, render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+                }
             }
         }
 
@@ -88,8 +96,10 @@ object PriceEditView : View() {
             localPriceState.set(localPriceState.get(render) + 50, render)
             context.update()
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+            if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
+                context.player.playSound(true) {
+                    type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
+                }
             }
         }
 
