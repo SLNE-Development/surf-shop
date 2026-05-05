@@ -59,7 +59,6 @@ object SettingsShopView : View() {
                 success(".")
             }
         }
-
     }
 
     override fun onClose(close: me.devnatan.inventoryframework.context.CloseContext) {
