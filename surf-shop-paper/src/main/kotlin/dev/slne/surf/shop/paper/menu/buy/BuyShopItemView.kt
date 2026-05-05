@@ -18,6 +18,8 @@ import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
@@ -399,19 +401,21 @@ object BuyShopItemView : View() {
                                 )
                             }
 
-                            Bukkit.getPlayer(shop.seller)?.sendText {
-                                appendInfoPrefix()
-                                variableValue(context.player.name)
-                                info(" hat gerade ")
-                                append {
-                                    if (result.deal.amount > 1) {
-                                        variableValue("${amount}x ")
+                            if (!hasSettingsApi() || SettingsHook.hasDealMadeMessagesEnabled(uniqueId)) {
+                                Bukkit.getPlayer(shop.seller)?.sendText {
+                                    appendInfoPrefix()
+                                    variableValue(context.player.name)
+                                    info(" hat gerade ")
+                                    append {
+                                        if (result.deal.amount > 1) {
+                                            variableValue("${amount}x ")
+                                        }
+                                        append(shop.item.displayName())
+                                        hoverEvent(shop.item.asHoverEvent())
                                     }
-                                    append(shop.item.displayName())
-                                    hoverEvent(shop.item.asHoverEvent())
+                                    info(" gekauft.")
+                                    spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
                                 }
-                                info(" gekauft.")
-                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
                             }
 
                             openListView(render)
