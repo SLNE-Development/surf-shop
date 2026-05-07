@@ -40,7 +40,13 @@ object ItemStorageInsertView : View() {
                 shopColored("Items einlagern".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(5)
-            .layout("OOOOQOOOO", "OSSSSSSSO", "OSSSSSSSO", "OSSSSSSSO", "OOOOBOOOO")
+            .layout(
+                "OOOOQOOOO",
+                "OSSSSSSSO",
+                "OSSSSSSSO",
+                "OSSSSSSSO",
+                "OOOOBOOOO"
+            )
             .cancelInteractions()
             .build()
     }
@@ -104,6 +110,7 @@ object ItemStorageInsertView : View() {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
                 }
             }
+            click.player.updateInventory()
         }
     }
 
