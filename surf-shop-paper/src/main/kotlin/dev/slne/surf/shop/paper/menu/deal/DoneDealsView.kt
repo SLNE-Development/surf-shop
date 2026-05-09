@@ -70,7 +70,7 @@ object DoneDealsView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "OOOPBNOOD"
+                "OOOPBNOOO"
             )
             .cancelInteractions()
     }
