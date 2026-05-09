@@ -3,6 +3,8 @@ package dev.slne.surf.shop.paper.menu
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import me.devnatan.inventoryframework.View
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -19,3 +21,22 @@ val View.outlineItem: ItemStack
 fun Player.playNoSound() = this.playSound(true) {
     type(Sound.ENTITY_VILLAGER_NO)
 }
+
+fun Player.hasFullShopCommandView() = hasPermission(PermissionRegistry.SHOP_COMMAND_FULL)
+
+fun Player.canUseFullShopView() = hasFullShopCommandView() || NpcShopState.isInNpcShop(uniqueId)
+
+fun Player.canUseShopTransactionsFromCurrentView() =
+    canUseFullShopView() || StaticShopState.isInStaticShop(uniqueId)
+
+fun Player.canEditShopStorageFromCurrentView() =
+    canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null
+
+fun Player.canCreateShopFromCurrentView() =
+    canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null
+
+fun Player.canDeleteShopFromCurrentView() =
+    canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null
+
+fun Player.canEditShopPrice(shop: Shop) =
+    shop.seller == uniqueId || canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null

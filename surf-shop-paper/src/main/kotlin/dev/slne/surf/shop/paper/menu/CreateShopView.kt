@@ -108,6 +108,15 @@ object CreateShopView : View() {
         render.layoutSlot('C', createItem(render)).onClick { context ->
             context.playGeneralClickSound()
 
+            if (!context.player.canCreateShopFromCurrentView()) {
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Shops kannst du nur am Spawn erstellen.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             val item = itemState.get(context)
             val price = priceState.get(context)
 

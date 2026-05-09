@@ -148,6 +148,15 @@ object BuyShopItemView : View() {
             .onClick { context ->
                 context.playGeneralClickSound()
 
+                if (!context.player.canUseShopTransactionsFromCurrentView()) {
+                    context.player.sendText {
+                        appendInfoPrefix()
+                        info("Kaufen ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
+                    }
+                    context.player.playNoSound()
+                    return@onClick
+                }
+
                 val currentShop = shopState.get(context).updatedShop ?: run {
                     context.player.sendText {
                         appendErrorPrefix()
@@ -288,6 +297,15 @@ object BuyShopItemView : View() {
             .updateOnStateChange(amountState)
             .onClick { context ->
                 context.playGeneralClickSound()
+
+                if (!context.player.canUseShopTransactionsFromCurrentView()) {
+                    context.player.sendText {
+                        appendInfoPrefix()
+                        info("Kaufen ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
+                    }
+                    context.player.playNoSound()
+                    return@onClick
+                }
 
                 val shop = shopState.get(context).updatedShop ?: run {
                     context.player.sendText {

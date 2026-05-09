@@ -13,8 +13,10 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
 import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -70,6 +72,15 @@ object ItemStorageInsertView : View() {
 
     override fun onClick(click: SlotClickContext) {
         if (click.clickedContainer.isEntityContainer) {
+            if (!click.player.canEditShopStorageFromCurrentView()) {
+                click.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                click.player.playNoSound()
+                return
+            }
+
             val item = click.item ?: return
             val shop = localShopState.get(click)
 

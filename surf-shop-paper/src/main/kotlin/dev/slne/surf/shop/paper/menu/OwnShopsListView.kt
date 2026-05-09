@@ -2,6 +2,7 @@ package dev.slne.surf.shop.paper.menu
 
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.core.util.mutableObjectSetOf
 import dev.slne.surf.api.paper.builder.buildItem
@@ -219,8 +220,32 @@ object OwnShopsListView : View() {
             searchInputCache[context.player.uniqueId]
         ).toMutableList()
     }.elementFactory { context, builder, _, shop ->
-        builder.withItem(createShopItem(shop, context.player.uniqueId)).onClick { context ->
+        builder.withItem(
+            createShopItem(
+                shop,
+                context.player.uniqueId,
+                viewOnly = !context.player.canUseFullShopView()
+            )
+        ).onClick { context ->
             context.playGeneralClickSound()
+
+            if (!context.player.canUseFullShopView()) {
+                if (shop.seller == context.player.uniqueId) {
+                    context.openForPlayer(
+                        EditShopView::class.java,
+                        ImmutableMap.of(
+                            "edit-shop",
+                            shop
+                        )
+                    )
+                } else {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
+                    }
+                }
+                return@onClick
+            }
 
             if (shop.seller == context.player.uniqueId) {
                 if (context.isShiftLeftClick) {
@@ -454,6 +479,19 @@ object StaticShopState {
             this.inStaticShop.add(playerUuid)
         } else {
             this.inStaticShop.remove(playerUuid)
+        }
+    }
+}
+
+object NpcShopState {
+    private val inNpcShop = mutableObjectSetOf<UUID>()
+    fun isInNpcShop(playerUuid: UUID) = inNpcShop.contains(playerUuid)
+
+    fun setInNpcShop(playerUuid: UUID, inNpcShop: Boolean) {
+        if (inNpcShop) {
+            this.inNpcShop.add(playerUuid)
+        } else {
+            this.inNpcShop.remove(playerUuid)
         }
     }
 }

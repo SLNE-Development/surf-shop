@@ -15,7 +15,9 @@ import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
+import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -57,6 +59,15 @@ object ItemStorageRemoveView : View() {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
+            if (!context.player.canEditShopStorageFromCurrentView()) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificRemoveAmountPriceDialog(
@@ -101,6 +112,14 @@ object ItemStorageRemoveView : View() {
 
         render.layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
+            if (!context.player.canEditShopStorageFromCurrentView()) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
 
             val toRemove = localAmountState.get(context)
 

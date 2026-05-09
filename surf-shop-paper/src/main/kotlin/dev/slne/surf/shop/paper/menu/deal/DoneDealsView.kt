@@ -42,6 +42,12 @@ object DoneDealsView : View() {
         }
     }
 
+    private val dealLogItem = buildItem(Material.CHEST) {
+        displayName {
+            shopColored("Verkaufsverlauf")
+        }
+    }
+
     private val paginationState = buildLazyPaginationState { context ->
         val shopsById = ShopService.loadedShops.associateBy { it.internalId }
 
