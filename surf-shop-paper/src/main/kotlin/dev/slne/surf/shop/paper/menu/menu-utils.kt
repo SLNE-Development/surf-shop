@@ -22,7 +22,7 @@ fun Player.playNoSound() = this.playSound(true) {
     type(Sound.ENTITY_VILLAGER_NO)
 }
 
-fun Player.hasFullShopCommandView() = hasPermission(PermissionRegistry.SHOP_COMMAND_FULL)
+fun Player.hasFullShopCommandView() = hasPermission(PermissionRegistry.SHOP_COMMAND_VIEW_ONLY_BYPASS)
 
 fun Player.canUseFullShopView() = hasFullShopCommandView() || NpcShopState.isInNpcShop(uniqueId)
 
@@ -38,5 +38,4 @@ fun Player.canCreateShopFromCurrentView() =
 fun Player.canDeleteShopFromCurrentView() =
     canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null
 
-fun Player.canEditShopPrice(shop: Shop) =
-    shop.seller == uniqueId || canUseFullShopView() || ChestShopEditState.getChest(uniqueId) != null
+fun Player.canEditShopPrice(shop: Shop) = shop.seller == uniqueId
