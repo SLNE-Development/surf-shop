@@ -42,12 +42,6 @@ object DoneDealsView : View() {
         }
     }
 
-    private val dealLogItem = buildItem(Material.CHEST) {
-        displayName {
-            shopColored("Verkaufsverlauf")
-        }
-    }
-
     private val paginationState = buildLazyPaginationState { context ->
         val shopsById = ShopService.loadedShops.associateBy { it.internalId }
 
@@ -123,11 +117,6 @@ object DoneDealsView : View() {
                 context.playNewPageSound()
                 pagination.advance()
             }
-
-        render.layoutSlot('D', dealLogItem).onClick { click ->
-            click.openForPlayer(DoneDealsView::class.java)
-            click.playGeneralClickSound()
-        }
 
         render.layoutSlot('B', backItem).onClick { click ->
             click.playGeneralClickSound()
