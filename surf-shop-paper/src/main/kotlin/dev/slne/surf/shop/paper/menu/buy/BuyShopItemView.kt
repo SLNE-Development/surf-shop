@@ -151,7 +151,7 @@ object BuyShopItemView : View() {
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
                         appendInfoPrefix()
-                        info("Kaufen ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
+                        info("Dieser Shop ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
                     }
                     context.player.playNoSound()
                     return@onClick
@@ -301,7 +301,7 @@ object BuyShopItemView : View() {
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
                         appendInfoPrefix()
-                        info("Kaufen ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
+                        info("Dieser Shop ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
                     }
                     context.player.playNoSound()
                     return@onClick
