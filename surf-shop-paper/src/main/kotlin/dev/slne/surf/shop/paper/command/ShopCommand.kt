@@ -11,6 +11,7 @@ import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.command.argument.shopArgument
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
+import dev.slne.surf.shop.paper.menu.NpcShopState
 import dev.slne.surf.shop.paper.menu.OwnShopState
 import dev.slne.surf.shop.paper.menu.ShopListView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
@@ -23,6 +24,8 @@ fun shopCommand() = commandTree("shop") {
     playerExecutor { player, _ ->
         searchInputCache.remove(player.uniqueId)
         ChestShopEditState.setChest(player.uniqueId, null)
+        NpcShopState.setInNpcShop(player.uniqueId, false)
+        OwnShopState.setInOwn(player.uniqueId, false)
         viewFrame.open(
             ShopListView::class.java,
             player
@@ -80,6 +83,7 @@ fun shopCommand() = commandTree("shop") {
             val search: String by args
             searchInputCache[player.uniqueId] = search
             ChestShopEditState.setChest(player.uniqueId, null)
+            NpcShopState.setInNpcShop(player.uniqueId, false)
             viewFrame.open(
                 ShopListView::class.java,
                 player

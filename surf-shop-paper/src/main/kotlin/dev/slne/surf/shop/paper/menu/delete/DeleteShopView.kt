@@ -69,6 +69,15 @@ object DeleteShopView : View() {
         }).onClick { context ->
             context.playGeneralClickSound()
 
+            if (!context.player.canDeleteShopFromCurrentView()) {
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Shops kannst du nur am Spawn löschen.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             context.player.sendText {
                 appendInfoPrefix()
                 info("Der Shop wird gelöscht...")

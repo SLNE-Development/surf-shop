@@ -70,7 +70,7 @@ object DoneDealsView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "OOOPBNOOD"
+                "OOOPBNOOO"
             )
             .cancelInteractions()
     }
@@ -117,11 +117,6 @@ object DoneDealsView : View() {
                 context.playNewPageSound()
                 pagination.advance()
             }
-
-        render.layoutSlot('D', dealLogItem).onClick { click ->
-            click.openForPlayer(DoneDealsView::class.java)
-            click.playGeneralClickSound()
-        }
 
         render.layoutSlot('B', backItem).onClick { click ->
             click.playGeneralClickSound()
