@@ -130,6 +130,7 @@ object ItemStorageInsertView : View() {
                                 }
                             }
                         }
+                        click.clickOrigin.currentItem = ItemStack.empty()
                         val leftover = click.player.inventory.addItem(emptyShulker)
                         if (leftover.isNotEmpty()) {
                             leftover.values.forEach { rest ->
