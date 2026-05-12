@@ -85,7 +85,7 @@ object BuyShopItemView : View() {
             }
 
             val boxState = meta.blockState as ShulkerBox
-            val contents = boxState.inventory.contents ?: return@onClick
+            val contents = boxState.inventory.contents
             if (contents.any { it != null && !it.type.isAir }) {
                 context.player.sendActionBar(buildText {
                     appendErrorPrefix()
