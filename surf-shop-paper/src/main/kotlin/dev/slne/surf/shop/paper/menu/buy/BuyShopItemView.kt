@@ -2,6 +2,7 @@ package dev.slne.surf.shop.paper.menu.buy
 
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
+import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.sendText
@@ -29,6 +30,11 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
+import org.bukkit.Material
+import org.bukkit.Sound
+import org.bukkit.block.ShulkerBox
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.BlockStateMeta
 
 object BuyShopItemView : View() {
     private val shopState = initialState<Shop>("buy-shop")
@@ -40,13 +46,225 @@ object BuyShopItemView : View() {
                 shopColored("Items kaufen".toSmallCaps(), TextDecoration.BOLD)
             }
             .size(3)
-            .layout("OOOOOOOOO", "O   I C O", "OOOOBOOOO")
-            .cancelInteractions()
+            .layout(
+                "OOOOOOOOO",
+                "O U I C O",
+                "OOOOBOOOO"
+            )
+            .cancelOnClick().cancelOnDrop().cancelOnDrag()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
+        render.layoutSlot('U', shulkerSlotItem).onClick { context ->
+            context.playGeneralClickSound()
+
+            if (!context.player.canUseShopTransactionsFromCurrentView()) {
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Dieser Shop ist hier nur zur Ansicht. Zum Kaufen musst du zum Spawn.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val cursorItem = context.clickOrigin.currentItem ?: return@onClick
+            if (!cursorItem.type.name.endsWith("SHULKER_BOX")) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Lege eine leere Shulker-Box auf deinen Cursor.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val meta = cursorItem.itemMeta
+            if (meta !is BlockStateMeta || meta.blockState !is ShulkerBox) {
+                return@onClick
+            }
+
+            val boxState = meta.blockState as ShulkerBox
+            val contents = boxState.inventory.contents ?: return@onClick
+            if (contents.any { it != null && !it.type.isAir }) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Die Shulker-Box muss leer sein.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val currentShop = shopState.get(context).updatedShop ?: run {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Dieser Shop existiert nicht mehr!")
+                }
+                context.player.playNoSound()
+                openListView(render)
+                return@onClick
+            }
+
+            if (currentShop.isBlocked) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst derzeit keine Items in diesem Shop kaufen!")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            if (currentShop.storedItemCount <= 0) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Dieser Shop ist ausverkauft!")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val maxPerSlot = currentShop.item.maxStackSize
+            val shulkerMax = 27 * maxPerSlot
+            val buyAmount = minOf(currentShop.storedItemCount, shulkerMax)
+
+            context.clickOrigin.currentItem = ItemStack.empty()
+            context.player.closeInventory()
+
+            plugin.launch {
+                when (val result = DealService.buy(
+                    context.player.uniqueId, currentShop, buyAmount
+                )) {
+                    is Deal.DealResult.Success -> {
+                        val boughtAmount = result.deal.amount
+
+                        withContext(plugin.entityDispatcher(context.player)) {
+                            val toRemove = currentShop.item.clone().apply {
+                                amount = boughtAmount
+                            }
+                            val notRemoved =
+                                context.player.inventory.removeItem(toRemove)
+                            val removedAmount =
+                                boughtAmount - notRemoved.values.sumOf { it.amount }
+
+                            if (removedAmount > 0) {
+                                val filledShulker = createFilledShulker(
+                                    cursorItem.type, currentShop.item, removedAmount
+                                )
+                                val leftover =
+                                    context.player.inventory.addItem(filledShulker)
+                                if (leftover.isNotEmpty()) {
+                                    withContext(
+                                        plugin.regionDispatcher(context.player.location)
+                                    ) {
+                                        leftover.values.forEach {
+                                            context.player.world.dropItem(
+                                                context.player.location, it
+                                            ).owner = context.player.uniqueId
+                                        }
+                                    }
+                                }
+                            }
+
+                            context.player.playSound(true) {
+                                type(Sound.ENTITY_CHICKEN_EGG)
+                            }
+                        }
+
+                        context.player.sendText {
+                            appendSuccessPrefix()
+                            success(
+                                "Du hast erfolgreich ${result.deal.amount} Items für ${
+                                    formatPriceNice(
+                                        result.deal.amount * currentShop.pricePerItem
+                                    )
+                                } gekauft und in einer Shulker-Box erhalten!"
+                            )
+                        }
+
+                        Bukkit.getPlayer(currentShop.seller)?.sendText {
+                            appendInfoPrefix()
+                            variableValue(context.player.name)
+                            info(" hat gerade ")
+                            append {
+                                if (result.deal.amount > 1) {
+                                    variableValue("${result.deal.amount}x ")
+                                }
+                                append(currentShop.item.displayName())
+                                hoverEvent(currentShop.item.asHoverEvent())
+                            }
+                            info(" gekauft.")
+                            spacer(
+                                " (${formatPriceNice(currentShop.pricePerItem * result.deal.amount)} - 3% Steuern)"
+                            )
+                        }
+
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.InsufficientStock -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Es sind nicht genügend Items auf Lager!")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.OtherInsufficientFounds,
+                    Deal.DealResult.SelfInsufficientFounds -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.ShopBlocked -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Du kannst derzeit keine Items in diesem Shop kaufen!")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.ShopDeleted -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Dieser Shop existiert nicht mehr!")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.TransactionFailed -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+
+                    Deal.DealResult.PlayerNotFound -> {
+                        returnEmptyShulker(context, cursorItem)
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
+                        }
+                        context.player.playNoSound()
+                        openListView(render)
+                    }
+                }
+            }
+        }
+
         render.layoutSlot('I')
             .renderWith {
                 val initialShop = shopState.get(render)
@@ -289,7 +507,9 @@ object BuyShopItemView : View() {
                             spacer("-")
                             appendSpace()
                             shopColored("Gesamtpreis: ")
-                            variableValue(amountState.get(render) * shopState.get(render).pricePerItem)
+                            variableValue(
+                                amountState.get(render) * shopState.get(render).pricePerItem
+                            )
                         }
                     }
                 }
@@ -354,7 +574,9 @@ object BuyShopItemView : View() {
                 }
 
                 plugin.launch {
-                    when (val result = DealService.buy(context.player.uniqueId, shop, amount)) {
+                    when (val result = DealService.buy(
+                        context.player.uniqueId, shop, amount
+                    )) {
                         Deal.DealResult.InsufficientStock -> {
                             context.player.sendText {
                                 appendErrorPrefix()
@@ -423,13 +645,15 @@ object BuyShopItemView : View() {
                                 info(" hat gerade ")
                                 append {
                                     if (result.deal.amount > 1) {
-                                        variableValue("${amount}x ")
+                                        variableValue("${result.deal.amount}x ")
                                     }
                                     append(shop.item.displayName())
                                     hoverEvent(shop.item.asHoverEvent())
                                 }
                                 info(" gekauft.")
-                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
+                                spacer(
+                                    " (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)"
+                                )
                             }
 
                             openListView(render)
@@ -470,6 +694,103 @@ object BuyShopItemView : View() {
                 context.openForPlayer(OwnShopsListView::class.java)
             } else {
                 context.openForPlayer(ShopListView::class.java)
+            }
+        }
+    }
+
+    private val shulkerSlotItem = buildItem(Material.SHULKER_BOX) {
+        displayName {
+            shopColored("Shulker-Box Kauf", TextDecoration.BOLD)
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Klicke mit einer leeren Shulker-Box")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("auf diesen Slot, um die Items")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("beim Kauf direkt in die Box zu")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("packen.")
+            }
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Maximal 27 Stapel")
+                spacer(" pro Box.")
+            }
+            line {
+                appendBlob()
+                shopColored("Bei geringerem Lagerbestand")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("wird die Box teilweise befullt.")
+            }
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Der Kaufpreis wird wie gewohnt")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("von deinem Konto abgezogen.")
+            }
+        }
+    }
+
+    private fun createFilledShulker(
+        shulkerType: Material, shopItem: ItemStack, amount: Int
+    ): ItemStack {
+        val filledShulker = ItemStack(shulkerType)
+        val meta = filledShulker.itemMeta as BlockStateMeta
+        val state = meta.blockState as ShulkerBox
+        val inv = state.inventory
+
+        var remaining = amount
+        val maxStack = shopItem.maxStackSize
+        var slotIndex = 0
+
+        while (remaining > 0 && slotIndex < 27) {
+            val stack = shopItem.clone()
+            val stackSize = minOf(maxStack, remaining)
+            stack.amount = stackSize
+            inv.setItem(slotIndex, stack)
+            remaining -= stackSize
+            slotIndex++
+        }
+
+        meta.blockState = state
+        filledShulker.itemMeta = meta
+        return filledShulker
+    }
+
+    private suspend fun returnEmptyShulker(
+        context: me.devnatan.inventoryframework.context.SlotClickContext,
+        shulkerItem: ItemStack
+    ) = withContext(plugin.entityDispatcher(context.player)) {
+        val emptyShulker = ItemStack(shulkerItem.type)
+        val leftover = context.player.inventory.addItem(emptyShulker)
+        if (leftover.isNotEmpty()) {
+            withContext(plugin.regionDispatcher(context.player.location)) {
+                leftover.values.forEach {
+                    context.player.world.dropItem(
+                        context.player.location, it
+                    ).owner = context.player.uniqueId
+                }
             }
         }
     }

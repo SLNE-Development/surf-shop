@@ -4,9 +4,11 @@ import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
+import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
+import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
@@ -21,6 +23,7 @@ import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.appendBlob
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -29,7 +32,11 @@ import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.block.ShulkerBox
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.BlockStateMeta
 import kotlin.math.max
+import kotlin.math.min
 
 object ItemStorageRemoveView : View() {
     private val shopState = initialState<Shop>("edit-shop")
@@ -47,9 +54,9 @@ object ItemStorageRemoveView : View() {
                 "O   W   O",
                 "O21 P 34O",
                 "O       O",
-                "QOOOBOOOO"
+                "UOOOBOOOO"
             )
-            .cancelInteractions()
+            .cancelOnClick().cancelOnDrop().cancelOnDrag()
             .build()
     }
 
@@ -110,6 +117,146 @@ object ItemStorageRemoveView : View() {
             handleIncrement(render, context, 64)
         }
 
+        render.layoutSlot('U', shulkerSlotItem).onClick { context ->
+            context.playGeneralClickSound()
+            if (!context.player.canEditShopStorageFromCurrentView()) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val cursorItem = context.clickOrigin.currentItem ?: return@onClick
+            if (!cursorItem.type.name.endsWith("SHULKER_BOX")) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Lege eine leere Shulker-Box auf deinen Cursor.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val meta = cursorItem.itemMeta
+            if (meta !is BlockStateMeta || meta.blockState !is ShulkerBox) {
+                return@onClick
+            }
+
+            val boxState = meta.blockState as ShulkerBox
+            val contents = boxState.inventory.contents ?: return@onClick
+            if (contents.any { it != null && !it.type.isAir }) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Die Shulker-Box muss leer sein.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            context.clickOrigin.currentItem = ItemStack.empty()
+
+            val shop = shopState.get(context)
+            ShopService.blockShop(shop)
+
+            plugin.launch {
+                val updatedShop =
+                    ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
+
+                if (updatedShop == null) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Shop existiert nicht mehr.")
+                    }
+                    ShopService.unblockShop(shop)
+                    return@launch
+                }
+
+                val toRemove = minOf(updatedShop.storedItemCount, 27 * updatedShop.item.maxStackSize)
+
+                if (toRemove <= 0) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Shop hat keine Items auf Lager.")
+                    }
+                    ShopService.unblockShop(updatedShop)
+
+                    withContext(plugin.entityDispatcher(context.player)) {
+                        val emptyShulker = ItemStack(cursorItem.type)
+                        val leftover = context.player.inventory.addItem(emptyShulker)
+                        if (leftover.isNotEmpty()) {
+                            leftover.values.forEach { rest ->
+                                val dropped = context.player.world.dropItem(
+                                    context.player.location, rest
+                                )
+                                dropped.owner = context.player.uniqueId
+                            }
+                        }
+                    }
+                    return@launch
+                }
+
+                val filledShulker = createFilledShulker(
+                    cursorItem.type, updatedShop.item, toRemove
+                )
+
+                withContext(plugin.entityDispatcher(context.player)) {
+                    val leftover = context.player.inventory.addItem(filledShulker)
+                    if (leftover.isNotEmpty()) {
+                        leftover.values.forEach { rest ->
+                            val dropped = context.player.world.dropItem(
+                                context.player.location, rest
+                            )
+                            dropped.owner = context.player.uniqueId
+                        }
+                    }
+
+                    context.player.playSound(true) {
+                        type(Sound.ENTITY_CHICKEN_EGG)
+                    }
+                }
+
+                ShopService.saveShop(
+                    updatedShop.copy(
+                        storedItemCount = updatedShop.storedItemCount - toRemove
+                    )
+                )
+                ShopService.unblockShop(updatedShop)
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logWithdraw(context.player, shop, toRemove)
+                }
+
+                context.player.sendActionBar(buildText {
+                    appendSuccessPrefix()
+                    success("Du hast ")
+                    variableValue("$toRemove Items")
+                    success(" per Shulker-Box ausgelagert.")
+                })
+
+                withContext(plugin.entityDispatcher(context.player)) {
+                    val refreshedShop = shopState.get(context).updatedShop
+
+                    if (refreshedShop == null) {
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Der Shop existiert nicht mehr.")
+                        }
+                        context.player.closeInventory()
+                        return@withContext
+                    }
+
+                    context.openForPlayer(
+                        ItemStorageView::class.java,
+                        ImmutableMap.of(
+                            "edit-shop",
+                            refreshedShop
+                        )
+                    )
+                }
+            }
+        }
+
         render.layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
@@ -166,7 +313,7 @@ object ItemStorageRemoveView : View() {
                             if (leftover.isNotEmpty()) {
                                 leftover.values.forEach { rest ->
                                     val dropped =
-                                        player.world.dropItemNaturally(player.location, rest)
+                                        player.world.dropItem(player.location, rest)
                                     dropped.owner = owner
                                 }
                             }
@@ -209,7 +356,7 @@ object ItemStorageRemoveView : View() {
                             if (leftover.isNotEmpty()) {
                                 leftover.values.forEach { rest ->
                                     val dropped =
-                                        player.world.dropItemNaturally(player.location, rest)
+                                        player.world.dropItem(player.location, rest)
                                     dropped.owner = owner
                                 }
                             }
@@ -273,12 +420,234 @@ object ItemStorageRemoveView : View() {
         }
     }
 
+    override fun onClick(click: SlotClickContext) {
+        if (click.clickedContainer.isEntityContainer) {
+            if (!click.player.canEditShopStorageFromCurrentView()) {
+                click.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                click.player.playNoSound()
+                return
+            }
+
+            val item = click.item ?: return
+
+            if (item.type.name.endsWith("SHULKER_BOX")) {
+                val meta = item.itemMeta
+                if (meta is BlockStateMeta) {
+                    val state = meta.blockState
+                    if (state is ShulkerBox) {
+                        val contents = state.inventory.contents ?: return
+                        if (contents.any { it != null && !it.type.isAir }) {
+                            click.player.sendActionBar(buildText {
+                                appendErrorPrefix()
+                                error("Die Shulker-Box muss leer sein.")
+                            })
+                            click.player.playNoSound()
+                            return
+                        }
+
+                        click.clickOrigin.currentItem = ItemStack.empty()
+
+                        val shop = shopState.get(click)
+                        ShopService.blockShop(shop)
+
+                        plugin.launch {
+                            val updatedShop =
+                                ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
+
+                            if (updatedShop == null) {
+                                click.player.sendText {
+                                    appendErrorPrefix()
+                                    error("Der Shop existiert nicht mehr.")
+                                }
+                                ShopService.unblockShop(shop)
+                                return@launch
+                            }
+
+                val toRemove = minOf(
+                    updatedShop.storedItemCount, 27 * updatedShop.item.maxStackSize
+                )
+
+                if (toRemove <= 0) {
+                    click.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Shop hat keine Items auf Lager.")
+                    }
+                                ShopService.unblockShop(updatedShop)
+
+                                withContext(plugin.entityDispatcher(click.player)) {
+                                    val emptyShulker = ItemStack(item.type)
+                                    val leftover =
+                                        click.player.inventory.addItem(emptyShulker)
+                                    if (leftover.isNotEmpty()) {
+                                        leftover.values.forEach { rest ->
+                                            val dropped = click.player.world.dropItem(
+                                                click.player.location, rest
+                                            )
+                                            dropped.owner = click.player.uniqueId
+                                        }
+                                    }
+                                }
+                                return@launch
+                            }
+
+                            val filledShulker = createFilledShulker(
+                                item.type, updatedShop.item, toRemove
+                            )
+
+                            withContext(plugin.entityDispatcher(click.player)) {
+                                val leftover =
+                                    click.player.inventory.addItem(filledShulker)
+                                if (leftover.isNotEmpty()) {
+                                    leftover.values.forEach { rest ->
+                                        val dropped = click.player.world.dropItem(
+                                            click.player.location, rest
+                                        )
+                                        dropped.owner = click.player.uniqueId
+                                    }
+                                }
+
+                                click.player.playSound(true) {
+                                    type(Sound.ENTITY_CHICKEN_EGG)
+                                }
+                            }
+
+                            ShopService.saveShop(
+                                updatedShop.copy(
+                                    storedItemCount = updatedShop.storedItemCount - toRemove
+                                )
+                            )
+                            ShopService.unblockShop(updatedShop)
+
+                            if (plugin.auxProtectHook) {
+                                AuxProtectHook.logWithdraw(
+                                    click.player, shop, toRemove
+                                )
+                            }
+
+                            click.player.sendActionBar(buildText {
+                                appendSuccessPrefix()
+                                success("Du hast ")
+                                variableValue("$toRemove Items")
+                                success(" per Shulker-Box ausgelagert.")
+                            })
+
+                            withContext(plugin.entityDispatcher(click.player)) {
+                                val refreshedShop =
+                                    shopState.get(click).updatedShop
+
+                                if (refreshedShop == null) {
+                                    click.player.sendText {
+                                        appendErrorPrefix()
+                                        error("Der Shop existiert nicht mehr.")
+                                    }
+                                    click.player.closeInventory()
+                                    return@withContext
+                                }
+
+                                click.openForPlayer(
+                                    ItemStorageView::class.java,
+                                    ImmutableMap.of(
+                                        "edit-shop",
+                                        refreshedShop
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun createFilledShulker(
+        shulkerType: Material, shopItem: ItemStack, amount: Int
+    ): ItemStack {
+        val filledShulker = ItemStack(shulkerType)
+        val meta = filledShulker.itemMeta as BlockStateMeta
+        val state = meta.blockState as ShulkerBox
+        val inv = state.inventory
+
+        var remaining = amount
+        val maxStack = shopItem.maxStackSize
+        var slotIndex = 0
+
+        while (remaining > 0 && slotIndex < 27) {
+            val stack = shopItem.clone()
+            val stackSize = minOf(maxStack, remaining)
+            stack.amount = stackSize
+            inv.setItem(slotIndex, stack)
+            remaining -= stackSize
+            slotIndex++
+        }
+
+        meta.blockState = state
+        filledShulker.itemMeta = meta
+        return filledShulker
+    }
+
     private val quitItem = buildItem(Material.RED_STAINED_GLASS_PANE) {
         displayName { error("Abbrechen".toSmallCaps(), TextDecoration.BOLD) }
     }
 
     private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
         displayName { spacer("") }
+    }
+
+    private val shulkerSlotItem = buildItem(Material.SHULKER_BOX) {
+        displayName {
+            shopColored("Shulker-Box füllen", TextDecoration.BOLD)
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Klicke mit einer leeren Shulker-Box")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("auf diesen Slot, um sie mit Items")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("aus dem Lager zu befüllen.")
+            }
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Maximal 27 Stapel")
+                spacer(" pro Box.")
+            }
+            line {
+                appendBlob()
+                shopColored("Bei weniger Lagerbestand wird")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("die Box teilweise befüllt.")
+            }
+            emptyLine()
+            line {
+                appendBlob()
+                shopColored("Alternativ kannst du eine leere")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("Shulker-Box in deinem Inventar")
+            }
+            line {
+                appendSpace()
+                appendBlob()
+                shopColored("anklicken.")
+            }
+        }
     }
 
     private fun handleIncrement(render: RenderContext, context: SlotClickContext, delta: Int) {
