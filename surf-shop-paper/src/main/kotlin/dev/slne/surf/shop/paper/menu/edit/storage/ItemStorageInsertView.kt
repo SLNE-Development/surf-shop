@@ -87,7 +87,7 @@ object ItemStorageInsertView : View() {
                 if (meta is BlockStateMeta) {
                     val state = meta.blockState
                     if (state is ShulkerBox) {
-                        val contents = state.inventory.contents ?: return
+                        val contents = state.inventory.contents
                         var totalItems = 0
                         var hasAnyItem = false
 

@@ -18,6 +18,7 @@ import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
+import dev.slne.surf.shop.paper.menu.outlineItem
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
@@ -63,7 +64,7 @@ object ItemStorageRemoveView : View() {
     override fun onFirstRender(render: RenderContext) {
         localAmountState.set(amountState.get(render), render)
 
-        render.layoutSlot('O', outlineItem).onClick { }
+        render.layoutSlot('O', outlineItem).onClick { _ -> }
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
@@ -374,6 +375,7 @@ object ItemStorageRemoveView : View() {
                 }
                 ShopService.unblockShop(shop)
                 return@launch
+            }
 
             val toRemove = minOf(updatedShop.storedItemCount, 27 * updatedShop.item.maxStackSize)
 
