@@ -207,7 +207,7 @@ object ItemStorageRemoveView : View() {
                             if (leftover.isNotEmpty()) {
                                 leftover.values.forEach { rest ->
                                     val dropped =
-                                        player.world.dropItem(player.location, rest)
+                                        player.world.dropItemNaturally(player.location, rest)
                                     dropped.owner = owner
                                 }
                             }
@@ -250,7 +250,7 @@ object ItemStorageRemoveView : View() {
                             if (leftover.isNotEmpty()) {
                                 leftover.values.forEach { rest ->
                                     val dropped =
-                                        player.world.dropItem(player.location, rest)
+                                        player.world.dropItemNaturally(player.location, rest)
                                     dropped.owner = owner
                                 }
                             }
