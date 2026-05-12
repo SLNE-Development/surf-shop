@@ -56,14 +56,14 @@ object ItemStorageRemoveView : View() {
                 "O       O",
                 "QOOOBOOOU"
             )
-            .cancelOnClick().cancelOnDrop().cancelOnDrag()
+            .cancelOnDrop().cancelOnDrag()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
         localAmountState.set(amountState.get(render), render)
 
-        render.layoutSlot('O', outlineItem)
+        render.layoutSlot('O', outlineItem).onClick { }
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
@@ -145,7 +145,6 @@ object ItemStorageRemoveView : View() {
                 return@onClick
             }
 
-            context.clickOrigin.currentItem = ItemStack.empty()
             handleShulkerWithdrawal(context, context.player, cursorItem)
         }
 
@@ -340,7 +339,6 @@ object ItemStorageRemoveView : View() {
                             return
                         }
 
-                        click.clickOrigin.currentItem = ItemStack.empty()
                         handleShulkerWithdrawal(click, click.player, item)
                     }
                 }
@@ -374,32 +372,8 @@ object ItemStorageRemoveView : View() {
                     appendErrorPrefix()
                     error("Der Shop existiert nicht mehr.")
                 }
-                withContext(plugin.entityDispatcher(player)) {
-                    val emptyShulker = shulkerItem.clone().apply {
-                        amount = 1
-                        val emptyMeta = itemMeta
-                        if (emptyMeta is BlockStateMeta) {
-                            val emptyState = emptyMeta.blockState
-                            if (emptyState is ShulkerBox) {
-                                emptyState.inventory.clear()
-                                emptyMeta.blockState = emptyState
-                                itemMeta = emptyMeta
-                            }
-                        }
-                    }
-                    val leftover = player.inventory.addItem(emptyShulker)
-                    if (leftover.isNotEmpty()) {
-                        leftover.values.forEach { rest ->
-                            val dropped = player.world.dropItem(
-                                player.location, rest
-                            )
-                            dropped.owner = player.uniqueId
-                        }
-                    }
-                }
                 ShopService.unblockShop(shop)
                 return@launch
-            }
 
             val toRemove = minOf(updatedShop.storedItemCount, 27 * updatedShop.item.maxStackSize)
 
@@ -409,30 +383,6 @@ object ItemStorageRemoveView : View() {
                     error("Der Shop hat keine Items auf Lager.")
                 }
                 ShopService.unblockShop(updatedShop)
-
-                withContext(plugin.entityDispatcher(player)) {
-                    val emptyShulker = shulkerItem.clone().apply {
-                        amount = 1
-                        val emptyMeta = itemMeta
-                        if (emptyMeta is BlockStateMeta) {
-                            val emptyState = emptyMeta.blockState
-                            if (emptyState is ShulkerBox) {
-                                emptyState.inventory.clear()
-                                emptyMeta.blockState = emptyState
-                                itemMeta = emptyMeta
-                            }
-                        }
-                    }
-                    val leftover = player.inventory.addItem(emptyShulker)
-                    if (leftover.isNotEmpty()) {
-                        leftover.values.forEach { rest ->
-                            val dropped = player.world.dropItem(
-                                player.location, rest
-                            )
-                            dropped.owner = player.uniqueId
-                        }
-                    }
-                }
                 return@launch
             }
 
@@ -441,6 +391,8 @@ object ItemStorageRemoveView : View() {
             )
 
             withContext(plugin.entityDispatcher(player)) {
+                player.setItemOnCursor(null)
+
                 val leftover = player.inventory.addItem(filledShulker)
                 if (leftover.isNotEmpty()) {
                     leftover.values.forEach { rest ->

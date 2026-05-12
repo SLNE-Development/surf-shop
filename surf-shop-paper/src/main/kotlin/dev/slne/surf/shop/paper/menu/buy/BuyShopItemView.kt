@@ -52,12 +52,12 @@ object BuyShopItemView : View() {
                 "O U I C O",
                 "OOOOBOOOO"
             )
-            .cancelOnClick().cancelOnDrop().cancelOnDrag()
+            .cancelOnDrop().cancelOnDrag()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('O', outlineItem)
+        render.layoutSlot('O', outlineItem).onClick { }
         render.layoutSlot('U').renderWith { shulkerSlotItem }.onClick { context ->
             context.playGeneralClickSound()
 
@@ -119,7 +119,7 @@ object BuyShopItemView : View() {
                 context.player.sendText {
                     appendErrorPrefix()
                     error("Dieser Shop ist ausverkauft!")
-                }
+                    }
                 context.player.playNoSound()
                 return@onClick
             }
@@ -128,7 +128,6 @@ object BuyShopItemView : View() {
             val shulkerMax = 27 * maxPerSlot
             val buyAmount = minOf(currentShop.storedItemCount, shulkerMax)
 
-            context.clickOrigin.currentItem = ItemStack.empty()
             context.player.closeInventory()
 
             plugin.launch {
@@ -139,6 +138,8 @@ object BuyShopItemView : View() {
                         val boughtAmount = result.deal.amount
 
                         withContext(plugin.entityDispatcher(context.player)) {
+                            context.player.inventory.removeItem(cursorItem.asQuantity(1))
+
                             val toRemove = currentShop.item.clone().apply {
                                 amount = boughtAmount
                             }
@@ -203,7 +204,6 @@ object BuyShopItemView : View() {
                     }
 
                     Deal.DealResult.InsufficientStock -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Es sind nicht genügend Items auf Lager!")
@@ -214,7 +214,6 @@ object BuyShopItemView : View() {
 
                     Deal.DealResult.OtherInsufficientFounds,
                     Deal.DealResult.SelfInsufficientFounds -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
@@ -224,7 +223,6 @@ object BuyShopItemView : View() {
                     }
 
                     Deal.DealResult.ShopBlocked -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Du kannst derzeit keine Items in diesem Shop kaufen!")
@@ -234,7 +232,6 @@ object BuyShopItemView : View() {
                     }
 
                     Deal.DealResult.ShopDeleted -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Dieser Shop existiert nicht mehr!")
@@ -244,7 +241,6 @@ object BuyShopItemView : View() {
                     }
 
                     Deal.DealResult.TransactionFailed -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
@@ -254,7 +250,6 @@ object BuyShopItemView : View() {
                     }
 
                     Deal.DealResult.PlayerNotFound -> {
-                        returnEmptyShulker(context, cursorItem)
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
@@ -776,24 +771,7 @@ object BuyShopItemView : View() {
 
         meta.blockState = state
         filledShulker.itemMeta = meta
-        return filledShulker
-    }
-
-    private suspend fun returnEmptyShulker(
-        context: me.devnatan.inventoryframework.context.SlotClickContext,
-        shulkerItem: ItemStack
-    ) = withContext(plugin.entityDispatcher(context.player)) {
-        val emptyShulker = ItemStack(shulkerItem.type)
-        val leftover = context.player.inventory.addItem(emptyShulker)
-        if (leftover.isNotEmpty()) {
-            withContext(plugin.regionDispatcher(context.player.location)) {
-                leftover.values.forEach {
-                    context.player.world.dropItem(
-                        context.player.location, it
-                    ).owner = context.player.uniqueId
-                }
-            }
-        }
+return filledShulker
     }
 
     private suspend fun openListView(context: RenderContext) =
