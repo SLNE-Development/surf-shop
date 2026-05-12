@@ -57,7 +57,7 @@ object BuyShopItemView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         render.layoutSlot('O', outlineItem)
-        render.layoutSlot('U', shulkerSlotItem).onClick { context ->
+        render.layoutSlot('U').renderWith { shulkerSlotItem }.onClick { context ->
             context.playGeneralClickSound()
 
             if (!context.player.canUseShopTransactionsFromCurrentView()) {
@@ -101,7 +101,7 @@ object BuyShopItemView : View() {
                     error("Dieser Shop existiert nicht mehr!")
                 }
                 context.player.playNoSound()
-                openListView(render)
+                plugin.launch { openListView(render) }
                 return@onClick
             }
 
@@ -165,9 +165,12 @@ object BuyShopItemView : View() {
                                 }
                             }
 
-                            context.player.playSound(true) {
-                                type(Sound.ENTITY_CHICKEN_EGG)
-                            }
+                            context.player.playSound(
+                                context.player.location,
+                                Sound.ENTITY_CHICKEN_EGG,
+                                1.0f,
+                                1.0f
+                            )
                         }
 
                         context.player.sendText {
@@ -698,7 +701,7 @@ object BuyShopItemView : View() {
         }
     }
 
-    private val shulkerSlotItem = buildItem(Material.SHULKER_BOX) {
+    private val shulkerSlotItem = ItemStack(Material.SHULKER_BOX).apply {
         displayName {
             shopColored("Shulker-Box Kauf", TextDecoration.BOLD)
         }
