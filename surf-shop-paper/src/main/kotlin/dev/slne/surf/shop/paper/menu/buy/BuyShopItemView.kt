@@ -6,6 +6,7 @@ import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
