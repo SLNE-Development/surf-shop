@@ -13,11 +13,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
-import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
-import dev.slne.surf.shop.paper.menu.outlineItem
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.playNoSound
-import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
@@ -43,7 +39,7 @@ object ItemStorageInsertView : View() {
             }
             .size(5)
             .layout("OOOOQOOOO", "OSSSSSSSO", "OSSSSSSSO", "OSSSSSSSO", "OOOOBOOOO")
-            .cancelInteractions()
+            .cancelOnClick().cancelOnDrop().cancelOnDrag()
             .build()
     }
 
