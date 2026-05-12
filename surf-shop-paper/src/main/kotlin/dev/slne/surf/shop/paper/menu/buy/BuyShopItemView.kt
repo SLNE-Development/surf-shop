@@ -165,12 +165,9 @@ object BuyShopItemView : View() {
                                 }
                             }
 
-                            context.player.playSound(
-                                context.player.location,
-                                Sound.ENTITY_CHICKEN_EGG,
-                                1.0f,
-                                1.0f
-                            )
+                            context.player.playSound(true) {
+                                    type(Sound.ENTITY_CHICKEN_EGG)
+                                }
                         }
 
                         context.player.sendText {
