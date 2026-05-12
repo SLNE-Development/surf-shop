@@ -27,7 +27,6 @@ import dev.slne.surf.shop.paper.util.appendBlob
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.IFContext
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.format.TextDecoration
@@ -137,7 +136,7 @@ object ItemStorageRemoveView : View() {
             }
 
             val boxState = meta.blockState as ShulkerBox
-            val contents = boxState.inventory.contents ?: return@onClick
+            val contents = boxState.inventory.contents
             if (contents.any { it != null && !it.type.isAir }) {
                 context.player.sendActionBar(buildText {
                     appendErrorPrefix()
@@ -332,7 +331,7 @@ object ItemStorageRemoveView : View() {
                 if (meta is BlockStateMeta) {
                     val state = meta.blockState
                     if (state is ShulkerBox) {
-                        val contents = state.inventory.contents ?: return
+                        val contents = state.inventory.contents
                         if (contents.any { it != null && !it.type.isAir }) {
                             click.player.sendActionBar(buildText {
                                 appendErrorPrefix()
@@ -351,7 +350,7 @@ object ItemStorageRemoveView : View() {
     }
 
     private fun handleShulkerWithdrawal(
-        context: IFContext,
+        context: SlotClickContext,
         player: Player,
         shulkerType: Material
     ) {
