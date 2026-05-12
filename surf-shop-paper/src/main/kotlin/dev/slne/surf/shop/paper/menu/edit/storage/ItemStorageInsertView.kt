@@ -89,20 +89,17 @@ object ItemStorageInsertView : View() {
                     if (state is ShulkerBox) {
                         val contents = state.inventory.contents ?: return
                         var totalItems = 0
+                        var hasAnyItem = false
 
                         for (slotItem in contents) {
                             if (slotItem == null || slotItem.type.isAir) {
-                                click.player.sendActionBar(buildText {
-                                    appendErrorPrefix()
-                                    error("Die Shulker-Box muss voll sein.")
-                                })
-                                click.player.playNoSound()
-                                return
+                                continue
                             }
+                            hasAnyItem = true
                             if (!slotItem.isSimilar(shop.item)) {
                                 click.player.sendActionBar(buildText {
                                     appendErrorPrefix()
-                                    error("Die Shulker-Box enthält unterschiedliche Item-Typen.")
+                                    error("Die Shulker-Box enthält vom Shop unterschiedliche Item-Typen.")
                                 })
                                 click.player.playNoSound()
                                 return
@@ -110,10 +107,30 @@ object ItemStorageInsertView : View() {
                             totalItems += slotItem.amount
                         }
 
+                        if (!hasAnyItem) {
+                            click.player.sendActionBar(buildText {
+                                appendErrorPrefix()
+                                error("Die Shulker-Box muss mindestens ein Shop Item enthalten.")
+                            })
+                            click.player.playNoSound()
+                            return
+                        }
+
                         click.isCancelled = false
                         click.clickOrigin.currentItem = ItemStack.empty()
 
-                        val emptyShulker = ItemStack(item.type)
+                        val emptyShulker = item.clone().apply {
+                            amount = 1
+                            val emptyMeta = itemMeta
+                            if (emptyMeta is BlockStateMeta) {
+                                val emptyState = emptyMeta.blockState
+                                if (emptyState is ShulkerBox) {
+                                    emptyState.inventory.clear()
+                                    emptyMeta.blockState = emptyState
+                                    itemMeta = emptyMeta
+                                }
+                            }
+                        }
                         val leftover = click.player.inventory.addItem(emptyShulker)
                         if (leftover.isNotEmpty()) {
                             leftover.values.forEach { rest ->
