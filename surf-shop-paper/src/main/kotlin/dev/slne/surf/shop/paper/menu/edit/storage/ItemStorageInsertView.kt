@@ -117,7 +117,6 @@ object ItemStorageInsertView : View() {
                         }
 
                         click.isCancelled = false
-                        click.clickOrigin.currentItem = ItemStack.empty()
 
                         val emptyShulker = item.clone().apply {
                             amount = 1
@@ -138,6 +137,15 @@ object ItemStorageInsertView : View() {
                                     click.player.location, rest
                                 )
                                 dropped.owner = click.player.uniqueId
+                            }
+                        }
+
+                        val topInv = click.player.openInventory.topInventory
+                        for (i in 0 until topInv.size) {
+                            val slotItem = topInv.getItem(i)
+                            if (slotItem != null && slotItem.isSimilar(item)) {
+                                topInv.setItem(i, ItemStack.empty())
+                                break
                             }
                         }
 
