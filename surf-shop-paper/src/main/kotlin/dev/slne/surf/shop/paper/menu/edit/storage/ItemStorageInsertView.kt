@@ -25,7 +25,9 @@ import me.devnatan.inventoryframework.context.SlotClickContext
 import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
+import org.bukkit.block.ShulkerBox
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.BlockStateMeta
 
 object ItemStorageInsertView : View() {
     private val shopState = initialState<Shop>("edit-shop")
@@ -79,6 +81,78 @@ object ItemStorageInsertView : View() {
 
             val item = click.item ?: return
             val shop = localShopState.get(click)
+
+            if (item.type.name.endsWith("SHULKER_BOX")) {
+                val meta = item.itemMeta
+                if (meta is BlockStateMeta) {
+                    val state = meta.blockState
+                    if (state is ShulkerBox) {
+                        val contents = state.inventory.contents ?: return
+                        var totalItems = 0
+
+                        for (slotItem in contents) {
+                            if (slotItem == null || slotItem.type.isAir) {
+                                click.player.sendActionBar(buildText {
+                                    appendErrorPrefix()
+                                    error("Die Shulker-Box muss voll sein.")
+                                })
+                                click.player.playNoSound()
+                                return
+                            }
+                            if (!slotItem.isSimilar(shop.item)) {
+                                click.player.sendActionBar(buildText {
+                                    appendErrorPrefix()
+                                    error("Die Shulker-Box enthält unterschiedliche Item-Typen.")
+                                })
+                                click.player.playNoSound()
+                                return
+                            }
+                            totalItems += slotItem.amount
+                        }
+
+                        click.isCancelled = false
+                        click.clickOrigin.currentItem = ItemStack.empty()
+
+                        val emptyShulker = ItemStack(item.type)
+                        val leftover = click.player.inventory.addItem(emptyShulker)
+                        if (leftover.isNotEmpty()) {
+                            leftover.values.forEach { rest ->
+                                val dropped = click.player.world.dropItem(
+                                    click.player.location, rest
+                                )
+                                dropped.owner = click.player.uniqueId
+                            }
+                        }
+
+                        plugin.launch {
+                            val newShop = shop.copy(
+                                storedItemCount = shop.storedItemCount + totalItems
+                            )
+                            localShopState.set(newShop, click)
+                            ShopService.saveShop(newShop)
+                            itemInsertedState.set(
+                                itemInsertedState.get(click) + totalItems, click
+                            )
+
+                            if (plugin.auxProtectHook) {
+                                AuxProtectHook.logDeposit(click.player, shop, totalItems)
+                            }
+
+                            click.player.sendActionBar(buildText {
+                                appendSuccessPrefix()
+                                success("Du hast ")
+                                variableValue("$totalItems Items")
+                                success(" per Shulker-Box eingelagert.")
+                            })
+
+                            click.player.playSound(true) {
+                                type(Sound.ENTITY_PLAYER_LEVELUP)
+                            }
+                        }
+                        return
+                    }
+                }
+            }
 
             if (!item.isSimilar(shop.item)) {
                 return
