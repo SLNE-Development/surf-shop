@@ -37,7 +37,6 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BlockStateMeta
 import kotlin.math.max
-import kotlin.math.min
 
 object ItemStorageRemoveView : View() {
     private val shopState = initialState<Shop>("edit-shop")
@@ -147,7 +146,7 @@ object ItemStorageRemoveView : View() {
             }
 
             context.clickOrigin.currentItem = ItemStack.empty()
-            handleShulkerWithdrawal(context, context.player, cursorItem.type)
+            handleShulkerWithdrawal(context, context.player, cursorItem)
         }
 
         render.layoutSlot('B', continueItem).onClick { context ->
@@ -342,7 +341,7 @@ object ItemStorageRemoveView : View() {
                         }
 
                         click.clickOrigin.currentItem = ItemStack.empty()
-                        handleShulkerWithdrawal(click, click.player, item.type)
+                        handleShulkerWithdrawal(click, click.player, item)
                     }
                 }
             }
@@ -352,7 +351,7 @@ object ItemStorageRemoveView : View() {
     private fun handleShulkerWithdrawal(
         context: SlotClickContext,
         player: Player,
-        shulkerType: Material
+        shulkerItem: ItemStack
     ) {
         if (!player.canEditShopStorageFromCurrentView()) {
             player.sendText {
@@ -375,6 +374,29 @@ object ItemStorageRemoveView : View() {
                     appendErrorPrefix()
                     error("Der Shop existiert nicht mehr.")
                 }
+                withContext(plugin.entityDispatcher(player)) {
+                    val emptyShulker = shulkerItem.clone().apply {
+                        amount = 1
+                        val emptyMeta = itemMeta
+                        if (emptyMeta is BlockStateMeta) {
+                            val emptyState = emptyMeta.blockState
+                            if (emptyState is ShulkerBox) {
+                                emptyState.inventory.clear()
+                                emptyMeta.blockState = emptyState
+                                itemMeta = emptyMeta
+                            }
+                        }
+                    }
+                    val leftover = player.inventory.addItem(emptyShulker)
+                    if (leftover.isNotEmpty()) {
+                        leftover.values.forEach { rest ->
+                            val dropped = player.world.dropItem(
+                                player.location, rest
+                            )
+                            dropped.owner = player.uniqueId
+                        }
+                    }
+                }
                 ShopService.unblockShop(shop)
                 return@launch
             }
@@ -389,7 +411,18 @@ object ItemStorageRemoveView : View() {
                 ShopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(player)) {
-                    val emptyShulker = ItemStack(shulkerType)
+                    val emptyShulker = shulkerItem.clone().apply {
+                        amount = 1
+                        val emptyMeta = itemMeta
+                        if (emptyMeta is BlockStateMeta) {
+                            val emptyState = emptyMeta.blockState
+                            if (emptyState is ShulkerBox) {
+                                emptyState.inventory.clear()
+                                emptyMeta.blockState = emptyState
+                                itemMeta = emptyMeta
+                            }
+                        }
+                    }
                     val leftover = player.inventory.addItem(emptyShulker)
                     if (leftover.isNotEmpty()) {
                         leftover.values.forEach { rest ->
@@ -403,8 +436,8 @@ object ItemStorageRemoveView : View() {
                 return@launch
             }
 
-            val filledShulker = createFilledShulker(
-                shulkerType, updatedShop.item, toRemove
+            val filledShulker = createFilledShulkerPreservingMeta(
+                shulkerItem, updatedShop.item, toRemove
             )
 
             withContext(plugin.entityDispatcher(player)) {
@@ -464,10 +497,11 @@ object ItemStorageRemoveView : View() {
         }
     }
 
-    private fun createFilledShulker(
-        shulkerType: Material, shopItem: ItemStack, amount: Int
+
+    private fun createFilledShulkerPreservingMeta(
+        originalShulker: ItemStack, shopItem: ItemStack, amount: Int
     ): ItemStack {
-        val filledShulker = ItemStack(shulkerType)
+        val filledShulker = originalShulker.clone().apply { this.amount = 1 }
         val meta = filledShulker.itemMeta as BlockStateMeta
         val state = meta.blockState as ShulkerBox
         val inv = state.inventory
