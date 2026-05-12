@@ -55,7 +55,7 @@ object ItemStorageRemoveView : View() {
                 "O   W   O",
                 "O21 P 34O",
                 "O       O",
-                "UOOOBOOOO"
+                "QOOOBOOOU"
             )
             .cancelOnClick().cancelOnDrop().cancelOnDrag()
             .build()
