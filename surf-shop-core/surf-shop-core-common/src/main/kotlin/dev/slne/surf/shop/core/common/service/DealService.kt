@@ -13,6 +13,8 @@ interface DealService {
 
     suspend fun buyInternal(shop: Shop, amount: Int, buyer: UUID): Deal
     suspend fun buy(playerUuid: UUID, shop: Shop, amount: Int): Deal.DealResult
+    
+    suspend fun buyWithoutDelivery(playerUuid: UUID, shop: Shop, amount: Int): Deal.DealResult
 
     suspend fun fetchDeals()
 

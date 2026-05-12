@@ -57,7 +57,7 @@ object BuyShopItemView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('O', outlineItem).onClick { }
+        render.layoutSlot('O', outlineItem).onClick { _ -> }
         render.layoutSlot('U').renderWith { shulkerSlotItem }.onClick { context ->
             context.playGeneralClickSound()
 
@@ -131,38 +131,32 @@ object BuyShopItemView : View() {
             context.player.closeInventory()
 
             plugin.launch {
-                when (val result = DealService.buy(
+                when (val result = DealService.buyWithoutDelivery(
                     context.player.uniqueId, currentShop, buyAmount
                 )) {
-                    is Deal.DealResult.Success -> {
+                    is Deal.DealResult.SuccessWithItems<*> -> {
                         val boughtAmount = result.deal.amount
+                        @Suppress("UNCHECKED_CAST")
+                        val purchasedItems = result.items as List<ItemStack>
 
                         withContext(plugin.entityDispatcher(context.player)) {
+                            // Remove the empty shulker box from player's inventory
                             context.player.inventory.removeItem(cursorItem.asQuantity(1))
 
-                            val toRemove = currentShop.item.clone().apply {
-                                amount = boughtAmount
-                            }
-                            val notRemoved =
-                                context.player.inventory.removeItem(toRemove)
-                            val removedAmount =
-                                boughtAmount - notRemoved.values.sumOf { it.amount }
-
-                            if (removedAmount > 0) {
-                                val filledShulker = createFilledShulker(
-                                    cursorItem.type, currentShop.item, removedAmount
-                                )
-                                val leftover =
-                                    context.player.inventory.addItem(filledShulker)
-                                if (leftover.isNotEmpty()) {
-                                    withContext(
-                                        plugin.regionDispatcher(context.player.location)
-                                    ) {
-                                        leftover.values.forEach {
-                                            context.player.world.dropItem(
-                                                context.player.location, it
-                                            ).owner = context.player.uniqueId
-                                        }
+                            // Fill the shulker box directly with purchased items (without roundtripping through inventory)
+                            val filledShulker = createFilledShulkerFromItems(
+                                cursorItem.type, purchasedItems
+                            )
+                            
+                            val leftover = context.player.inventory.addItem(filledShulker)
+                            if (leftover.isNotEmpty()) {
+                                withContext(
+                                    plugin.regionDispatcher(context.player.location)
+                                ) {
+                                    leftover.values.forEach {
+                                        context.player.world.dropItem(
+                                            context.player.location, it
+                                        ).owner = context.player.uniqueId
                                     }
                                 }
                             }
@@ -200,6 +194,21 @@ object BuyShopItemView : View() {
                             )
                         }
 
+                        openListView(render)
+                    }
+                    
+                    is Deal.DealResult.Success -> {
+                        // Fallback: should not happen with buyWithoutDelivery, but handle gracefully
+                        context.player.sendText {
+                            appendSuccessPrefix()
+                            success(
+                                "Du hast erfolgreich ${result.deal.amount} Items für ${
+                                    formatPriceNice(
+                                        result.deal.amount * currentShop.pricePerItem
+                                    )
+                                } gekauft!"
+                            )
+                        }
                         openListView(render)
                     }
 
@@ -674,6 +683,15 @@ object BuyShopItemView : View() {
                             context.player.playNoSound()
                             openListView(render)
                         }
+                        
+                        is Deal.DealResult.SuccessWithItems<*> -> {
+                            // This branch should not occur for regular buy(), but handle gracefully
+                            context.player.sendText {
+                                appendSuccessPrefix()
+                                success("Du hast erfolgreich ${result.deal.amount} Items gekauft!")
+                            }
+                            openListView(render)
+                        }
                     }
                 }
             }
@@ -771,7 +789,29 @@ object BuyShopItemView : View() {
 
         meta.blockState = state
         filledShulker.itemMeta = meta
-return filledShulker
+        return filledShulker
+    }
+
+    /**
+     * Creates a filled shulker box directly from the provided item stacks.
+     * This avoids the inventory roundtrip that could affect existing player items.
+     */
+    private fun createFilledShulkerFromItems(
+        shulkerType: Material, items: List<ItemStack>
+    ): ItemStack {
+        val filledShulker = ItemStack(shulkerType)
+        val meta = filledShulker.itemMeta as BlockStateMeta
+        val state = meta.blockState as ShulkerBox
+        val inv = state.inventory
+
+        for ((index, item) in items.withIndex()) {
+            if (index >= 27) break
+            inv.setItem(index, item)
+        }
+
+        meta.blockState = state
+        filledShulker.itemMeta = meta
+        return filledShulker
     }
 
     private suspend fun openListView(context: RenderContext) =
