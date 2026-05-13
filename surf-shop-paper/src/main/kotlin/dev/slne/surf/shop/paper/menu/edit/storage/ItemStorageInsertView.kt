@@ -67,49 +67,59 @@ object ItemStorageInsertView : View() {
     }
 
     override fun onClick(click: SlotClickContext) {
-        if (click.clickedContainer.isEntityContainer) {
-            if (!click.player.canEditShopStorageFromCurrentView()) {
-                click.player.sendText {
-                    appendErrorPrefix()
-                    error("Das Lager kannst du nur am Spawn bearbeiten.")
-                }
-                click.player.playNoSound()
-                return
+        if (!click.clickedContainer.isEntityContainer) {
+            return
+        }
+
+        if (!click.player.canEditShopStorageFromCurrentView()) {
+            click.player.sendText {
+                appendErrorPrefix()
+                error("Das Lager kannst du nur am Spawn bearbeiten.")
+            }
+            click.player.playNoSound()
+            return
+        }
+
+        val item = click.item ?: return
+        val shop = localShopState.get(click)
+
+        if (!item.isSimilar(shop.item)) {
+            return
+        }
+
+        click.isCancelled = false
+        click.clickOrigin.currentItem = ItemStack.empty()
+
+        plugin.launch {
+            val amount = item.amount
+
+            val currentShop = localShopState.get(click)
+            val newShop = currentShop.copy(
+                storedItemCount = currentShop.storedItemCount + amount
+            )
+
+            localShopState.set(newShop, click)
+
+            ShopService.saveShop(newShop)
+
+            itemInsertedState.set(
+                itemInsertedState.get(click) + amount,
+                click
+            )
+
+            if (plugin.auxProtectHook) {
+                AuxProtectHook.logDeposit(click.player, currentShop, amount)
             }
 
-            val item = click.item ?: return
-            val shop = localShopState.get(click)
+            click.player.sendActionBar(buildText {
+                appendSuccessPrefix()
+                success("Du hast ")
+                variableValue("$amount Items")
+                success(" eingelagert.")
+            })
 
-            if (!item.isSimilar(shop.item)) {
-                return
-            }
-
-            click.isCancelled = false
-            click.clickOrigin.currentItem = ItemStack.empty()
-
-            plugin.launch {
-                val amount = item.amount
-                val newShop =
-                    shop.copy(storedItemCount = shop.storedItemCount + amount)
-                localShopState.set(newShop, click)
-
-                ShopService.saveShop(newShop)
-                itemInsertedState.set(itemInsertedState.get(click) + amount, click)
-
-                if (plugin.auxProtectHook) {
-                    AuxProtectHook.logDeposit(click.player, shop, amount)
-                }
-
-                click.player.sendActionBar(buildText {
-                    appendSuccessPrefix()
-                    success("Du hast ")
-                    variableValue("$amount Items")
-                    success(" eingelagert.")
-                })
-
-                click.player.playSound(true) {
-                    type(Sound.ENTITY_PLAYER_LEVELUP)
-                }
+            click.player.playSound(true) {
+                type(Sound.ENTITY_PLAYER_LEVELUP)
             }
         }
     }
