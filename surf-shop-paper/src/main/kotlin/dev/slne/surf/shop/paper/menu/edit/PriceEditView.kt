@@ -26,8 +26,8 @@ import kotlin.math.max
 
 object PriceEditView : View() {
     private val shopState = initialState<Shop>("edit-shop")
-    private val priceState: State<Int> = initialState("edit-price")
-    private val localPriceState = mutableState(0)
+    private val priceState: State<Double> = initialState("edit-price")
+    private val localPriceState = mutableState(0.01)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -70,7 +70,7 @@ object PriceEditView : View() {
         }
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 1), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 1), render)
             context.update()
 
             context.player.playSound(true) {
@@ -79,7 +79,7 @@ object PriceEditView : View() {
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 50), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 50), render)
             context.update()
 
             context.player.playSound(true) {

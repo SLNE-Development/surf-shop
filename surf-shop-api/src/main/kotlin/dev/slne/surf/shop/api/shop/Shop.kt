@@ -13,7 +13,7 @@ data class Shop(
     val shopUuid: SerializableUUID,
     val itemString: String,
     val storedItemCount: Int,
-    val pricePerItem: Int,
+    val pricePerItem: Double,
     val seller: SerializableUUID,
     val createdAt: SerializableOffsetDateTime,
 ) {
@@ -30,7 +30,7 @@ data class Shop(
             shopUuid = UUID.randomUUID(),
             itemString = "",
             storedItemCount = 0,
-            pricePerItem = 0,
+            pricePerItem = 0.0,
             seller = UUID.randomUUID(),
             createdAt = OffsetDateTime.MIN
         )

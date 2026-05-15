@@ -3,8 +3,8 @@ package dev.slne.surf.shop.paper.menu
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
-import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
 import dev.slne.surf.api.core.util.dateTimeFormatter
 import dev.slne.surf.api.paper.builder.buildItem
@@ -566,11 +566,11 @@ fun createShopItem(
 
                 newEntries.add(buildText {
                     appendBlob()
-                    spacer("Drücke ".toSmallCaps())
-                    white("SHIFT".toSmallCaps())
+                    error("Drücke ".toSmallCaps())
+                    white("Shift")
                     spacer(" + ")
                     displayKey("key.mouse.left")
-                    spacer(" um den Shop zu löschen.".toSmallCaps())
+                    error(" um den Shop zu löschen.".toSmallCaps())
                 })
             } else {
                 newEntries.add(buildText {

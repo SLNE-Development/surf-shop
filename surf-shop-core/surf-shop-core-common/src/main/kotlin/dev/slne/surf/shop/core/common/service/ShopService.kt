@@ -13,7 +13,7 @@ interface ShopService {
     suspend fun createShop(
         itemString: String,
         storedItemCount: Int,
-        pricePerItem: Int,
+        pricePerItem: Double,
         seller: UUID
     ): Shop
 

@@ -36,7 +36,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     override suspend fun createShop(
         itemString: String,
         storedItemCount: Int,
-        pricePerItem: Int,
+        pricePerItem: Double,
         seller: UUID
     ): Shop {
 

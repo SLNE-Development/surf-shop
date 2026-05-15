@@ -1,5 +1,7 @@
 package dev.slne.surf.shop.paper.dialog.edit
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.messages.adventure.appendNewline
 import dev.slne.surf.api.paper.dialog.base
@@ -10,6 +12,7 @@ import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.plugin
 
 @Suppress("UnstableApiUsage")
 fun createEditSpecificRemoveAmountPriceDialog(
@@ -61,14 +64,17 @@ fun createEditSpecificRemoveAmountPriceDialog(
                     customPlayerClick { response, player ->
                         val amount = response.getText("amount")?.trim()?.toIntOrNull() ?: 0
 
-                        player.closeDialog()
 
-                        viewFrame.open(
-                            ItemStorageRemoveView::class.java, player, ImmutableMap.of(
-                                "edit-shop", shop,
-                                "edit-amount", amount
+                        plugin.launch(plugin.entityDispatcher(player)) {
+                            player.closeDialog()
+
+                            viewFrame.open(
+                                ItemStorageRemoveView::class.java, player, ImmutableMap.of(
+                                    "edit-shop", shop,
+                                    "edit-amount", amount
+                                )
                             )
-                        )
+                        }
                     }
                 }
             })

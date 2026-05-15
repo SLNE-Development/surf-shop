@@ -169,10 +169,10 @@ class DealServiceImpl : DealService, Services.Fallback {
                 }
 
                 TransactionUser[shop.seller].withdraw(
-                    (shop.pricePerItem * amount * taxRate).toBigDecimal(),
+                    (shop.pricePerItem * amount * taxRate).toBigDecimal().setScale(2),
                     Currency.default(),
                     false,
-                    TransactionData.of("reason", "shop-tax")
+                    TransactionData.of("reason", "shop-tax (${taxRate * 100}%)")
                 )
 
                 return Deal.DealResult.Success(deal)
