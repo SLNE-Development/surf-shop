@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class CreateShopRequestPacket(
     val itemString: String,
     val storedItemCount: Int,
-    val pricePerItem: Int,
+    val pricePerItem: Double,
     val seller: SerializableUUID,
     val createdAt: SerializableOffsetDateTime
 ) : RabbitRequestPacket<SingleShopResponsePacket>()

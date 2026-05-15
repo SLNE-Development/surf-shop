@@ -28,6 +28,7 @@ import net.kyori.adventure.util.Services
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.math.RoundingMode
 import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -169,10 +170,11 @@ class DealServiceImpl : DealService, Services.Fallback {
                 }
 
                 TransactionUser[shop.seller].withdraw(
-                    (shop.pricePerItem * amount * taxRate).toBigDecimal(),
+                    (shop.pricePerItem * amount * taxRate).toBigDecimal()
+                        .setScale(2, RoundingMode.HALF_DOWN),
                     Currency.default(),
                     false,
-                    TransactionData.of("reason", "shop-tax")
+                    TransactionData.of("reason", "shop-tax (${taxRate * 100}%)")
                 )
 
                 return Deal.DealResult.Success(deal)

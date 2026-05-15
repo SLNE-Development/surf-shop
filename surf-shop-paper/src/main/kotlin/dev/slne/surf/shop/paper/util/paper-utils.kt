@@ -21,7 +21,7 @@ fun SurfComponentBuilder.displayKey(key: String) =
 
 fun SurfComponentBuilder.translatable(key: String) = append(Component.translatable(key))
 
-fun formatPriceNice(price: Int): String = castCoinFormat.format(price)
+fun formatPriceNice(price: Double): String = castCoinFormat.format(price)
 
 val castCoinFormat = DecimalFormat("#,##0.## ¤", DecimalFormatSymbols(Locale.GERMANY).apply {
     decimalSeparator = ','

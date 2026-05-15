@@ -1,20 +1,25 @@
 package dev.slne.surf.shop.paper.dialog.create
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.messages.adventure.appendNewline
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.dialog.base
 import dev.slne.surf.api.paper.dialog.builder.actionButton
 import dev.slne.surf.api.paper.dialog.dialog
 import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.plugin
 import org.bukkit.inventory.ItemStack
 
 @Suppress("UnstableApiUsage")
 fun createSpecificPriceDialog(
     itemStack: ItemStack,
-    initialPrice: Int
+    initialPrice: Double
 ) = dialog {
     base {
         title { shopColored("Item Preis auswählen") }
@@ -23,7 +28,7 @@ fun createSpecificPriceDialog(
                 info("Hier kannst du einen Preis für das Item festlegen, welches du verkaufen möchtest.")
                 appendNewline(2)
                 appendWarningPrefix()
-                error("Bitte beachte, das der Preis nicht kleiner als 1 sein darf. Beachte außerdem, dass der Preis pro Item gilt, nicht für den gesamten Stapel.")
+                error("Bitte beachte, das der Preis nicht kleiner als 0.01 sein darf. Beachte außerdem, dass der Preis pro Item gilt, nicht für den gesamten Stapel.")
             }
 
             input {
@@ -60,16 +65,27 @@ fun createSpecificPriceDialog(
 
                 action {
                     customPlayerClick { response, player ->
-                        val price = response.getText("price")?.trim()?.toIntOrNull() ?: 0
+                        val price = response.getText("price")?.trim()?.toDoubleOrNull() ?: 0.01
 
-                        player.closeDialog()
+                        if (price < 0.01) {
+                            player.sendText {
+                                appendErrorPrefix()
+                                error("Der Preis muss mindestens 0.01 sein.")
+                            }
+                            player.playNoSound()
+                            return@customPlayerClick
+                        }
 
-                        viewFrame.open(
-                            CreateShopView::class.java, player, ImmutableMap.of(
-                                "create-item", itemStack,
-                                "create-price", price
+                        plugin.launch(plugin.entityDispatcher(player)) {
+                            player.closeDialog()
+
+                            viewFrame.open(
+                                CreateShopView::class.java, player, ImmutableMap.of(
+                                    "create-item", itemStack,
+                                    "create-price", price
+                                )
                             )
-                        )
+                        }
                     }
                 }
             })
