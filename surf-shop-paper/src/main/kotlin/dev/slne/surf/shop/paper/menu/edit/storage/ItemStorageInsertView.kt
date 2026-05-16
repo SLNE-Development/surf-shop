@@ -120,11 +120,8 @@ object ItemStorageInsertView : View() {
                 success(" eingelagert.")
             })
 
-                if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(click.player.uniqueId)) {
-                    click.player.playSound(true) {
-                        type(Sound.ENTITY_PLAYER_LEVELUP)
-                    }
-                }
+            click.player.playSound(true) {
+                type(Sound.ENTITY_PLAYER_LEVELUP)
             }
         }
     }

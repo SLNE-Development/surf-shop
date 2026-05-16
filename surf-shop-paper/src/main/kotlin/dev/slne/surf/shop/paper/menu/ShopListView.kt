@@ -25,6 +25,8 @@ import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.settings.SettingsShopView
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.settings.SettingsHook
+import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.*
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
