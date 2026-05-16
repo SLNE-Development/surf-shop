@@ -27,7 +27,7 @@ class ShopRepository {
     suspend fun createShop(
         itemString: String,
         storedItemCount: Int,
-        pricePerItem: Int,
+        pricePerItem: Double,
         seller: UUID,
         createdAt: OffsetDateTime
     ): Shop = suspendTransaction {

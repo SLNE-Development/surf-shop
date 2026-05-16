@@ -20,6 +20,7 @@ import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
+import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.View
@@ -45,6 +46,8 @@ object EditShopView : View() {
     }
 
     override fun onFirstRender(render: RenderContext) {
+        val canEditStorage = render.player.canEditShopStorageFromCurrentView()
+
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('P', pricePerItemItem.clone().apply {
             if (shopState.get(render).pricePerItem > 0) {
@@ -67,11 +70,22 @@ object EditShopView : View() {
             }
         }).onClick { context ->
             context.playGeneralClickSound()
+
+            val shop = shopState.get(render)
+            if (!context.player.canEditShopPrice(shop)) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst den Preis dieses Shops nicht bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             context.openForPlayer(
                 PriceEditView::class.java,
                 ImmutableMap.of(
-                    "edit-shop", shopState.get(render),
-                    "edit-price", shopState.get(render).pricePerItem
+                    "edit-shop", shop,
+                    "edit-price", shop.pricePerItem
                 )
             )
         }
@@ -80,9 +94,23 @@ object EditShopView : View() {
             amount = 1
         })
 
-        render.layoutSlot('F', storageItem(shopState.get(render).storedItemCount))
+        render.layoutSlot(
+            'F',
+            if (canEditStorage) storageItem(shopState.get(render).storedItemCount) else lockedStorageItem(
+                shopState.get(render).storedItemCount
+            )
+        )
             .onClick { context ->
                 context.playGeneralClickSound()
+                if (!context.player.canEditShopStorageFromCurrentView()) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Das Lager kannst du nur am Spawn bearbeiten.")
+                    }
+                    context.player.playNoSound()
+                    return@onClick
+                }
+
                 context.openForPlayer(
                     ItemStorageView::class.java,
                     ImmutableMap.of(
@@ -96,6 +124,15 @@ object EditShopView : View() {
 
             val shop = shopState.get(context)
             val price = shop.pricePerItem
+
+            if (!context.player.canEditShopPrice(shop)) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst diesen Shop nicht bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
 
             if (price <= 0) {
                 context.player.sendText {
@@ -207,6 +244,31 @@ object EditShopView : View() {
                 } else {
                     variableValue("$amount Items")
                 }
+            }
+        }
+    }
+
+    private fun lockedStorageItem(amount: Int) = buildItem(Material.BARRIER) {
+        displayName {
+            shopColored("Item Lager")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                shopColored("Auf Lager: ")
+
+                if (amount <= 0) {
+                    error("Ausverkauft")
+                } else {
+                    variableValue("$amount Items")
+                }
+            }
+
+            emptyLine()
+            line {
+                appendBlob()
+                spacer("Das Lager kannst du nur am Spawn bearbeiten.".toSmallCaps())
             }
         }
     }

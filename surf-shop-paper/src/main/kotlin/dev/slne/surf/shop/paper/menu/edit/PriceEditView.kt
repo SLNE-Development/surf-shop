@@ -3,12 +3,15 @@ package dev.slne.surf.shop.paper.menu.edit
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
+import dev.slne.surf.shop.paper.menu.canEditShopPrice
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
+import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.settings.SettingsHook
 import dev.slne.surf.shop.paper.settings.hasSettingsApi
@@ -25,8 +28,8 @@ import kotlin.math.max
 
 object PriceEditView : View() {
     private val shopState = initialState<Shop>("edit-shop")
-    private val priceState: State<Int> = initialState("edit-price")
-    private val localPriceState = mutableState(0)
+    private val priceState: State<Double> = initialState("edit-price")
+    private val localPriceState = mutableState(0.01)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -51,6 +54,15 @@ object PriceEditView : View() {
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
+            if (!context.player.canEditShopPrice(shopState.get(render))) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst den Preis dieses Shops nicht bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificPriceDialog(
@@ -60,7 +72,7 @@ object PriceEditView : View() {
         }
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 1), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 1), render)
             context.update()
 
             if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
@@ -71,7 +83,7 @@ object PriceEditView : View() {
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 50), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 50), render)
             context.update()
 
             if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
@@ -105,6 +117,15 @@ object PriceEditView : View() {
 
         render.layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
+            if (!context.player.canEditShopPrice(shopState.get(render))) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst den Preis dieses Shops nicht bearbeiten.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
+
             context.openForPlayer(
                 EditShopView::class.java,
                 ImmutableMap.of(

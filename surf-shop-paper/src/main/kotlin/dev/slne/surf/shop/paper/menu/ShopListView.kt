@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
 import dev.slne.surf.api.core.util.dateTimeFormatter
 import dev.slne.surf.api.paper.builder.buildItem
@@ -24,8 +25,6 @@ import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.menu.settings.SettingsShopView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.settings.SettingsHook
-import dev.slne.surf.shop.paper.settings.hasSettingsApi
 import dev.slne.surf.shop.paper.util.*
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -39,7 +38,6 @@ import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
-import kotlin.jvm.java
 
 object ShopListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
@@ -53,6 +51,28 @@ object ShopListView : View() {
     private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
         displayName {
             shopColored("Shop erstellen")
+        }
+    }
+
+    private val viewOnlyItem = buildItem(Material.SPYGLASS) {
+        displayName {
+            shopColored("Ansichtsmodus")
+        }
+
+        buildLore {
+            emptyLine()
+            line {
+                appendBlob()
+                spacer("Du kannst Shops hier ansehen und durchsuchen.".toSmallCaps())
+            }
+            line {
+                appendBlob()
+                spacer("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.".toSmallCaps())
+            }
+            line {
+                appendBlob()
+                spacer("Eigene Shops kannst du hier im Preis anpassen.".toSmallCaps())
+            }
         }
     }
 
@@ -119,7 +139,11 @@ object ShopListView : View() {
             emptyLine()
             line {
                 appendBlob()
-                spacer("Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps())
+                if (context.player.canUseFullShopView()) {
+                    spacer("Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps())
+                } else {
+                    spacer("Hier kannst du eigene Shops ansehen und Preise anpassen.".toSmallCaps())
+                }
             }
             line {
                 appendBlob()
@@ -255,8 +279,32 @@ object ShopListView : View() {
             searchInputCache[context.player.uniqueId]
         ).toMutableList()
     }.elementFactory { context, builder, _, shop ->
-        builder.withItem(createShopItem(shop, context.player.uniqueId)).onClick { context ->
+        builder.withItem(
+            createShopItem(
+                shop,
+                context.player.uniqueId,
+                viewOnly = !context.player.canUseFullShopView()
+            )
+        ).onClick { context ->
             context.playGeneralClickSound()
+
+            if (!context.player.canUseFullShopView()) {
+                if (shop.seller == context.player.uniqueId) {
+                    context.openForPlayer(
+                        EditShopView::class.java,
+                        ImmutableMap.of(
+                            "edit-shop",
+                            shop
+                        )
+                    )
+                } else {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
+                    }
+                }
+                return@onClick
+            }
 
             if (shop.seller == context.player.uniqueId) {
                 if (context.isShiftLeftClick) {
@@ -350,22 +398,32 @@ object ShopListView : View() {
                 )
             )
         }
+        if (render.player.canUseFullShopView()) {
+            render.layoutSlot('C', createItem).onClick { context ->
+                context.playGeneralClickSound()
+                context.openForPlayer(
+                    CreateShopView::class.java,
+                    ImmutableMap.of(
+                        "create-item",
+                        ItemStack.empty(),
+                        "create-price",
+                        0
+                    )
+                )
+            }
+        } else {
+            render.layoutSlot('C', viewOnlyItem).onClick { context ->
+                context.playGeneralClickSound()
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.")
+                }
+            }
+        }
         render.layoutSlot('Q', settingsItem()).onClick { context ->
             context.playGeneralClickSound()
 
             context.openForPlayer(SettingsShopView::class.java)
-        }
-        render.layoutSlot('C', createItem).onClick { context ->
-            context.playGeneralClickSound()
-            context.openForPlayer(
-                CreateShopView::class.java,
-                ImmutableMap.of(
-                    "create-item",
-                    ItemStack.empty(),
-                    "create-price",
-                    0
-                )
-            )
         }
         render
             .layoutSlot('P')
@@ -413,7 +471,12 @@ object ShopListView : View() {
     }
 }
 
-fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.item.clone().apply {
+fun createShopItem(
+    shop: Shop,
+    viewer: UUID,
+    shopChest: Boolean = false,
+    viewOnly: Boolean = false
+) = shop.item.clone().apply {
     amount = 1
 
     val oldLore = lore()?.toMutableList() ?: mutableListOf()
@@ -483,25 +546,49 @@ fun createShopItem(shop: Shop, viewer: UUID, shopChest: Boolean = false) = shop.
     newEntries.add(Component.empty())
 
     if (!shopChest) {
-        if (shop.seller == viewer) {
-            newEntries.add(buildText {
-                appendBlob()
-                spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps())
-            })
+        if (viewOnly) {
+            if (shop.seller == viewer) {
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Klicke, um den Preis zu bearbeiten.".toSmallCaps())
+                })
 
-            newEntries.add(buildText {
-                appendBlob()
-                spacer("Drücke ".toSmallCaps())
-                white("SHIFT".toSmallCaps())
-                spacer(" + ")
-                displayKey("key.mouse.left")
-                spacer(" um den Shop zu löschen.".toSmallCaps())
-            })
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Zum Bearbeiten des Lagers oder Löschen des Shops musst du zum Spawn.".toSmallCaps())
+                })
+            } else {
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Dieser Shop ist hier nur zur Ansicht.".toSmallCaps())
+                })
+
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Zum Kaufen musst du zum Spawn.".toSmallCaps())
+                })
+            }
         } else {
-            newEntries.add(buildText {
-                appendBlob()
-                spacer("Klicke, um Items zu kaufen.".toSmallCaps())
-            })
+            if (shop.seller == viewer) {
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Klicke, um den Shop zu bearbeiten.".toSmallCaps())
+                })
+
+                newEntries.add(buildText {
+                    appendBlob()
+                    error("Drücke ".toSmallCaps())
+                    white("Shift")
+                    spacer(" + ")
+                    displayKey("key.mouse.left")
+                    error(" um den Shop zu löschen.".toSmallCaps())
+                })
+            } else {
+                newEntries.add(buildText {
+                    appendBlob()
+                    spacer("Klicke, um Items zu kaufen.".toSmallCaps())
+                })
+            }
         }
         newEntries.add(Component.empty())
     } else {
@@ -599,4 +686,3 @@ private fun getLoadedShopsSortedFiltered(
 
 fun SurfComponentBuilder.shopColored(text: Any, vararg decoration: TextDecoration) =
     coloredComponent(text.toString(), TextColor.color(252, 233, 121), *decoration)
-

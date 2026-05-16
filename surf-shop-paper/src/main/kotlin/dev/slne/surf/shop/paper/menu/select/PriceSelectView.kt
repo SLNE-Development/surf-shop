@@ -26,8 +26,8 @@ import kotlin.math.max
 
 object PriceSelectView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Int> = initialState("create-price")
-    private val localPriceState = mutableState(0)
+    private val priceState: State<Double> = initialState("create-price")
+    private val localPriceState = mutableState(0.01)
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -62,7 +62,7 @@ object PriceSelectView : View() {
         }
 
         render.layoutSlot('1', minusOne).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 1), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 1), render)
             context.update()
 
             if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {
@@ -73,7 +73,7 @@ object PriceSelectView : View() {
         }
 
         render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localPriceState.set(max(0, localPriceState.get(render) - 50), render)
+            localPriceState.set(max(0.01, localPriceState.get(render) - 50), render)
             context.update()
 
             if (!hasSettingsApi() || SettingsHook.hasShopSoundsEnabled(context.player.uniqueId)) {

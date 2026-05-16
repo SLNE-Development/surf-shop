@@ -7,7 +7,9 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import org.bukkit.Bukkit
+import org.bukkit.block.ShulkerBox
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.BlockStateMeta
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import java.util.*
 import kotlin.time.Duration.Companion.hours
@@ -47,6 +49,29 @@ fun Shop.rebuildSearchTokens() {
         if (meta is EnchantmentStorageMeta) {
             meta.storedEnchants.keys.forEach {
                 add(it.key.toString().lowercase())
+            }
+        }
+
+        if (meta is BlockStateMeta) {
+            val blockState = meta.blockState
+
+            if (blockState is ShulkerBox) {
+                blockState.inventory.contents.filterNotNull().forEach {
+                    if (it.type.isAir()) return@forEach
+                    add(it.type.name.lowercase())
+                    
+                    it.enchantments.keys.forEach { enchant ->
+                        add(enchant.key.toString().lowercase())
+                    }
+
+                    val meta = it.itemMeta ?: return@forEach
+
+                    if (meta is EnchantmentStorageMeta) {
+                        meta.storedEnchants.keys.forEach { enchant ->
+                            add(enchant.key.toString().lowercase())
+                        }
+                    }
+                }
             }
         }
     }

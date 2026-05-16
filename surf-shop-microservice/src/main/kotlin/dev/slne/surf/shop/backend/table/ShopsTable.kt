@@ -8,7 +8,7 @@ object ShopsTable : ULongIdTable("shop_shops") {
     val shopUuid = nativeUuid("shop_uuid").uniqueIndex()
     val item = largeText("item_stack")
     val storedItemCount = integer("item_count")
-    val pricePerItem = integer("price_per_item")
+    val pricePerItem = double("price_per_item")
     val seller = nativeUuid("seller")
     val createdAt = offsetDateTime("created_at")
 }

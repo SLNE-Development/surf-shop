@@ -38,7 +38,7 @@ import org.bukkit.inventory.ItemStack
 
 object CreateShopView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Int> = initialState("create-price")
+    private val priceState: State<Double> = initialState("create-price")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -107,6 +107,15 @@ object CreateShopView : View() {
 
         render.layoutSlot('C', createItem(render)).onClick { context ->
             context.playGeneralClickSound()
+
+            if (!context.player.canCreateShopFromCurrentView()) {
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Shops kannst du nur am Spawn erstellen.")
+                }
+                context.player.playNoSound()
+                return@onClick
+            }
 
             val item = itemState.get(context)
             val price = priceState.get(context)

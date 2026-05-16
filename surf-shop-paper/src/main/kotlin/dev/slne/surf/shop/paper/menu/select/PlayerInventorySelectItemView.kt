@@ -29,10 +29,10 @@ private val blacklistedItems = objectListOf(
 )
 
 object PlayerInventorySelectItemView : View() {
-    private val priceState: State<Int> = initialState("create-price")
+    private val priceState: State<Double> = initialState("create-price")
     private val itemState = initialState<ItemStack>("create-item")
 
-    private val paginationState = buildComputedPaginationState<ItemStack> { context ->
+    private val paginationState = buildComputedPaginationState { context ->
         context.player.inventory.storageContents.filterNotNull().toMutableList()
     }.itemFactory { builder, item ->
         builder.withItem(item).onClick { context ->
