@@ -18,7 +18,7 @@ fun searchShopItemDialog(initial: String) = searchDialog(
     },
     body = {
         plainMessage {
-            shopColored("Gib den Namen eines Items ein, um nach Shops zu suchen. Suche nach Verzauberungsnamen (z.b. \"Mending\" oder \"Soulbound\"), Potion-Effekten (z.b. \"fire_resistance\") oder nutze @Spielername um nach einem Verkäufer zu suchen.")
+            shopColored("Gib den Namen eines Items ein, um nach Shops zu suchen. Suche nach Verzauberungsnamen (z.b. \"Mending\" oder \"Soulbound\"), Potion-Effekten (z.b. \"Fire Resistence\") oder nutze @Spielername um nach einem Verkäufer zu suchen.")
         }
     },
     onSearch = { player, query ->

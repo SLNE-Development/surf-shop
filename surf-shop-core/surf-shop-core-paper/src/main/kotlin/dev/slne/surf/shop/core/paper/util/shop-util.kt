@@ -41,10 +41,10 @@ private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
     val meta = itemStack.itemMeta as? PotionMeta ?: return
 
     meta.basePotionType?.let {
-        add(it.key.key.lowercase())
+        add(it.key.key.lowercase().replace(" ", "_"))
     }
     meta.customEffects.forEach { effect ->
-        add(effect.type.key.key.lowercase())
+        add(effect.type.key.key.lowercase().replace(" ", "_"))
     }
 }
 
