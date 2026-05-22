@@ -11,6 +11,7 @@ import org.bukkit.block.ShulkerBox
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BlockStateMeta
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
+import org.bukkit.inventory.meta.PotionMeta
 import java.util.*
 import kotlin.time.Duration.Companion.hours
 
@@ -36,9 +37,23 @@ val Shop.item: ItemStack
 
 val Deal.boughtByName get() = nameCache.get(boughtBy)
 
+private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
+    val meta = itemStack.itemMeta as? PotionMeta ?: return
+
+    meta.basePotionType?.let {
+        add(it.key.key.lowercase())
+    }
+    meta.customEffects.forEach { effect ->
+        add(effect.type.key.key.lowercase())
+    }
+}
+
 fun Shop.rebuildSearchTokens() {
     searchableTokens = buildSet {
         add(item.type.name.lowercase())
+
+        // Add potion effect tokens
+        addPotionTokens(item)
 
         item.enchantments.keys.forEach {
             add(it.key.toString().lowercase())
@@ -60,6 +75,9 @@ fun Shop.rebuildSearchTokens() {
                     if (it.type.isAir()) return@forEach
                     add(it.type.name.lowercase())
                     
+                    // Add potion effect tokens for items in shulker box
+                    addPotionTokens(it)
+
                     it.enchantments.keys.forEach { enchant ->
                         add(enchant.key.toString().lowercase())
                     }
