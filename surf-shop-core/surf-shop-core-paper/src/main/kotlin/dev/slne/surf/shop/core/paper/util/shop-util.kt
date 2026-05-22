@@ -52,7 +52,6 @@ fun Shop.rebuildSearchTokens() {
     searchableTokens = buildSet {
         add(item.type.name.lowercase())
 
-        // Add potion effect tokens
         addPotionTokens(item)
 
         item.enchantments.keys.forEach {
@@ -74,8 +73,7 @@ fun Shop.rebuildSearchTokens() {
                 blockState.inventory.contents.filterNotNull().forEach {
                     if (it.type.isAir()) return@forEach
                     add(it.type.name.lowercase())
-                    
-                    // Add potion effect tokens for items in shulker box
+
                     addPotionTokens(it)
 
                     it.enchantments.keys.forEach { enchant ->
