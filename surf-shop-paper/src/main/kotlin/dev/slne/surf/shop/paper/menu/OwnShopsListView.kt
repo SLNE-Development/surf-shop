@@ -289,7 +289,7 @@ object OwnShopsListView : View() {
                 "ORRRRRRRO",
                 "ORRRRRRRO",
                 "ORRRRRRRO",
-                "WUOPCNOAS"
+                "UAOPCNOWS"
             )
             .cancelInteractions()
     }
