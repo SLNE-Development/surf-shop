@@ -18,11 +18,19 @@ val View.outlineItem: ItemStack
         }
     }
 
+val View.loadingItem
+    get() = buildItem(Material.YELLOW_STAINED_GLASS_PANE) {
+        displayName {
+            shopColored("Lädt...")
+        }
+    }
+
 fun Player.playNoSound() = this.playSound(true) {
     type(Sound.ENTITY_VILLAGER_NO)
 }
 
-fun Player.hasFullShopCommandView() = hasPermission(PermissionRegistry.SHOP_COMMAND_VIEW_ONLY_BYPASS)
+fun Player.hasFullShopCommandView() =
+    hasPermission(PermissionRegistry.SHOP_COMMAND_VIEW_ONLY_BYPASS)
 
 fun Player.canUseFullShopView() = hasFullShopCommandView() || NpcShopState.isInNpcShop(uniqueId)
 

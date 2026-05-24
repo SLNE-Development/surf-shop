@@ -37,6 +37,7 @@ import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 object ShopListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
@@ -267,11 +268,13 @@ object ShopListView : View() {
         }
     }
 
-    private val paginationState = buildLazyPaginationState { context ->
-        getLoadedShopsSortedFiltered(
-            plugin.getSorting(context.player.uniqueId),
-            searchInputCache[context.player.uniqueId]
-        ).toMutableList()
+    private val paginationState = buildLazyAsyncPaginationState { context ->
+        CompletableFuture.supplyAsync {
+            getLoadedShopsSortedFiltered(
+                plugin.getSorting(context.player.uniqueId),
+                searchInputCache[context.player.uniqueId]
+            ).toMutableList()
+        }
     }.elementFactory { context, builder, _, shop ->
         builder.withItem(
             createShopItem(
@@ -350,6 +353,10 @@ object ShopListView : View() {
     override fun onFirstRender(render: RenderContext) {
         selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
         val pagination = paginationState.get(render)
+
+        render.availableSlot(loadingItem)
+            .displayIf(pagination::isLoading)
+            .updateOnStateChange(paginationState)
 
         render
             .layoutSlot('S')

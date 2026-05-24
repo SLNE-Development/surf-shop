@@ -31,6 +31,7 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 object OwnShopsListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
@@ -213,12 +214,14 @@ object OwnShopsListView : View() {
         }
     }
 
-    private val paginationState = buildLazyPaginationState { context ->
-        getLoadedShopsSortedFiltered(
-            context.player.uniqueId,
-            plugin.getSorting(context.player.uniqueId),
-            searchInputCache[context.player.uniqueId]
-        ).toMutableList()
+    private val paginationState = buildLazyAsyncPaginationState { context ->
+        CompletableFuture.supplyAsync {
+            getLoadedShopsSortedFiltered(
+                context.player.uniqueId,
+                plugin.getSorting(context.player.uniqueId),
+                searchInputCache[context.player.uniqueId]
+            ).toMutableList()
+        }
     }.elementFactory { context, builder, _, shop ->
         builder.withItem(
             createShopItem(
@@ -297,6 +300,10 @@ object OwnShopsListView : View() {
     override fun onFirstRender(render: RenderContext) {
         selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
         val pagination = paginationState.get(render)
+
+        render.availableSlot(loadingItem)
+            .displayIf(pagination::isLoading)
+            .updateOnStateChange(paginationState)
 
         render
             .layoutSlot('S')
