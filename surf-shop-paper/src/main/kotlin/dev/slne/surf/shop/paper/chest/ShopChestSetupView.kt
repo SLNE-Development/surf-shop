@@ -56,7 +56,7 @@ object ShopChestSetupView : View() {
                 CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item", ItemStack.empty(),
-                    "create-price", 0
+                    "create-price", 0.0
                 )
             )
         }

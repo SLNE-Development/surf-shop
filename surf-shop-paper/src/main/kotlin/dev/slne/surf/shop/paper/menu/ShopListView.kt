@@ -409,7 +409,7 @@ object ShopListView : View() {
                         "create-item",
                         ItemStack.empty(),
                         "create-price",
-                        0
+                        0.0
                     )
                 )
             }
