@@ -59,12 +59,14 @@ object ShopChestSelectShopView : View() {
             ShopService.loadedShops
                 .filter { it.seller == context.player.uniqueId }
                 .sortedBy { it.item.type.name }
+                .map { it to createShopItem(it, context.player.uniqueId, true) }
                 .toMutableList()
         }
-    }.elementFactory { context, builder, _, shop ->
-        builder.withItem(createShopItem(shop, context.player.uniqueId, true)).onClick { context ->
+    }.elementFactory { _, builder, _, shop ->
+        builder.withItem(shop.second).onClick { context ->
             context.playGeneralClickSound()
 
+            val shop = shop.first
             val chest = chestState.get(context)
 
             plugin.launch {

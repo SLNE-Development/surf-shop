@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu
 
+import com.github.shynixn.mccoroutine.folia.scope
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
@@ -25,8 +26,11 @@ import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.future.future
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
+import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.Component
@@ -37,7 +41,6 @@ import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
-import java.util.concurrent.CompletableFuture
 
 object ShopListView : View() {
     private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
@@ -269,21 +272,19 @@ object ShopListView : View() {
     }
 
     private val paginationState = buildLazyAsyncPaginationState { context ->
-        CompletableFuture.supplyAsync {
+        plugin.scope.future {
             getLoadedShopsSortedFiltered(
                 plugin.getSorting(context.player.uniqueId),
-                searchInputCache[context.player.uniqueId]
+                searchInputCache[context.player.uniqueId],
+                context
             ).toMutableList()
         }
-    }.elementFactory { context, builder, _, shop ->
+    }.elementFactory { _, builder, _, shop ->
         builder.withItem(
-            createShopItem(
-                shop,
-                context.player.uniqueId,
-                viewOnly = !context.player.canUseFullShopView()
-            )
+            shop.second
         ).onClick { context ->
             context.playGeneralClickSound()
+            val shop = shop.first
 
             if (!context.player.canUseFullShopView()) {
                 if (shop.seller == context.player.uniqueId) {
@@ -408,7 +409,7 @@ object ShopListView : View() {
                         "create-item",
                         ItemStack.empty(),
                         "create-price",
-                        0
+                        0.0
                     )
                 )
             }
@@ -613,10 +614,11 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedShopsSortedFiltered(
+private suspend fun getLoadedShopsSortedFiltered(
     sortType: ShopSortingType,
-    search: String?
-): List<Shop> {
+    search: String?,
+    context: Context
+): MutableList<Pair<Shop, ItemStack>> = withContext(Dispatchers.Default) {
     val base = ShopService.loadedShops.filter { it.storedItemCount > 0 }
 
     val filtered = if (search.isNullOrBlank()) {
@@ -638,19 +640,9 @@ private fun getLoadedShopsSortedFiltered(
                     if (term.startsWith("@")) {
                         val sellerSearch = term.removePrefix("@")
                         if (sellerSearch.isEmpty()) continue
-                        val sellerName = shop.sellerName.lowercase()
-                        if (!sellerName.contains(sellerSearch)) return@filter false
+                        if (!shop.sellerName.lowercase().contains(sellerSearch)) return@filter false
                     } else {
-                        var matched = false
-
-                        for (token in tokens) {
-                            if (token.contains(term)) {
-                                matched = true
-                                break
-                            }
-                        }
-
-                        if (!matched) return@filter false
+                        if (tokens.none { it.contains(term) }) return@filter false
                     }
                 }
 
@@ -659,7 +651,7 @@ private fun getLoadedShopsSortedFiltered(
         }
     }
 
-    return when (sortType) {
+    val sorted = when (sortType) {
         ShopSortingType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
         ShopSortingType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
         ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
@@ -672,6 +664,20 @@ private fun getLoadedShopsSortedFiltered(
 
         ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
         ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
+    }
+
+    val playerId = context.player.uniqueId
+    val viewOnly = !context.player.canUseFullShopView()
+
+    return@withContext coroutineScope {
+        sorted
+            .map { shop ->
+                async {
+                    shop to createShopItem(shop, playerId, viewOnly = viewOnly)
+                }
+            }
+            .awaitAll()
+            .toMutableList()
     }
 }
 
