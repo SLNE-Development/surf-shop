@@ -277,7 +277,7 @@ object ShopListView : View() {
                 plugin.getSorting(context.player.uniqueId),
                 searchInputCache[context.player.uniqueId],
                 context
-            )
+            ).toMutableList()
         }
     }.elementFactory { _, builder, _, shop ->
         builder.withItem(

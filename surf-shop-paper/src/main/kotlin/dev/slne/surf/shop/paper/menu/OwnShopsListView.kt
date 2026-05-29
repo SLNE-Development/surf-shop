@@ -470,7 +470,7 @@ private suspend fun getOwnLoadedShopsWithItems(
                 }
             }
             .awaitAll()
-    }
+    }.toMutableList()
 }
 
 object OwnShopState {

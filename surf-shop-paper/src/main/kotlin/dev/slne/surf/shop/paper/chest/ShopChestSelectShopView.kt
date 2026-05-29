@@ -59,8 +59,8 @@ object ShopChestSelectShopView : View() {
             ShopService.loadedShops
                 .filter { it.seller == context.player.uniqueId }
                 .sortedBy { it.item.type.name }
-                .toMutableList()
                 .map { it to createShopItem(it, context.player.uniqueId, true) }
+                .toMutableList()
         }
     }.elementFactory { _, builder, _, shop ->
         builder.withItem(shop.second).onClick { context ->
