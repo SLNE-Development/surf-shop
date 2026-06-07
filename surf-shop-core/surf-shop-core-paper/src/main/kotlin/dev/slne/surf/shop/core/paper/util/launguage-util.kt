@@ -2,6 +2,8 @@ package dev.slne.surf.shop.core.paper.util
 
 import com.google.gson.JsonParser
 import dev.slne.surf.shop.core.common.util.logger
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
 import org.bukkit.Material
 import org.bukkit.Registry
 import org.bukkit.enchantments.Enchantment
@@ -75,8 +77,8 @@ fun populateTranslationCaches() {
         materialTranslationCache[material] = getMaterialTranslations(material, languages)
     }
 
-    Registry.ENCHANTMENT .forEach { enchantment ->
-        enchantmentTranslationCache[enchantment] = getEnchantmentTranslations(enchantment, languages)
+    RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).forEach { ench ->
+        enchantmentTranslationCache[ench] = getEnchantmentTranslations(ench, languages)
     }
 
     Registry.POTION_EFFECT_TYPE.forEach { effect ->
