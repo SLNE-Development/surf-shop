@@ -155,27 +155,3 @@ fun getAllCachedTranslationsFor(itemStack: ItemStack): Set<String> {
         }
     }
 }
-
-fun getCachedTranslationsFor(material: Material): Map<String, String> {
-    return materialTranslationCache[material] ?: emptyMap()
-}
-
-fun getCachedTranslationForMaterialWithLanguage(material: Material, lang: String): String? {
-    return materialTranslationCache[material]?.get(lang)
-}
-
-fun getCachedTranslationsForEnchantment(enchantment: Enchantment): Map<String, String> {
-    return enchantmentTranslationCache[enchantment] ?: emptyMap()
-}
-
-fun getCachedTranslationForEnchantmentWithLanguage(enchantment: Enchantment, lang: String): String? {
-    return enchantmentTranslationCache[enchantment]?.get(lang)
-}
-
-fun getCachedTranslationsForPotion(effect: PotionEffectType): Map<String, String> {
-    return potionTranslationCache[effect] ?: emptyMap()
-}
-
-fun getCachedTranslationForPotionWithLanguage(effect: PotionEffectType, lang: String): String? {
-    return potionTranslationCache[effect]?.get(lang)
-}
