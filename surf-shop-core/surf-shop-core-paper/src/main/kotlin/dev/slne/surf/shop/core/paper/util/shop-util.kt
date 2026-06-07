@@ -10,8 +10,6 @@ import org.bukkit.Bukkit
 import org.bukkit.block.ShulkerBox
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BlockStateMeta
-import org.bukkit.inventory.meta.EnchantmentStorageMeta
-import org.bukkit.inventory.meta.PotionMeta
 import java.util.*
 import kotlin.time.Duration.Companion.hours
 
@@ -37,56 +35,26 @@ val Shop.item: ItemStack
 
 val Deal.boughtByName get() = nameCache.get(boughtBy)
 
-private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
-    val meta = itemStack.itemMeta as? PotionMeta ?: return
-
-    meta.basePotionType?.let {
-        add(it.key.key.lowercase().replace(" ", "_"))
-    }
-    meta.customEffects.forEach { effect ->
-        add(effect.type.key.key.lowercase().replace(" ", "_"))
-    }
+private fun MutableSet<String>.addTranslationTokens(itemStack: ItemStack) {
+    getAllCachedTranslationsFor(itemStack).forEach { add(it) }
 }
 
 fun Shop.rebuildSearchTokens() {
     searchableTokens = buildSet {
         add(item.type.name.lowercase())
 
-        addPotionTokens(item)
+        addTranslationTokens(item)
 
-        item.enchantments.keys.forEach {
-            add(it.key.toString().lowercase())
-        }
-
-        val meta = item.itemMeta ?: return@buildSet
-
-        if (meta is EnchantmentStorageMeta) {
-            meta.storedEnchants.keys.forEach {
-                add(it.key.toString().lowercase())
-            }
-        }
-
-        if (meta is BlockStateMeta) {
-            val blockState = meta.blockState
+        if (item.itemMeta is BlockStateMeta) {
+            val blockState = (item.itemMeta as BlockStateMeta).blockState
 
             if (blockState is ShulkerBox) {
                 blockState.inventory.contents.filterNotNull().forEach {
                     if (it.type.isAir()) return@forEach
                     add(it.type.name.lowercase())
 
-                    addPotionTokens(it)
+                    addTranslationTokens(it)
 
-                    it.enchantments.keys.forEach { enchant ->
-                        add(enchant.key.toString().lowercase())
-                    }
-
-                    val meta = it.itemMeta ?: return@forEach
-
-                    if (meta is EnchantmentStorageMeta) {
-                        meta.storedEnchants.keys.forEach { enchant ->
-                            add(enchant.key.toString().lowercase())
-                        }
-                    }
                 }
             }
         }

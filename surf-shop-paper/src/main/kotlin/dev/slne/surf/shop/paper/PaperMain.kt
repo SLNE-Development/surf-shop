@@ -11,6 +11,7 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.service.DealServiceImpl
+import dev.slne.surf.shop.core.paper.util.populateTranslationCaches
 import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
@@ -47,6 +48,8 @@ class PaperMain : SuspendingJavaPlugin() {
     override suspend fun onLoadAsync() {
         PaperShopInstance.paperLoader.onLoad()
         DealServiceImpl.plugin = this
+
+        populateTranslationCaches()
 
         viewFrame.with(ShopListView)
         viewFrame.with(CreateShopView)
