@@ -3,6 +3,7 @@ package dev.slne.surf.shop.core.paper.util
 import com.google.gson.JsonParser
 import dev.slne.surf.shop.core.common.util.logger
 import org.bukkit.Material
+import org.bukkit.Registry
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
@@ -74,11 +75,11 @@ fun populateTranslationCaches() {
         materialTranslationCache[material] = getMaterialTranslations(material, languages)
     }
 
-    Enchantment.values().forEach { ench ->
-        enchantmentTranslationCache[ench] = getEnchantmentTranslations(ench, languages)
+    Registry.ENCHANTMENT .forEach { enchantment ->
+        enchantmentTranslationCache[enchantment] = getEnchantmentTranslations(enchantment, languages)
     }
 
-    PotionEffectType.values().forEach { effect ->
+    Registry.POTION_EFFECT_TYPE.forEach { effect ->
         potionTranslationCache[effect] = getPotionTranslations(effect, languages)
     }
 }
