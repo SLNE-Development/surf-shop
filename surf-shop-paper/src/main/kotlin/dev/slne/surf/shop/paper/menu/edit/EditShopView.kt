@@ -14,6 +14,9 @@ import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.paper.util.MAX_PRICE
+import dev.slne.surf.shop.core.paper.util.MIN_PRICE
+import dev.slne.surf.shop.core.paper.util.isValidePrice
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
@@ -134,10 +137,18 @@ object EditShopView : View() {
                 return@onClick
             }
 
-            if (price <= 0) {
+            if (!isValidePrice(price)) {
                 context.player.sendText {
                     appendErrorPrefix()
-                    error("Du kannst den Preis des Shops nicht entfernen.")
+                    error("Der angegebene Preis kann nicht angewendet werden. Er muss zwischen")
+                    appendSpace()
+                    variableValue(MIN_PRICE)
+                    appendSpace()
+                    error("und")
+                    appendSpace()
+                    variableValue(MAX_PRICE)
+                    appendSpace()
+                    error("liegen.")
                 }
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
