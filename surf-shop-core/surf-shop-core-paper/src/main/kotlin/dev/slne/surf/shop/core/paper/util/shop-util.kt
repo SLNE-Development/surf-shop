@@ -5,7 +5,6 @@ import com.sksamuel.aedile.core.expireAfterWrite
 import dev.slne.surf.api.core.util.objectListOf
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -15,6 +14,7 @@ import org.bukkit.inventory.meta.BlockStateMeta
 import org.bukkit.inventory.meta.EnchantmentStorageMeta
 import org.bukkit.inventory.meta.PotionMeta
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 
 const val MAX_PRICE = 100_000_000.0
@@ -30,7 +30,7 @@ val Shop.totalSoldItems
         .filter { it.shopInternalId == this.internalId }
         .sumOf { it.amount }
 val Shop.updatedShop
-    get() = ShopService.loadedShops.firstOrNull { it.internalId == this.internalId }
+    get() = ShopService.getShopByInternalId(this.internalId)
 
 
 private val nameCache = Caffeine.newBuilder().expireAfterWrite(12.hours).build<UUID, String> {
@@ -38,11 +38,13 @@ private val nameCache = Caffeine.newBuilder().expireAfterWrite(12.hours).build<U
 }
 
 val Shop.sellerName get() = nameCache.get(seller)
-private val itemCache = mutableMapOf<Shop, ItemStack>()
+private val itemCache = Caffeine.newBuilder()
+    .maximumSize(10_000)
+    .expireAfterAccess(6, TimeUnit.HOURS)
+    .build<String, ItemStack>()
+
 val Shop.item: ItemStack
-    get() = itemCache.getOrPut(this) {
-        itemStackFromString(itemString)
-    }
+    get() = itemCache.get(itemString) { itemStackFromString(it) }
 
 val Deal.boughtByName get() = nameCache.get(boughtBy)
 

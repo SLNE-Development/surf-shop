@@ -10,6 +10,7 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
+import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.item
@@ -59,7 +60,14 @@ object ShopChestSelectShopView : View() {
             ShopService.loadedShops
                 .filter { it.seller == context.player.uniqueId }
                 .sortedBy { it.item.type.name }
-                .map { it to createShopItem(it, context.player.uniqueId, true) }
+                .map {
+                    it to createShopItem(
+                        it,
+                        context.player.uniqueId,
+                        true,
+                        stats = DealService.getDealStats(it.internalId)
+                    )
+                }
                 .toMutableList()
         }
     }.elementFactory { _, builder, _, shop ->
