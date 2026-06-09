@@ -13,7 +13,9 @@ import java.util.*
 
 class ShopArgument(nodeName: String) :
     CustomArgument<Shop, String>(StringArgument(nodeName), { info ->
-        ShopService.loadedShops.find { it.shopUuid == runCatching { UUID.fromString(info.input) }.getOrNull() }
+        runCatching { UUID.fromString(info.input) }
+            .getOrNull()
+            ?.let(ShopService::getShop)
             ?: throw CustomArgumentException.fromAdventureComponent(
                 buildText {
                     appendErrorPrefix()
