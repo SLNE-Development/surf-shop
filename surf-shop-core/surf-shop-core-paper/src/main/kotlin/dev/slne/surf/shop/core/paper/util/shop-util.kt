@@ -25,11 +25,6 @@ private val BLACKLISTED_ITEMS = objectListOf(
     Material.PLAYER_HEAD
 )
 
-val Shop.dealCount get() = DealService.loadedDeals.count { it.shopInternalId == this.internalId }
-val Shop.totalSoldItems
-    get() = DealService.loadedDeals
-        .filter { it.shopInternalId == this.internalId }
-        .sumOf { it.amount }
 val Shop.updatedShop
     get() = ShopService.getShopByInternalId(this.internalId)
 
