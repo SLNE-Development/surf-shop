@@ -264,7 +264,7 @@ object ShopChestListener : Listener {
             return
         }
 
-        val shop = ShopService.loadedShops.firstOrNull { it.shopUuid == shopUuid }
+        val shop = ShopService.getShop(shopUuid)
         if (shop == null) {
             player.sendText {
                 appendErrorPrefix()
