@@ -51,12 +51,16 @@ object ShopChestListener : Listener {
         z = z
     )
 
-    private fun isTransitioningChest(block: Block) = block.chestBlockLocation() in transitioningChests
+    private fun isTransitioningChest(block: Block) =
+        block.chestBlockLocation() in transitioningChests
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
         val item = event.itemInHand
         if (!ShopChestRecipe.isShopChest(item)) return
+
+        if (event.isCancelled) return
+        if (event.blockPlaced.type != Material.CHEST) return
 
         val block = event.blockPlaced
         val player = event.player
