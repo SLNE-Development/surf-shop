@@ -4,14 +4,13 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
-import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.core.util.objectSetOf
-import dev.slne.surf.api.core.util.toObjectSet
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.BuyRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.LoadDealsRequestPacket
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopDealStats
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
@@ -20,7 +19,6 @@ import dev.slne.surf.transaction.api.currency.Currency
 import dev.slne.surf.transaction.api.transaction.TransactionResult
 import dev.slne.surf.transaction.api.transaction.data.TransactionData
 import dev.slne.surf.transaction.api.user.TransactionUser
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -35,8 +33,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 @AutoService(DealService::class)
 class DealServiceImpl : DealService, Services.Fallback {
-    private val _deals = mutableObject2ObjectMapOf<UUID, Deal>()
-    override val loadedDeals: ObjectSet<Deal> get() = _deals.values.toObjectSet()
+    private val _deals = ConcurrentHashMap<UUID, Deal>()
+    private val _dealStatsByShop = ConcurrentHashMap<ULong, ShopDealStats>()
+
+    override val loadedDeals: Collection<Deal> get() = _deals.values
+
+    override fun getDealStats(shopInternalId: ULong) =
+        _dealStatsByShop[shopInternalId] ?: ShopDealStats()
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
 
@@ -60,7 +63,7 @@ class DealServiceImpl : DealService, Services.Fallback {
             )
         ).deal
 
-        _deals[bought.dealUuid] = bought
+        putDeal(bought)
         return bought
     }
 
@@ -71,9 +74,7 @@ class DealServiceImpl : DealService, Services.Fallback {
     ): Deal.DealResult {
         val player = Bukkit.getPlayer(playerUuid) ?: return Deal.DealResult.PlayerNotFound
 
-        val actualShop =
-            ShopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
-                ?: return Deal.DealResult.ShopDeleted
+        val actualShop = ShopService.getShop(shop.shopUuid) ?: return Deal.DealResult.ShopDeleted
 
         val lock = getLock(actualShop.shopUuid)
 
@@ -141,7 +142,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                     )
                 ).deal
 
-                _deals[deal.dealUuid] = deal
+                putDeal(deal)
 
                 val itemStack = shop.item
                 var remaining = amount
@@ -188,13 +189,27 @@ class DealServiceImpl : DealService, Services.Fallback {
         val loadedDeals = PaperShopInstance.rabbitApi.sendRequest(LoadDealsRequestPacket()).deals
 
         _deals.clear()
-        loadedDeals.forEach { _deals[it.dealUuid] = it }
+        _dealStatsByShop.clear()
+        loadedDeals.forEach(::putDeal)
 
         logger.info("Loaded ${_deals.size} deals")
     }
 
     fun removeShopLock(shopUuid: UUID) {
         shopLocks.remove(shopUuid)
+    }
+
+    private fun putDeal(deal: Deal) {
+        _deals[deal.dealUuid] = deal
+        _dealStatsByShop.merge(
+            deal.shopInternalId,
+            ShopDealStats(dealCount = 1, totalSoldItems = deal.amount)
+        ) { current, added ->
+            ShopDealStats(
+                dealCount = current.dealCount + added.dealCount,
+                totalSoldItems = current.totalSoldItems + added.totalSoldItems
+            )
+        }
     }
 
     companion object {

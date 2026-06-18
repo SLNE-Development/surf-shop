@@ -45,11 +45,9 @@ object DoneDealsView : View() {
 
     private val paginationState = buildLazyAsyncPaginationState { context ->
         CompletableFuture.supplyAsync {
-            val shopsById = ShopService.loadedShops.associateBy { it.internalId }
-
             DealService.loadedDeals.asSequence()
                 .mapNotNull { deal ->
-                    val shop = shopsById[deal.shopInternalId]
+                    val shop = ShopService.getShopByInternalId(deal.shopInternalId)
                     if (shop?.seller == context.player.uniqueId) deal to shop else null
                 }
                 .sortedByDescending { it.first.boughtAt }

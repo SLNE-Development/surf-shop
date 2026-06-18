@@ -67,14 +67,6 @@ fun createSpecificPriceDialog(
                     customPlayerClick { response, player ->
                         val price = response.getText("price")?.trim()?.toDoubleOrNull() ?: 0.01
 
-                        if (price < 0.01) {
-                            player.sendText {
-                                appendErrorPrefix()
-                                error("Der Preis muss mindestens 0.01 sein.")
-                            }
-                            player.playNoSound()
-                            return@customPlayerClick
-                        }
 
                         plugin.launch(plugin.entityDispatcher(player)) {
                             player.closeDialog()

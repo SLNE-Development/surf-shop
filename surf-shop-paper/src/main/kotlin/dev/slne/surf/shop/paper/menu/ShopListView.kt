@@ -15,11 +15,10 @@ import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopDealStats
 import dev.slne.surf.shop.core.common.service.ShopService
-import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
-import dev.slne.surf.shop.core.paper.util.totalSoldItems
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
@@ -472,7 +471,8 @@ fun createShopItem(
     shop: Shop,
     viewer: UUID,
     shopChest: Boolean = false,
-    viewOnly: Boolean = false
+    viewOnly: Boolean = false,
+    stats: ShopDealStats = ShopDealStats()
 ) = shop.item.clone().apply {
     amount = 1
 
@@ -509,25 +509,23 @@ fun createShopItem(
         variableValue(shop.sellerName)
     })
 
-    val dealCount = shop.dealCount
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
         shopColored("Abgeschlossene Käufe: ")
-        if (dealCount > 0) {
-            variableValue(dealCount)
+        if (stats.dealCount > 0) {
+            variableValue(stats.dealCount)
         } else {
             error("Noch keine abgeschlossen")
         }
     })
 
-    val totalSold = shop.totalSoldItems
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
         shopColored("Gesamt verkauft: ")
-        if (totalSold > 0) {
-            variableValue("$totalSold Items")
+        if (stats.totalSoldItems > 0) {
+            variableValue("${stats.totalSoldItems} Items")
         } else {
             error("Noch keine verkauft")
         }
@@ -651,34 +649,29 @@ private suspend fun getLoadedShopsSortedFiltered(
         }
     }
 
-    val sorted = when (sortType) {
-        ShopSortingType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
-        ShopSortingType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
-        ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
-        ShopSortingType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
-        ShopSortingType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
-        ShopSortingType.MOST_DEALS -> {
-            val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
-            filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
-        }
+    val withStats = filtered.map { shop ->
+        shop to DealService.getDealStats(shop.internalId)
+    }
 
-        ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
-        ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
+    val sorted = when (sortType) {
+        ShopSortingType.PRICE_ASC -> withStats.sortedBy { it.first.pricePerItem }
+        ShopSortingType.PRICE_DESC -> withStats.sortedByDescending { it.first.pricePerItem }
+        ShopSortingType.TIME_ASC -> withStats.sortedBy { it.first.createdAt }
+        ShopSortingType.TIME_DESC -> withStats.sortedByDescending { it.first.createdAt }
+        ShopSortingType.MOST_STORED -> withStats.sortedByDescending { it.first.storedItemCount }
+        ShopSortingType.MOST_DEALS -> withStats.sortedByDescending { it.second.dealCount }
+        ShopSortingType.ITEM_NAME -> withStats.sortedBy { it.first.item.type.name }
+        ShopSortingType.SELLER_NAME -> withStats.sortedBy { it.first.sellerName.lowercase() }
     }
 
     val playerId = context.player.uniqueId
     val viewOnly = !context.player.canUseFullShopView()
 
-    return@withContext coroutineScope {
-        sorted
-            .map { shop ->
-                async {
-                    shop to createShopItem(shop, playerId, viewOnly = viewOnly)
-                }
-            }
-            .awaitAll()
-            .toMutableList()
-    }
+    return@withContext sorted
+        .map { (shop, stats) ->
+            shop to createShopItem(shop, playerId, viewOnly = viewOnly, stats = stats)
+        }
+        .toMutableList()
 }
 
 

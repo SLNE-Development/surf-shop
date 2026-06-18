@@ -26,9 +26,6 @@ import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.searchInputCache
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.future
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
@@ -444,33 +441,29 @@ private suspend fun getOwnLoadedShopsWithItems(
         }
     }
 
-    val sorted = when (sortType) {
-        ShopSortingType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
-        ShopSortingType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
-        ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
-        ShopSortingType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
-        ShopSortingType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
-        ShopSortingType.MOST_DEALS -> {
-            val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
-            filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
-        }
+    val withStats = filtered.map { shop ->
+        shop to DealService.getDealStats(shop.internalId)
+    }
 
-        ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
-        ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
+    val sorted = when (sortType) {
+        ShopSortingType.PRICE_ASC -> withStats.sortedBy { it.first.pricePerItem }
+        ShopSortingType.PRICE_DESC -> withStats.sortedByDescending { it.first.pricePerItem }
+        ShopSortingType.TIME_ASC -> withStats.sortedBy { it.first.createdAt }
+        ShopSortingType.TIME_DESC -> withStats.sortedByDescending { it.first.createdAt }
+        ShopSortingType.MOST_STORED -> withStats.sortedByDescending { it.first.storedItemCount }
+        ShopSortingType.MOST_DEALS -> withStats.sortedByDescending { it.second.dealCount }
+        ShopSortingType.ITEM_NAME -> withStats.sortedBy { it.first.item.type.name }
+        ShopSortingType.SELLER_NAME -> withStats.sortedBy { it.first.sellerName.lowercase() }
     }
 
     val playerId = context.player.uniqueId
     val viewOnly = !context.player.canUseFullShopView()
 
-    return coroutineScope {
-        sorted
-            .map { shop ->
-                async {
-                    shop to createShopItem(shop, playerId, viewOnly = viewOnly)
-                }
-            }
-            .awaitAll()
-    }.toMutableList()
+    return sorted
+        .map { (shop, stats) ->
+            shop to createShopItem(shop, playerId, viewOnly = viewOnly, stats = stats)
+        }
+        .toMutableList()
 }
 
 object OwnShopState {
