@@ -17,14 +17,7 @@ import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
-import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
-import dev.slne.surf.shop.paper.menu.canUseShulkerFeature
-import dev.slne.surf.shop.paper.menu.findFillableShulker
-import dev.slne.surf.shop.paper.menu.outlineItem
-import dev.slne.surf.shop.paper.menu.shulkerFreeCapacityFor
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.playNoSound
-import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
@@ -336,90 +329,116 @@ object ItemStorageRemoveView : View() {
         shulker: ItemStack
     ) {
         val shop = shopState.get(context)
-
-        ShopService.blockShop(shop)
-
         plugin.launch {
-            val updatedShop = ShopService.getShop(shop.shopUuid)
+            ShopService.blockShop(shop)
 
-            if (updatedShop == null) {
-                player.sendText {
-                    appendErrorPrefix()
-                    error("Der Shop existiert nicht mehr.")
-                }
-                ShopService.unblockShop(shop)
-                withContext(plugin.entityDispatcher(player)) {
-                    giveOrDrop(player, shulker)
-                }
-                return@launch
-            }
+            try {
+                val updatedShop = ShopService.getShop(shop.shopUuid)
 
-            val toRemove = minOf(
-                updatedShop.storedItemCount,
-                shulker.shulkerFreeCapacityFor(updatedShop.item)
-            )
-
-            if (toRemove <= 0) {
-                player.sendText {
-                    appendErrorPrefix()
-                    error("Der Shop hat keine Items auf Lager.")
-                }
-                ShopService.unblockShop(updatedShop)
-                withContext(plugin.entityDispatcher(player)) {
-                    giveOrDrop(player, shulker)
-                }
-                return@launch
-            }
-
-            val filledShulker = createFilledShulkerPreservingMeta(
-                shulker, updatedShop.item, toRemove
-            )
-
-            withContext(plugin.entityDispatcher(player)) {
-                giveOrDrop(player, filledShulker)
-
-                player.playSound(true) {
-                    type(Sound.ENTITY_CHICKEN_EGG)
-                }
-            }
-
-            ShopService.saveShop(
-                updatedShop.copy(
-                    storedItemCount = updatedShop.storedItemCount - toRemove
-                )
-            )
-            ShopService.unblockShop(updatedShop)
-
-            if (plugin.auxProtectHook) {
-                AuxProtectHook.logWithdraw(player, shop, toRemove)
-            }
-
-            player.sendActionBar(buildText {
-                appendSuccessPrefix()
-                success("Du hast ")
-                variableValue("$toRemove Items")
-                success(" per Shulker-Box ausgelagert.")
-            })
-
-            withContext(plugin.entityDispatcher(player)) {
-                val refreshedShop = shopState.get(context).updatedShop
-
-                if (refreshedShop == null) {
+                if (updatedShop == null) {
                     player.sendText {
                         appendErrorPrefix()
                         error("Der Shop existiert nicht mehr.")
                     }
-                    player.closeInventory()
-                    return@withContext
+                    withContext(plugin.entityDispatcher(player)) {
+                        giveOrDrop(player, shulker)
+                    }
+                    return@launch
                 }
 
-                context.openForPlayer(
-                    ItemStorageView::class.java,
-                    ImmutableMap.of(
-                        "edit-shop",
-                        refreshedShop
+                val toRemove = minOf(
+                    updatedShop.storedItemCount,
+                    shulker.shulkerFreeCapacityFor(updatedShop.item)
+                )
+
+                if (toRemove <= 0) {
+                    player.sendText {
+                        appendErrorPrefix()
+                        error("Der Shop hat keine Items auf Lager.")
+                    }
+                    withContext(plugin.entityDispatcher(player)) {
+                        giveOrDrop(player, shulker)
+                    }
+                    return@launch
+                }
+
+                val filledShulkers = createFilledShulkerPreservingMeta(
+                    shulker, updatedShop.item, toRemove
+                )
+
+                withContext(plugin.entityDispatcher(player)) {
+                    giveOrDrop(player, filledShulkers)
+
+                    player.playSound(true) {
+                        type(Sound.ENTITY_CHICKEN_EGG)
+                    }
+                }
+
+                ShopService.saveShop(
+                    updatedShop.copy(
+                        storedItemCount = updatedShop.storedItemCount - toRemove
                     )
                 )
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logWithdraw(player, shop, toRemove)
+                }
+
+                player.sendActionBar(buildText {
+                    appendSuccessPrefix()
+                    success("Du hast ")
+                    variableValue("$toRemove Items")
+                    success(" per Shulker-Box ausgelagert.")
+                })
+
+                withContext(plugin.entityDispatcher(player)) {
+                    val refreshedShop = shopState.get(context).updatedShop
+
+                    if (refreshedShop == null) {
+                        player.sendText {
+                            appendErrorPrefix()
+                            error("Der Shop existiert nicht mehr.")
+                        }
+                        player.closeInventory()
+                        return@withContext
+                    }
+
+                    context.openForPlayer(
+                        ItemStorageView::class.java,
+                        ImmutableMap.of(
+                            "edit-shop",
+                            refreshedShop
+                        )
+                    )
+                }
+            } catch (_: Throwable) {
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
+                }
+
+                withContext(plugin.entityDispatcher(player)) {
+                    val refreshedShop = shopState.get(context).updatedShop
+
+                    if (refreshedShop == null) {
+                        player.sendText {
+                            appendErrorPrefix()
+                            error("Der Shop existiert nicht mehr.")
+                        }
+                        player.closeInventory()
+                        return@withContext
+                    }
+
+                    context.openForPlayer(
+                        ItemStorageView::class.java,
+                        ImmutableMap.of(
+                            "edit-shop",
+                            refreshedShop
+                        )
+                    )
+                }
+            } finally {
+                ShopService.unblockShop(shop)
             }
         }
     }
