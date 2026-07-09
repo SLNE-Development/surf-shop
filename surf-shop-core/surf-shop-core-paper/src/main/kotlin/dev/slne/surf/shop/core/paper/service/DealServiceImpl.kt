@@ -91,14 +91,45 @@ class DealServiceImpl : DealService, Services.Fallback {
 
             val buyAmount = if (storedAmount < amount) storedAmount else amount
 
-            buy0(player, actualShop, buyAmount)
+            buy0(player, actualShop, buyAmount, deliverToInventory = true)
+        }
+    }
+
+    override suspend fun buyWithoutDelivery(
+        playerUuid: UUID,
+        shop: Shop,
+        amount: Int
+    ): Deal.DealResult {
+        val player = Bukkit.getPlayer(playerUuid) ?: return Deal.DealResult.PlayerNotFound
+
+        val actualShop =
+            ShopService.loadedShops.firstOrNull { it.shopUuid == shop.shopUuid }
+                ?: return Deal.DealResult.ShopDeleted
+
+        val lock = getLock(actualShop.shopUuid)
+
+        return lock.withLock {
+            if (actualShop.isBlocked) {
+                return@withLock Deal.DealResult.ShopBlocked
+            }
+
+            val storedAmount = actualShop.storedItemCount
+
+            if (storedAmount == 0) {
+                return@withLock Deal.DealResult.InsufficientStock
+            }
+
+            val buyAmount = if (storedAmount < amount) storedAmount else amount
+
+            buy0(player, actualShop, buyAmount, deliverToInventory = false)
         }
     }
 
     private suspend fun buy0(
         player: Player,
         shop: Shop,
-        amount: Int
+        amount: Int,
+        deliverToInventory: Boolean
     ): Deal.DealResult {
         val receiverAccount = TransactionUser[shop.seller].getDefaultAccount()
         val transactionResult = TransactionUser[player.uniqueId].transfer(
@@ -150,7 +181,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                 val stacks = mutableListOf<ItemStack>()
 
                 while (remaining > 0) {
-                    val stackSize = minOf(remaining, 64)
+                    val stackSize = minOf(remaining, itemStack.maxStackSize)
                     val stack = itemStack.clone()
 
                     stack.amount = stackSize
@@ -158,13 +189,15 @@ class DealServiceImpl : DealService, Services.Fallback {
                     remaining -= stackSize
                 }
 
-                withContext(plugin.entityDispatcher(player)) {
-                    val leftover = player.inventory.addItem(*stacks.toTypedArray())
+                if (deliverToInventory) {
+                    withContext(plugin.entityDispatcher(player)) {
+                        val leftover = player.inventory.addItem(*stacks.toTypedArray())
 
-                    if (leftover.isNotEmpty()) {
-                        withContext(plugin.regionDispatcher(player.location)) {
-                            leftover.values.forEach {
-                                player.world.dropItem(player.location, it).owner = player.uniqueId
+                        if (leftover.isNotEmpty()) {
+                            withContext(plugin.regionDispatcher(player.location)) {
+                                leftover.values.forEach {
+                                    player.world.dropItem(player.location, it).owner = player.uniqueId
+                                }
                             }
                         }
                     }
@@ -178,7 +211,11 @@ class DealServiceImpl : DealService, Services.Fallback {
                     TransactionData.of("reason", "shop-tax (${taxRate * 100}%)")
                 )
 
-                return Deal.DealResult.Success(deal)
+                return if (deliverToInventory) {
+                    Deal.DealResult.Success(deal)
+                } else {
+                    Deal.DealResult.SuccessWithItems(deal, stacks)
+                }
             }
         }
     }

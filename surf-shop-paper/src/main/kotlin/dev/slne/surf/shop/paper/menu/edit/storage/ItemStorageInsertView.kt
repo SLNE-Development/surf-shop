@@ -25,7 +25,10 @@ import me.devnatan.inventoryframework.context.SlotClickContext
 import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
+import org.bukkit.Tag
+import org.bukkit.block.ShulkerBox
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.BlockStateMeta
 
 object ItemStorageInsertView : View() {
     private val shopState = initialState<Shop>("edit-shop")
@@ -84,6 +87,75 @@ object ItemStorageInsertView : View() {
         val shop = localShopState.get(click)
 
         if (!item.isSimilar(shop.item)) {
+            if (!Tag.SHULKER_BOXES.isTagged(item.type)) {
+                return
+            }
+
+            if (!click.player.canUseShulkerFeature()) {
+                click.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Dir fehlt die Berechtigung, um Shulker-Boxen im Shop zu nutzen.")
+                })
+                click.player.playNoSound()
+                return
+            }
+
+            val returnedShulker = item.asQuantity(1)
+            val returnMeta = returnedShulker.itemMeta as? BlockStateMeta ?: return
+            val returnState = returnMeta.blockState as? ShulkerBox ?: return
+            val boxInventory = returnState.inventory
+
+            var totalItems = 0
+            for (i in 0 until boxInventory.size) {
+                val slotItem = boxInventory.getItem(i) ?: continue
+                if (slotItem.type.isAir || !slotItem.isSimilar(shop.item)) {
+                    continue
+                }
+                totalItems += slotItem.amount
+                boxInventory.setItem(i, null)
+            }
+
+            if (totalItems <= 0) {
+                click.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Die Shulker-Box enthält keine passenden Items.")
+                })
+                click.player.playNoSound()
+                return
+            }
+
+            returnMeta.blockState = returnState
+            returnedShulker.itemMeta = returnMeta
+
+            click.clickOrigin.currentItem = returnedShulker
+            click.player.updateInventory()
+
+            plugin.launch {
+                val currentShop = localShopState.get(click)
+                val newShop = currentShop.copy(
+                    storedItemCount = currentShop.storedItemCount + totalItems
+                )
+                localShopState.set(newShop, click)
+                ShopService.saveShop(newShop)
+                itemInsertedState.set(
+                    itemInsertedState.get(click) + totalItems, click
+                )
+
+                if (plugin.auxProtectHook) {
+                    AuxProtectHook.logDeposit(click.player, currentShop, totalItems)
+                }
+
+                click.player.sendActionBar(buildText {
+                    appendSuccessPrefix()
+                    success("Du hast ")
+                    variableValue("$totalItems Items")
+                    success(" per Shulker-Box eingelagert.")
+                })
+
+                click.player.playSound(true) {
+                    type(Sound.ENTITY_PLAYER_LEVELUP)
+                }
+            }
             return
         }
 

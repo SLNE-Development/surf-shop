@@ -15,6 +15,7 @@ data class Deal(
 ) {
     sealed class DealResult {
         data class Success(val deal: Deal) : DealResult()
+        data class SuccessWithItems<T>(val deal: Deal, val items: List<T>) : DealResult()
         object ShopBlocked : DealResult()
         object ShopDeleted : DealResult()
         object InsufficientStock : DealResult()
