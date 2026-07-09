@@ -56,7 +56,7 @@ object ShopChestSetupView : View() {
                 CreateShopView::class.java,
                 ImmutableMap.of(
                     "create-item", ItemStack.empty(),
-                    "create-price", 0
+                    "create-price", 0.0
                 )
             )
         }
@@ -71,7 +71,7 @@ object ShopChestSetupView : View() {
 
         val shopUuid = chest.shopUuid
         val currentShop = if (shopUuid != null) {
-            ShopService.loadedShops.firstOrNull { it.shopUuid == shopUuid }
+            ShopService.getShop(shopUuid)
         } else null
 
         if (currentShop != null) {

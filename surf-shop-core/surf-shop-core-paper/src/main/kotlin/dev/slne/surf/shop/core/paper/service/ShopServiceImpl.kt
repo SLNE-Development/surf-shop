@@ -1,8 +1,6 @@
 package dev.slne.surf.shop.core.paper.service
 
 import com.google.auto.service.AutoService
-import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
-import dev.slne.surf.api.core.util.toObjectSet
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.CreateShopRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopRequestPacket
@@ -12,7 +10,6 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.rebuildSearchTokens
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.kyori.adventure.util.Services
@@ -24,8 +21,13 @@ import kotlin.system.measureTimeMillis
 @AutoService(ShopService::class)
 class ShopServiceImpl : ShopService, Services.Fallback {
 
-    private val _shops = mutableObject2ObjectMapOf<UUID, Shop>()
-    override val loadedShops: ObjectSet<Shop> get() = _shops.values.toObjectSet()
+    private val _shops = ConcurrentHashMap<UUID, Shop>()
+    private val _shopsByInternalId = ConcurrentHashMap<ULong, Shop>()
+
+    override val loadedShops: Collection<Shop> get() = _shops.values
+
+    override fun getShop(shopUuid: UUID) = _shops[shopUuid]
+    override fun getShopByInternalId(internalId: ULong) = _shopsByInternalId[internalId]
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
 
@@ -36,7 +38,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     override suspend fun createShop(
         itemString: String,
         storedItemCount: Int,
-        pricePerItem: Int,
+        pricePerItem: Double,
         seller: UUID
     ): Shop {
 
@@ -52,7 +54,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
             rebuildSearchTokens()
         }
 
-        _shops[created.shopUuid] = created
+        putShop(created)
         return created
     }
 
@@ -69,7 +71,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
             rebuildSearchTokens()
         }
 
-        _shops[shop.shopUuid] = updatedShop
+        putShop(updatedShop)
 
         PaperShopInstance.rabbitApi.sendRequest(
             SaveShopRequestPacket(
@@ -92,7 +94,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
             ).value
 
             if (deleted) {
-                _shops.remove(shop.shopUuid)
+                removeShop(shop)
                 shopLocks.remove(shop.shopUuid)
             }
 
@@ -110,14 +112,31 @@ class ShopServiceImpl : ShopService, Services.Fallback {
                 PaperShopInstance.rabbitApi.sendRequest(LoadShopsRequestPacket()).shops
 
             _shops.clear()
+            _shopsByInternalId.clear()
 
             loadedShops.forEach {
-                _shops[it.shopUuid] = it.apply {
+                putShop(it.apply {
                     rebuildSearchTokens()
-                }
+                })
             }
         }
 
         logger.info("Loaded ${_shops.size} shops in ${ms}ms")
+    }
+
+    private fun putShop(shop: Shop) {
+        _shops[shop.shopUuid]?.let { existing ->
+            if (existing.internalId != shop.internalId) {
+                _shopsByInternalId.remove(existing.internalId)
+            }
+        }
+
+        _shops[shop.shopUuid] = shop
+        _shopsByInternalId[shop.internalId] = shop
+    }
+
+    private fun removeShop(shop: Shop) {
+        val removed = _shops.remove(shop.shopUuid)
+        _shopsByInternalId.remove(removed?.internalId ?: shop.internalId)
     }
 }

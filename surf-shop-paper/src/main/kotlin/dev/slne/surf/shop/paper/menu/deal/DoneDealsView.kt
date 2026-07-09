@@ -22,6 +22,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import java.util.concurrent.CompletableFuture
 
 object DoneDealsView : View() {
     private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
@@ -42,16 +43,16 @@ object DoneDealsView : View() {
         }
     }
 
-    private val paginationState = buildLazyPaginationState { context ->
-        val shopsById = ShopService.loadedShops.associateBy { it.internalId }
-
-        DealService.loadedDeals.asSequence()
-            .mapNotNull { deal ->
-                val shop = shopsById[deal.shopInternalId]
-                if (shop?.seller == context.player.uniqueId) deal to shop else null
-            }
-            .sortedByDescending { it.first.boughtAt }
-            .toMutableList()
+    private val paginationState = buildLazyAsyncPaginationState { context ->
+        CompletableFuture.supplyAsync {
+            DealService.loadedDeals.asSequence()
+                .mapNotNull { deal ->
+                    val shop = ShopService.getShopByInternalId(deal.shopInternalId)
+                    if (shop?.seller == context.player.uniqueId) deal to shop else null
+                }
+                .sortedByDescending { it.first.boughtAt }
+                .toMutableList()
+        }
     }.elementFactory { _, builder, _, dealToShop ->
         builder.withItem(createDealAndShopItem(dealToShop)).onClick { context ->
             context.playGeneralClickSound()
@@ -78,6 +79,10 @@ object DoneDealsView : View() {
     override fun onFirstRender(render: RenderContext) {
         val pagination = paginationState.get(render)
 
+        render.availableSlot(loadingItem)
+            .displayIf(pagination::isLoading)
+            .updateOnStateChange(paginationState)
+
         render.layoutSlot('O', outlineItem)
 
         render
@@ -86,7 +91,7 @@ object DoneDealsView : View() {
                 if (pagination.canBack()) {
                     previousItem
                 } else {
-                    ShopListView.outlineItem
+                    outlineItem
                 }
             }
             .watch(paginationState)
@@ -105,7 +110,7 @@ object DoneDealsView : View() {
                 if (pagination.canAdvance()) {
                     nextItem
                 } else {
-                    ShopListView.outlineItem
+                    outlineItem
                 }
             }
             .watch(paginationState)

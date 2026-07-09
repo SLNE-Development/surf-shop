@@ -4,11 +4,11 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
-import dev.slne.surf.api.core.util.objectListOf
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.shop.core.paper.util.isAllowedToSell
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
@@ -22,20 +22,16 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-private val blacklistedItems = objectListOf(
-    Material.PLAYER_HEAD
-)
-
 object PlayerInventorySelectItemView : View() {
-    private val priceState: State<Int> = initialState("create-price")
+    private val priceState: State<Double> = initialState("create-price")
     private val itemState = initialState<ItemStack>("create-item")
 
-    private val paginationState = buildComputedPaginationState<ItemStack> { context ->
+    private val paginationState = buildComputedPaginationState { context ->
         context.player.inventory.storageContents.filterNotNull().toMutableList()
     }.itemFactory { builder, item ->
         builder.withItem(item).onClick { context ->
 
-            if (blacklistedItems.contains(item.type)) {
+            if (!isAllowedToSell(item)) {
                 context.player.playSound(true) {
                     type(Sound.BLOCK_NOTE_BLOCK_BASS)
                     pitch(2f)

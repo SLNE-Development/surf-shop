@@ -175,7 +175,7 @@ object ItemStorageRemoveView : View() {
 
             plugin.launch {
                 val updatedShop =
-                    ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
+                    ShopService.getShop(shop.shopUuid)
 
                 if (updatedShop == null) {
                     context.player.sendText {
@@ -541,9 +541,10 @@ object ItemStorageRemoveView : View() {
     }
 
     private fun handleIncrement(render: RenderContext, context: SlotClickContext, delta: Int) {
-        val currentStock = ShopService.loadedShops.find {
-            it.shopUuid == shopState.get(context)?.shopUuid
-        }?.storedItemCount ?: 0
+        val currentStock = shopState.get(context)
+            ?.shopUuid
+            ?.let(ShopService::getShop)
+            ?.storedItemCount ?: 0
 
         val newAmount = localAmountState.get(render) + delta
 
@@ -567,11 +568,12 @@ object ItemStorageRemoveView : View() {
         displayName {
             shopColored("Anzahl: ", TextDecoration.BOLD)
             appendSpace()
-            shopColored(("${localAmountState.get(context)}/" + ShopService.loadedShops.find {
-                it.shopUuid == shopState.get(
-                    context
-                )?.shopUuid
-            }?.storedItemCount))
+            shopColored(
+                "${localAmountState.get(context)}/" + shopState.get(context)
+                    ?.shopUuid
+                    ?.let(ShopService::getShop)
+                    ?.storedItemCount
+            )
         }
     }
 

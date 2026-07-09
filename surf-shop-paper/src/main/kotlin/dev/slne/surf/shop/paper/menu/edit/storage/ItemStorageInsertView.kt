@@ -69,19 +69,25 @@ object ItemStorageInsertView : View() {
     }
 
     override fun onClick(click: SlotClickContext) {
-        if (click.clickedContainer.isEntityContainer) {
-            if (!click.player.canEditShopStorageFromCurrentView()) {
-                click.player.sendText {
-                    appendErrorPrefix()
-                    error("Das Lager kannst du nur am Spawn bearbeiten.")
-                }
-                click.player.playNoSound()
-                return
+        if (!click.clickedContainer.isEntityContainer) {
+            return
+        }
+
+        if (!click.player.canEditShopStorageFromCurrentView()) {
+            click.player.sendText {
+                appendErrorPrefix()
+                error("Das Lager kannst du nur am Spawn bearbeiten.")
             }
+            click.player.playNoSound()
+            return
+        }
 
-            val item = click.item ?: return
-            val shop = localShopState.get(click)
+        val item = click.item ?: return
+        val shop = localShopState.get(click)
 
+        if (!item.isSimilar(shop.item)) {
+            return
+        }
             if (item.type.name.endsWith("SHULKER_BOX")) {
                 val meta = item.itemMeta
                 if (meta is BlockStateMeta) {
@@ -184,32 +190,39 @@ object ItemStorageInsertView : View() {
                 return
             }
 
-            click.isCancelled = false
-            click.clickOrigin.currentItem = ItemStack.empty()
+        click.isCancelled = false
+        click.clickOrigin.currentItem = ItemStack.empty()
 
-            plugin.launch {
-                val amount = item.amount
-                val newShop =
-                    shop.copy(storedItemCount = shop.storedItemCount + amount)
-                localShopState.set(newShop, click)
+        plugin.launch {
+            val amount = item.amount
 
-                ShopService.saveShop(newShop)
-                itemInsertedState.set(itemInsertedState.get(click) + amount, click)
+            val currentShop = localShopState.get(click)
+            val newShop = currentShop.copy(
+                storedItemCount = currentShop.storedItemCount + amount
+            )
 
-                if (plugin.auxProtectHook) {
-                    AuxProtectHook.logDeposit(click.player, shop, amount)
-                }
+            localShopState.set(newShop, click)
 
-                click.player.sendActionBar(buildText {
-                    appendSuccessPrefix()
-                    success("Du hast ")
-                    variableValue("$amount Items")
-                    success(" eingelagert.")
-                })
+            ShopService.saveShop(newShop)
 
-                click.player.playSound(true) {
-                    type(Sound.ENTITY_PLAYER_LEVELUP)
-                }
+            itemInsertedState.set(
+                itemInsertedState.get(click) + amount,
+                click
+            )
+
+            if (plugin.auxProtectHook) {
+                AuxProtectHook.logDeposit(click.player, currentShop, amount)
+            }
+
+            click.player.sendActionBar(buildText {
+                appendSuccessPrefix()
+                success("Du hast ")
+                variableValue("$amount Items")
+                success(" eingelagert.")
+            })
+
+            click.player.playSound(true) {
+                type(Sound.ENTITY_PLAYER_LEVELUP)
             }
         }
     }

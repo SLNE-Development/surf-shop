@@ -1,6 +1,6 @@
 package dev.slne.surf.shop.paper.menu
 
-import com.github.shynixn.mccoroutine.folia.globalRegionDispatcher
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
@@ -38,7 +38,7 @@ import org.bukkit.inventory.ItemStack
 
 object CreateShopView : View() {
     private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Int> = initialState("create-price")
+    private val priceState: State<Double> = initialState("create-price")
 
     override fun onInit(config: ViewConfigBuilder) {
         config
@@ -175,7 +175,7 @@ object CreateShopView : View() {
                     success("Der Shop wurde erstellt!")
                 }
 
-                withContext(plugin.globalRegionDispatcher) {
+                withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
                     viewFrame.open(
                         EditShopView::class.java,

@@ -2,18 +2,21 @@ package dev.slne.surf.shop.core.common.service
 
 import dev.slne.surf.api.core.util.requiredService
 import dev.slne.surf.shop.api.shop.Shop
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import java.util.*
 
 private val service = requiredService<ShopService>()
 
 interface ShopService {
-    val loadedShops: ObjectSet<Shop>
+    val loadedShops: Collection<Shop>
+
+    fun loadedShopsSnapshot(): List<Shop> = loadedShops.toList()
+    fun getShop(shopUuid: UUID): Shop?
+    fun getShopByInternalId(internalId: ULong): Shop?
 
     suspend fun createShop(
         itemString: String,
         storedItemCount: Int,
-        pricePerItem: Int,
+        pricePerItem: Double,
         seller: UUID
     ): Shop
 

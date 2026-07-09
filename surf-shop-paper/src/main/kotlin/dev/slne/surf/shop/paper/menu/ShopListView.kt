@@ -1,10 +1,11 @@
 package dev.slne.surf.shop.paper.menu
 
+import com.github.shynixn.mccoroutine.folia.scope
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
-import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
 import dev.slne.surf.api.core.util.dateTimeFormatter
 import dev.slne.surf.api.paper.builder.buildItem
@@ -14,19 +15,21 @@ import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.ShopDealStats
 import dev.slne.surf.shop.core.common.service.ShopService
-import dev.slne.surf.shop.core.paper.util.dealCount
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
-import dev.slne.surf.shop.core.paper.util.totalSoldItems
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.future.future
 import me.devnatan.inventoryframework.View
 import me.devnatan.inventoryframework.ViewConfigBuilder
+import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.Component
@@ -267,20 +270,20 @@ object ShopListView : View() {
         }
     }
 
-    private val paginationState = buildLazyPaginationState { context ->
-        getLoadedShopsSortedFiltered(
-            plugin.getSorting(context.player.uniqueId),
-            searchInputCache[context.player.uniqueId]
-        ).toMutableList()
-    }.elementFactory { context, builder, _, shop ->
+    private val paginationState = buildLazyAsyncPaginationState { context ->
+        plugin.scope.future {
+            getLoadedShopsSortedFiltered(
+                plugin.getSorting(context.player.uniqueId),
+                searchInputCache[context.player.uniqueId],
+                context
+            ).toMutableList()
+        }
+    }.elementFactory { _, builder, _, shop ->
         builder.withItem(
-            createShopItem(
-                shop,
-                context.player.uniqueId,
-                viewOnly = !context.player.canUseFullShopView()
-            )
+            shop.second
         ).onClick { context ->
             context.playGeneralClickSound()
+            val shop = shop.first
 
             if (!context.player.canUseFullShopView()) {
                 if (shop.seller == context.player.uniqueId) {
@@ -351,6 +354,10 @@ object ShopListView : View() {
         selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
         val pagination = paginationState.get(render)
 
+        render.availableSlot(loadingItem)
+            .displayIf(pagination::isLoading)
+            .updateOnStateChange(paginationState)
+
         render
             .layoutSlot('S')
             .updateOnClick()
@@ -401,7 +408,7 @@ object ShopListView : View() {
                         "create-item",
                         ItemStack.empty(),
                         "create-price",
-                        0
+                        0.0
                     )
                 )
             }
@@ -464,7 +471,8 @@ fun createShopItem(
     shop: Shop,
     viewer: UUID,
     shopChest: Boolean = false,
-    viewOnly: Boolean = false
+    viewOnly: Boolean = false,
+    stats: ShopDealStats = ShopDealStats()
 ) = shop.item.clone().apply {
     amount = 1
 
@@ -501,25 +509,23 @@ fun createShopItem(
         variableValue(shop.sellerName)
     })
 
-    val dealCount = shop.dealCount
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
         shopColored("Abgeschlossene Käufe: ")
-        if (dealCount > 0) {
-            variableValue(dealCount)
+        if (stats.dealCount > 0) {
+            variableValue(stats.dealCount)
         } else {
             error("Noch keine abgeschlossen")
         }
     })
 
-    val totalSold = shop.totalSoldItems
     newEntries.add(buildText {
         spacer("-")
         appendSpace()
         shopColored("Gesamt verkauft: ")
-        if (totalSold > 0) {
-            variableValue("$totalSold Items")
+        if (stats.totalSoldItems > 0) {
+            variableValue("${stats.totalSoldItems} Items")
         } else {
             error("Noch keine verkauft")
         }
@@ -566,11 +572,11 @@ fun createShopItem(
 
                 newEntries.add(buildText {
                     appendBlob()
-                    spacer("Drücke ".toSmallCaps())
-                    white("SHIFT".toSmallCaps())
+                    error("Drücke ".toSmallCaps())
+                    white("Shift")
                     spacer(" + ")
                     displayKey("key.mouse.left")
-                    spacer(" um den Shop zu löschen.".toSmallCaps())
+                    error(" um den Shop zu löschen.".toSmallCaps())
                 })
             } else {
                 newEntries.add(buildText {
@@ -606,10 +612,11 @@ fun SlotClickContext.playNewPageSound() {
     }
 }
 
-private fun getLoadedShopsSortedFiltered(
+private suspend fun getLoadedShopsSortedFiltered(
     sortType: ShopSortingType,
-    search: String?
-): List<Shop> {
+    search: String?,
+    context: Context
+): MutableList<Pair<Shop, ItemStack>> = withContext(Dispatchers.Default) {
     val base = ShopService.loadedShops.filter { it.storedItemCount > 0 }
 
     val filtered = if (search.isNullOrBlank()) {
@@ -631,19 +638,9 @@ private fun getLoadedShopsSortedFiltered(
                     if (term.startsWith("@")) {
                         val sellerSearch = term.removePrefix("@")
                         if (sellerSearch.isEmpty()) continue
-                        val sellerName = shop.sellerName.lowercase()
-                        if (!sellerName.contains(sellerSearch)) return@filter false
+                        if (!shop.sellerName.lowercase().contains(sellerSearch)) return@filter false
                     } else {
-                        var matched = false
-
-                        for (token in tokens) {
-                            if (token.contains(term)) {
-                                matched = true
-                                break
-                            }
-                        }
-
-                        if (!matched) return@filter false
+                        if (tokens.none { it.contains(term) }) return@filter false
                     }
                 }
 
@@ -652,20 +649,29 @@ private fun getLoadedShopsSortedFiltered(
         }
     }
 
-    return when (sortType) {
-        ShopSortingType.PRICE_ASC -> filtered.sortedBy { it.pricePerItem }
-        ShopSortingType.PRICE_DESC -> filtered.sortedByDescending { it.pricePerItem }
-        ShopSortingType.TIME_ASC -> filtered.sortedBy { it.createdAt }
-        ShopSortingType.TIME_DESC -> filtered.sortedByDescending { it.createdAt }
-        ShopSortingType.MOST_STORED -> filtered.sortedByDescending { it.storedItemCount }
-        ShopSortingType.MOST_DEALS -> {
-            val dealCountMap = DealService.loadedDeals.groupingBy { it.shopInternalId }.eachCount()
-            filtered.sortedByDescending { dealCountMap[it.internalId] ?: 0 }
-        }
-
-        ShopSortingType.ITEM_NAME -> filtered.sortedBy { it.item.type.name }
-        ShopSortingType.SELLER_NAME -> filtered.sortedBy { it.sellerName.lowercase() }
+    val withStats = filtered.map { shop ->
+        shop to DealService.getDealStats(shop.internalId)
     }
+
+    val sorted = when (sortType) {
+        ShopSortingType.PRICE_ASC -> withStats.sortedBy { it.first.pricePerItem }
+        ShopSortingType.PRICE_DESC -> withStats.sortedByDescending { it.first.pricePerItem }
+        ShopSortingType.TIME_ASC -> withStats.sortedBy { it.first.createdAt }
+        ShopSortingType.TIME_DESC -> withStats.sortedByDescending { it.first.createdAt }
+        ShopSortingType.MOST_STORED -> withStats.sortedByDescending { it.first.storedItemCount }
+        ShopSortingType.MOST_DEALS -> withStats.sortedByDescending { it.second.dealCount }
+        ShopSortingType.ITEM_NAME -> withStats.sortedBy { it.first.item.type.name }
+        ShopSortingType.SELLER_NAME -> withStats.sortedBy { it.first.sellerName.lowercase() }
+    }
+
+    val playerId = context.player.uniqueId
+    val viewOnly = !context.player.canUseFullShopView()
+
+    return@withContext sorted
+        .map { (shop, stats) ->
+            shop to createShopItem(shop, playerId, viewOnly = viewOnly, stats = stats)
+        }
+        .toMutableList()
 }
 
 

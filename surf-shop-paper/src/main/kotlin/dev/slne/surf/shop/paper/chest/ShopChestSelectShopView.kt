@@ -10,14 +10,12 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
+import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
-import dev.slne.surf.shop.paper.menu.createShopItem
-import dev.slne.surf.shop.paper.menu.playGeneralClickSound
-import dev.slne.surf.shop.paper.menu.playNewPageSound
-import dev.slne.surf.shop.paper.menu.shopColored
+import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.location
@@ -28,6 +26,7 @@ import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
+import java.util.concurrent.CompletableFuture
 
 object ShopChestSelectShopView : View() {
     private val chestState = initialState<StaticShopChest>("shop-chest")
@@ -56,15 +55,26 @@ object ShopChestSelectShopView : View() {
         }
     }
 
-    private val paginationState = buildLazyPaginationState { context ->
-        ShopService.loadedShops
-            .filter { it.seller == context.player.uniqueId }
-            .sortedBy { it.item.type.name }
-            .toMutableList()
-    }.elementFactory { context, builder, _, shop ->
-        builder.withItem(createShopItem(shop, context.player.uniqueId, true)).onClick { context ->
+    private val paginationState = buildLazyAsyncPaginationState { context ->
+        CompletableFuture.supplyAsync {
+            ShopService.loadedShops
+                .filter { it.seller == context.player.uniqueId }
+                .sortedBy { it.item.type.name }
+                .map {
+                    it to createShopItem(
+                        it,
+                        context.player.uniqueId,
+                        true,
+                        stats = DealService.getDealStats(it.internalId)
+                    )
+                }
+                .toMutableList()
+        }
+    }.elementFactory { _, builder, _, shop ->
+        builder.withItem(shop.second).onClick { context ->
             context.playGeneralClickSound()
 
+            val shop = shop.first
             val chest = chestState.get(context)
 
             plugin.launch {
@@ -127,6 +137,10 @@ object ShopChestSelectShopView : View() {
 
     override fun onFirstRender(render: RenderContext) {
         val pagination = paginationState.get(render)
+
+        render.availableSlot(loadingItem)
+            .displayIf(pagination::isLoading)
+            .updateOnStateChange(paginationState)
 
         render.layoutSlot('O', outlineItem)
 
