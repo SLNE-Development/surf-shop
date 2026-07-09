@@ -10,4 +10,5 @@ object PermissionRegistry : PermissionRegistry() {
     val SHOP_COMMAND_VIEW_ONLY_BYPASS = create("$PREFIX_COMMAND.shop.view-only.bypass")
     val SHOP_COMMAND_ADMIN = create("$PREFIX_COMMAND.shop.admin")
     val CHEST_SHOP_BREAK_BYPASS = create("$PREFIX.chests.bypass")
+    val SHULKER = create("$PREFIX.shulker")
 }

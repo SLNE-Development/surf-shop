@@ -18,7 +18,10 @@ import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
+import dev.slne.surf.shop.paper.menu.canUseShulkerFeature
+import dev.slne.surf.shop.paper.menu.findFillableShulker
 import dev.slne.surf.shop.paper.menu.outlineItem
+import dev.slne.surf.shop.paper.menu.shulkerFreeCapacityFor
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
@@ -33,6 +36,7 @@ import me.devnatan.inventoryframework.context.SlotClickContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.Tag
 import org.bukkit.block.ShulkerBox
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -57,14 +61,14 @@ object ItemStorageRemoveView : View() {
                 "O       O",
                 "QOOOBOOOU"
             )
-            .cancelOnDrop().cancelOnDrag()
+            .cancelInteractions()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
         localAmountState.set(amountState.get(render), render)
 
-        render.layoutSlot('O', outlineItem).onClick { _ -> }
+        render.layoutSlot('O', outlineItem)
         render.layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
@@ -120,33 +124,47 @@ object ItemStorageRemoveView : View() {
 
         render.layoutSlot('U', shulkerSlotItem).onClick { context ->
             context.playGeneralClickSound()
-            val cursorItem = context.clickOrigin.currentItem ?: return@onClick
-            if (!cursorItem.type.name.endsWith("SHULKER_BOX")) {
+
+            if (!context.player.canUseShulkerFeature()) {
                 context.player.sendActionBar(buildText {
                     appendErrorPrefix()
-                    error("Lege eine leere Shulker-Box auf deinen Cursor.")
+                    error("Dir fehlt die Berechtigung, um Shulker-Boxen im Shop zu nutzen.")
                 })
                 context.player.playNoSound()
                 return@onClick
             }
 
-            val meta = cursorItem.itemMeta
-            if (meta !is BlockStateMeta || meta.blockState !is ShulkerBox) {
+            if (!context.player.canEditShopStorageFromCurrentView()) {
+                context.player.sendText {
+                    appendErrorPrefix()
+                    error("Das Lager kannst du nur am Spawn bearbeiten.")
+                }
+                context.player.playNoSound()
                 return@onClick
             }
 
-            val boxState = meta.blockState as ShulkerBox
-            val contents = boxState.inventory.contents
-            if (contents.any { it != null && !it.type.isAir }) {
+            val shop = shopState.get(context)
+
+            if (Tag.SHULKER_BOXES.isTagged(shop.item.type)) {
                 context.player.sendActionBar(buildText {
                     appendErrorPrefix()
-                    error("Die Shulker-Box muss leer sein.")
+                    error("Du kannst keine Shulker-Boxen in einer Shulker-Box lagern.")
                 })
                 context.player.playNoSound()
                 return@onClick
             }
 
-            handleShulkerWithdrawal(context, context.player, cursorItem)
+            val shulker = context.player.findFillableShulker(shop.item)?.asQuantity(1) ?: run {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Du brauchst eine Shulker-Box mit freiem Platz in deinem Inventar.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            context.player.inventory.removeItem(shulker.asQuantity(1))
+            handleShulkerWithdrawal(context, context.player, shulker)
         }
 
         render.layoutSlot('B', continueItem).onClick { context ->
@@ -312,61 +330,17 @@ object ItemStorageRemoveView : View() {
         }
     }
 
-    override fun onClick(click: SlotClickContext) {
-        if (click.clickedContainer.isEntityContainer) {
-            if (!click.player.canEditShopStorageFromCurrentView()) {
-                click.player.sendText {
-                    appendErrorPrefix()
-                    error("Das Lager kannst du nur am Spawn bearbeiten.")
-                }
-                click.player.playNoSound()
-                return
-            }
-
-            val item = click.item ?: return
-
-            if (item.type.name.endsWith("SHULKER_BOX")) {
-                val meta = item.itemMeta
-                if (meta is BlockStateMeta) {
-                    val state = meta.blockState
-                    if (state is ShulkerBox) {
-                        val contents = state.inventory.contents
-                        if (contents.any { it != null && !it.type.isAir }) {
-                            click.player.sendActionBar(buildText {
-                                appendErrorPrefix()
-                                error("Die Shulker-Box muss leer sein.")
-                            })
-                            click.player.playNoSound()
-                            return
-                        }
-
-                        handleShulkerWithdrawal(click, click.player, item)
-                    }
-                }
-            }
-        }
-    }
-
     private fun handleShulkerWithdrawal(
         context: SlotClickContext,
         player: Player,
-        shulkerItem: ItemStack
+        shulker: ItemStack
     ) {
-        if (!player.canEditShopStorageFromCurrentView()) {
-            player.sendText {
-                appendErrorPrefix()
-                error("Das Lager kannst du nur am Spawn bearbeiten.")
-            }
-            player.playNoSound()
-            return
-        }
-
         val shop = shopState.get(context)
+
         ShopService.blockShop(shop)
 
         plugin.launch {
-            val updatedShop =
-                ShopService.loadedShops.find { it.shopUuid == shop.shopUuid }
+            val updatedShop = ShopService.getShop(shop.shopUuid)
 
             if (updatedShop == null) {
                 player.sendText {
@@ -374,10 +348,16 @@ object ItemStorageRemoveView : View() {
                     error("Der Shop existiert nicht mehr.")
                 }
                 ShopService.unblockShop(shop)
+                withContext(plugin.entityDispatcher(player)) {
+                    giveOrDrop(player, shulker)
+                }
                 return@launch
             }
 
-            val toRemove = minOf(updatedShop.storedItemCount, 27 * updatedShop.item.maxStackSize)
+            val toRemove = minOf(
+                updatedShop.storedItemCount,
+                shulker.shulkerFreeCapacityFor(updatedShop.item)
+            )
 
             if (toRemove <= 0) {
                 player.sendText {
@@ -385,25 +365,18 @@ object ItemStorageRemoveView : View() {
                     error("Der Shop hat keine Items auf Lager.")
                 }
                 ShopService.unblockShop(updatedShop)
+                withContext(plugin.entityDispatcher(player)) {
+                    giveOrDrop(player, shulker)
+                }
                 return@launch
             }
 
             val filledShulker = createFilledShulkerPreservingMeta(
-                shulkerItem, updatedShop.item, toRemove
+                shulker, updatedShop.item, toRemove
             )
 
             withContext(plugin.entityDispatcher(player)) {
-                player.setItemOnCursor(null)
-
-                val leftover = player.inventory.addItem(filledShulker)
-                if (leftover.isNotEmpty()) {
-                    leftover.values.forEach { rest ->
-                        val dropped = player.world.dropItem(
-                            player.location, rest
-                        )
-                        dropped.owner = player.uniqueId
-                    }
-                }
+                giveOrDrop(player, filledShulker)
 
                 player.playSound(true) {
                     type(Sound.ENTITY_CHICKEN_EGG)
@@ -451,27 +424,28 @@ object ItemStorageRemoveView : View() {
         }
     }
 
+    private fun giveOrDrop(player: Player, item: ItemStack) {
+        val leftover = player.inventory.addItem(item)
+        leftover.values.forEach { rest ->
+            player.world.dropItem(player.location, rest).owner = player.uniqueId
+        }
+    }
 
     private fun createFilledShulkerPreservingMeta(
         originalShulker: ItemStack, shopItem: ItemStack, amount: Int
     ): ItemStack {
-        val filledShulker = originalShulker.clone().apply { this.amount = 1 }
+        val filledShulker = originalShulker.asQuantity(1)
         val meta = filledShulker.itemMeta as BlockStateMeta
         val state = meta.blockState as ShulkerBox
-        val inv = state.inventory
 
         var remaining = amount
-        val maxStack = shopItem.maxStackSize
-        var slotIndex = 0
-
-        while (remaining > 0 && slotIndex < 27) {
-            val stack = shopItem.clone()
-            val stackSize = minOf(maxStack, remaining)
-            stack.amount = stackSize
-            inv.setItem(slotIndex, stack)
+        val stacks = mutableListOf<ItemStack>()
+        while (remaining > 0) {
+            val stackSize = minOf(shopItem.maxStackSize, remaining)
+            stacks += shopItem.clone().apply { this.amount = stackSize }
             remaining -= stackSize
-            slotIndex++
         }
+        state.inventory.addItem(*stacks.toTypedArray())
 
         meta.blockState = state
         filledShulker.itemMeta = meta
@@ -495,17 +469,17 @@ object ItemStorageRemoveView : View() {
             emptyLine()
             line {
                 appendBlob()
-                shopColored("Klicke mit einer leeren Shulker-Box")
+                shopColored("Klicke eine leere Shulker-Box in")
             }
             line {
                 appendSpace()
                 appendBlob()
-                shopColored("auf diesen Slot, um sie mit Items")
+                shopColored("deinem Inventar an, um sie mit")
             }
             line {
                 appendSpace()
                 appendBlob()
-                shopColored("aus dem Lager zu befüllen.")
+                shopColored("Items aus dem Lager zu befüllen.")
             }
             emptyLine()
             line {
@@ -521,21 +495,6 @@ object ItemStorageRemoveView : View() {
                 appendSpace()
                 appendBlob()
                 shopColored("die Box teilweise befüllt.")
-            }
-            emptyLine()
-            line {
-                appendBlob()
-                shopColored("Alternativ kannst du eine leere")
-            }
-            line {
-                appendSpace()
-                appendBlob()
-                shopColored("Shulker-Box in deinem Inventar")
-            }
-            line {
-                appendSpace()
-                appendBlob()
-                shopColored("anklicken.")
             }
         }
     }

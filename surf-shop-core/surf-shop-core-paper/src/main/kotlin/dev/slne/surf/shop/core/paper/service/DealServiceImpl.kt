@@ -181,7 +181,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                 val stacks = mutableListOf<ItemStack>()
 
                 while (remaining > 0) {
-                    val stackSize = minOf(remaining, 64)
+                    val stackSize = minOf(remaining, itemStack.maxStackSize)
                     val stack = itemStack.clone()
 
                     stack.amount = stackSize
@@ -201,6 +201,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                             }
                         }
                     }
+                }
 
                 TransactionUser[shop.seller].withdraw(
                     (shop.pricePerItem * amount * taxRate).toBigDecimal()
@@ -210,16 +211,10 @@ class DealServiceImpl : DealService, Services.Fallback {
                     TransactionData.of("reason", "shop-tax (${taxRate * 100}%)")
                 )
 
-                    return Deal.DealResult.Success(deal)
+                return if (deliverToInventory) {
+                    Deal.DealResult.Success(deal)
                 } else {
-                    TransactionUser[shop.seller].withdraw(
-                        (shop.pricePerItem * amount * taxRate).toBigDecimal(),
-                        Currency.default(),
-                        false,
-                        TransactionData.of("reason", "shop-tax")
-                    )
-
-                    return Deal.DealResult.SuccessWithItems(deal, stacks)
+                    Deal.DealResult.SuccessWithItems(deal, stacks)
                 }
             }
         }

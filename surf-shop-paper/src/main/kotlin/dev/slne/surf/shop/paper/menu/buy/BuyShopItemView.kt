@@ -2,7 +2,6 @@ package dev.slne.surf.shop.paper.menu.buy
 
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
-import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.sendText
@@ -33,7 +32,9 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.Tag
 import org.bukkit.block.ShulkerBox
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BlockStateMeta
 
@@ -52,14 +53,23 @@ object BuyShopItemView : View() {
                 "O U I C O",
                 "OOOOBOOOO"
             )
-            .cancelOnDrop().cancelOnDrag()
+            .cancelInteractions()
             .build()
     }
 
     override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('O', outlineItem).onClick { _ -> }
+        render.layoutSlot('O', outlineItem)
         render.layoutSlot('U').renderWith { shulkerSlotItem }.onClick { context ->
             context.playGeneralClickSound()
+
+            if (!context.player.canUseShulkerFeature()) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Dir fehlt die Berechtigung, um Shulker-Boxen im Shop zu nutzen.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
 
             if (!context.player.canUseShopTransactionsFromCurrentView()) {
                 context.player.sendText {
@@ -70,203 +80,62 @@ object BuyShopItemView : View() {
                 return@onClick
             }
 
-            val cursorItem = context.clickOrigin.currentItem ?: return@onClick
-            if (!cursorItem.type.name.endsWith("SHULKER_BOX")) {
-                context.player.sendActionBar(buildText {
-                    appendErrorPrefix()
-                    error("Lege eine leere Shulker-Box auf deinen Cursor.")
-                })
-                context.player.playNoSound()
-                return@onClick
-            }
-
-            val meta = cursorItem.itemMeta
-            if (meta !is BlockStateMeta || meta.blockState !is ShulkerBox) {
-                return@onClick
-            }
-
-            val boxState = meta.blockState as ShulkerBox
-            val contents = boxState.inventory.contents
-            if (contents.any { it != null && !it.type.isAir }) {
-                context.player.sendActionBar(buildText {
-                    appendErrorPrefix()
-                    error("Die Shulker-Box muss leer sein.")
-                })
-                context.player.playNoSound()
-                return@onClick
-            }
-
             val currentShop = shopState.get(context).updatedShop ?: run {
                 context.player.sendText {
                     appendErrorPrefix()
                     error("Dieser Shop existiert nicht mehr!")
                 }
                 context.player.playNoSound()
-                plugin.launch { openListView(render) }
+                plugin.launch { openListView(context.player) }
                 return@onClick
             }
 
             if (currentShop.isBlocked) {
-                context.player.sendText {
+                context.player.sendActionBar(buildText {
                     appendErrorPrefix()
                     error("Du kannst derzeit keine Items in diesem Shop kaufen!")
-                }
+                })
                 context.player.playNoSound()
                 return@onClick
             }
 
             if (currentShop.storedItemCount <= 0) {
-                context.player.sendText {
+                context.player.sendActionBar(buildText {
                     appendErrorPrefix()
                     error("Dieser Shop ist ausverkauft!")
-                    }
+                })
                 context.player.playNoSound()
                 return@onClick
             }
 
-            val maxPerSlot = currentShop.item.maxStackSize
-            val shulkerMax = 27 * maxPerSlot
-            val buyAmount = minOf(currentShop.storedItemCount, shulkerMax)
+            if (Tag.SHULKER_BOXES.isTagged(currentShop.item.type)) {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Du kannst keine Shulker-Boxen in einer Shulker-Box kaufen.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
 
+            val shulker = context.player.findFillableShulker(currentShop.item)?.asQuantity(1) ?: run {
+                context.player.sendActionBar(buildText {
+                    appendErrorPrefix()
+                    error("Du brauchst eine Shulker-Box mit freiem Platz in deinem Inventar.")
+                })
+                context.player.playNoSound()
+                return@onClick
+            }
+
+            val buyAmount = minOf(
+                currentShop.storedItemCount,
+                shulker.shulkerFreeCapacityFor(currentShop.item)
+            )
+
+            context.player.inventory.removeItem(shulker.asQuantity(1))
             context.player.closeInventory()
 
             plugin.launch {
-                when (val result = DealService.buyWithoutDelivery(
-                    context.player.uniqueId, currentShop, buyAmount
-                )) {
-                    is Deal.DealResult.SuccessWithItems<*> -> {
-                        val boughtAmount = result.deal.amount
-                        @Suppress("UNCHECKED_CAST")
-                        val purchasedItems = result.items as List<ItemStack>
-
-                        withContext(plugin.entityDispatcher(context.player)) {
-                            // Remove the empty shulker box from player's inventory
-                            context.player.inventory.removeItem(cursorItem.asQuantity(1))
-
-                            // Fill the shulker box directly with purchased items (without roundtripping through inventory)
-                            val filledShulker = createFilledShulkerFromItems(
-                                cursorItem.type, purchasedItems
-                            )
-                            
-                            val leftover = context.player.inventory.addItem(filledShulker)
-                            if (leftover.isNotEmpty()) {
-                                withContext(
-                                    plugin.regionDispatcher(context.player.location)
-                                ) {
-                                    leftover.values.forEach {
-                                        context.player.world.dropItem(
-                                            context.player.location, it
-                                        ).owner = context.player.uniqueId
-                                    }
-                                }
-                            }
-
-                            context.player.playSound(true) {
-                                    type(Sound.ENTITY_CHICKEN_EGG)
-                                }
-                        }
-
-                        context.player.sendText {
-                            appendSuccessPrefix()
-                            success(
-                                "Du hast erfolgreich ${result.deal.amount} Items für ${
-                                    formatPriceNice(
-                                        result.deal.amount * currentShop.pricePerItem
-                                    )
-                                } gekauft und in einer Shulker-Box erhalten!"
-                            )
-                        }
-
-                        Bukkit.getPlayer(currentShop.seller)?.sendText {
-                            appendInfoPrefix()
-                            variableValue(context.player.name)
-                            info(" hat gerade ")
-                            append {
-                                if (result.deal.amount > 1) {
-                                    variableValue("${result.deal.amount}x ")
-                                }
-                                append(currentShop.item.displayName())
-                                hoverEvent(currentShop.item.asHoverEvent())
-                            }
-                            info(" gekauft.")
-                            spacer(
-                                " (${formatPriceNice(currentShop.pricePerItem * result.deal.amount)} - 3% Steuern)"
-                            )
-                        }
-
-                        openListView(render)
-                    }
-                    
-                    is Deal.DealResult.Success -> {
-                        // Fallback: should not happen with buyWithoutDelivery, but handle gracefully
-                        context.player.sendText {
-                            appendSuccessPrefix()
-                            success(
-                                "Du hast erfolgreich ${result.deal.amount} Items für ${
-                                    formatPriceNice(
-                                        result.deal.amount * currentShop.pricePerItem
-                                    )
-                                } gekauft!"
-                            )
-                        }
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.InsufficientStock -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es sind nicht genügend Items auf Lager!")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.OtherInsufficientFounds,
-                    Deal.DealResult.SelfInsufficientFounds -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.ShopBlocked -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Du kannst derzeit keine Items in diesem Shop kaufen!")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.ShopDeleted -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Dieser Shop existiert nicht mehr!")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.TransactionFailed -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-
-                    Deal.DealResult.PlayerNotFound -> {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
-                        }
-                        context.player.playNoSound()
-                        openListView(render)
-                    }
-                }
+                completeShulkerPurchase(context.player, currentShop, buyAmount, shulker)
             }
         }
 
@@ -589,7 +458,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.OtherInsufficientFounds -> {
@@ -599,7 +468,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.SelfInsufficientFounds -> {
@@ -609,7 +478,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.ShopBlocked -> {
@@ -619,7 +488,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.ShopDeleted -> {
@@ -629,7 +498,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         is Deal.DealResult.Success -> {
@@ -661,7 +530,7 @@ object BuyShopItemView : View() {
                                 )
                             }
 
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.TransactionFailed -> {
@@ -671,7 +540,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
 
                         Deal.DealResult.PlayerNotFound -> {
@@ -681,16 +550,15 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(context.player)
                         }
                         
                         is Deal.DealResult.SuccessWithItems<*> -> {
-                            // This branch should not occur for regular buy(), but handle gracefully
                             context.player.sendText {
                                 appendSuccessPrefix()
                                 success("Du hast erfolgreich ${result.deal.amount} Items gekauft!")
                             }
-                            openListView(render)
+                            openListView(context.player)
                         }
                     }
                 }
@@ -712,6 +580,130 @@ object BuyShopItemView : View() {
         }
     }
 
+    private suspend fun completeShulkerPurchase(
+        player: Player,
+        shop: Shop,
+        buyAmount: Int,
+        shulker: ItemStack
+    ) {
+        when (val result = DealService.buyWithoutDelivery(player.uniqueId, shop, buyAmount)) {
+            is Deal.DealResult.SuccessWithItems<*> -> {
+                @Suppress("UNCHECKED_CAST")
+                val purchasedItems = result.items as List<ItemStack>
+
+                withContext(plugin.entityDispatcher(player)) {
+                    giveOrDrop(player, createFilledShulkerFromItems(shulker, purchasedItems))
+
+                    player.playSound(true) {
+                        type(Sound.ENTITY_CHICKEN_EGG)
+                    }
+                }
+
+                player.sendText {
+                    appendSuccessPrefix()
+                    success(
+                        "Du hast erfolgreich ${result.deal.amount} Items für ${
+                            formatPriceNice(result.deal.amount * shop.pricePerItem)
+                        } gekauft und in einer Shulker-Box erhalten!"
+                    )
+                }
+
+                Bukkit.getPlayer(shop.seller)?.sendText {
+                    appendInfoPrefix()
+                    variableValue(player.name)
+                    info(" hat gerade ")
+                    append {
+                        if (result.deal.amount > 1) {
+                            variableValue("${result.deal.amount}x ")
+                        }
+                        append(shop.item.displayName())
+                        hoverEvent(shop.item.asHoverEvent())
+                    }
+                    info(" gekauft.")
+                    spacer(
+                        " (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)"
+                    )
+                }
+
+                openListView(player)
+            }
+
+            is Deal.DealResult.Success -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendSuccessPrefix()
+                    success(
+                        "Du hast erfolgreich ${result.deal.amount} Items für ${
+                            formatPriceNice(result.deal.amount * shop.pricePerItem)
+                        } gekauft!"
+                    )
+                }
+                openListView(player)
+            }
+
+            Deal.DealResult.InsufficientStock -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Es sind nicht genügend Items auf Lager!")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+
+            Deal.DealResult.OtherInsufficientFounds,
+            Deal.DealResult.SelfInsufficientFounds -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+
+            Deal.DealResult.ShopBlocked -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Du kannst derzeit keine Items in diesem Shop kaufen!")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+
+            Deal.DealResult.ShopDeleted -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Dieser Shop existiert nicht mehr!")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+
+            Deal.DealResult.TransactionFailed -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+
+            Deal.DealResult.PlayerNotFound -> {
+                returnShulker(player, shulker)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
+                }
+                player.playNoSound()
+                openListView(player)
+            }
+        }
+    }
+
     private val shulkerSlotItem = ItemStack(Material.SHULKER_BOX).apply {
         displayName {
             shopColored("Shulker-Box Kauf", TextDecoration.BOLD)
@@ -721,12 +713,12 @@ object BuyShopItemView : View() {
             emptyLine()
             line {
                 appendBlob()
-                shopColored("Klicke mit einer leeren Shulker-Box")
+                shopColored("Klicke eine leere Shulker-Box in")
             }
             line {
                 appendSpace()
                 appendBlob()
-                shopColored("auf diesen Slot, um die Items")
+                shopColored("deinem Inventar an, um die Items")
             }
             line {
                 appendSpace()
@@ -751,7 +743,7 @@ object BuyShopItemView : View() {
             line {
                 appendSpace()
                 appendBlob()
-                shopColored("wird die Box teilweise befullt.")
+                shopColored("wird die Box teilweise befüllt.")
             }
             emptyLine()
             line {
@@ -766,63 +758,41 @@ object BuyShopItemView : View() {
         }
     }
 
-    private fun createFilledShulker(
-        shulkerType: Material, shopItem: ItemStack, amount: Int
-    ): ItemStack {
-        val filledShulker = ItemStack(shulkerType)
-        val meta = filledShulker.itemMeta as BlockStateMeta
-        val state = meta.blockState as ShulkerBox
-        val inv = state.inventory
-
-        var remaining = amount
-        val maxStack = shopItem.maxStackSize
-        var slotIndex = 0
-
-        while (remaining > 0 && slotIndex < 27) {
-            val stack = shopItem.clone()
-            val stackSize = minOf(maxStack, remaining)
-            stack.amount = stackSize
-            inv.setItem(slotIndex, stack)
-            remaining -= stackSize
-            slotIndex++
-        }
-
-        meta.blockState = state
-        filledShulker.itemMeta = meta
-        return filledShulker
-    }
-
-    /**
-     * Creates a filled shulker box directly from the provided item stacks.
-     * This avoids the inventory roundtrip that could affect existing player items.
-     */
     private fun createFilledShulkerFromItems(
-        shulkerType: Material, items: List<ItemStack>
+        template: ItemStack, items: List<ItemStack>
     ): ItemStack {
-        val filledShulker = ItemStack(shulkerType)
+        val filledShulker = template.asQuantity(1)
         val meta = filledShulker.itemMeta as BlockStateMeta
         val state = meta.blockState as ShulkerBox
-        val inv = state.inventory
 
-        for ((index, item) in items.withIndex()) {
-            if (index >= 27) break
-            inv.setItem(index, item)
-        }
+        state.inventory.addItem(*items.toTypedArray())
 
         meta.blockState = state
         filledShulker.itemMeta = meta
         return filledShulker
     }
 
-    private suspend fun openListView(context: RenderContext) =
-        withContext(plugin.entityDispatcher(context.player)) {
-            if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
-                StaticShopState.setInStaticShop(context.player.uniqueId, false)
-                context.player.closeInventory()
-            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                viewFrame.open(OwnShopsListView::class.java, context.player)
+    private fun giveOrDrop(player: Player, item: ItemStack) {
+        val leftover = player.inventory.addItem(item)
+        leftover.values.forEach { rest ->
+            player.world.dropItem(player.location, rest).owner = player.uniqueId
+        }
+    }
+
+    private suspend fun returnShulker(player: Player, shulker: ItemStack) =
+        withContext(plugin.entityDispatcher(player)) {
+            giveOrDrop(player, shulker)
+        }
+
+    private suspend fun openListView(player: Player) =
+        withContext(plugin.entityDispatcher(player)) {
+            if (StaticShopState.isInStaticShop(player.uniqueId)) {
+                StaticShopState.setInStaticShop(player.uniqueId, false)
+                player.closeInventory()
+            } else if (OwnShopState.isInOwn(player.uniqueId)) {
+                viewFrame.open(OwnShopsListView::class.java, player)
             } else {
-                viewFrame.open(ShopListView::class.java, context.player)
+                viewFrame.open(ShopListView::class.java, player)
             }
         }
 }

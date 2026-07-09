@@ -15,7 +15,6 @@ data class Deal(
 ) {
     sealed class DealResult {
         data class Success(val deal: Deal) : DealResult()
-        /** Result for purchases where items are returned without being placed in inventory */
         data class SuccessWithItems<T>(val deal: Deal, val items: List<T>) : DealResult()
         object ShopBlocked : DealResult()
         object ShopDeleted : DealResult()
