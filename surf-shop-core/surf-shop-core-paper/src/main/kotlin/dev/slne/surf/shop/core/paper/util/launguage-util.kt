@@ -17,7 +17,7 @@ import java.util.*
 
 private val languageJsonCache = mutableMapOf<String, Map<String, String>>()
 
-private fun getAvailableLanguages(): List<String> { //TODO: rework? dont know what this does, but works (lol)
+private fun getAvailableLanguages(): List<String> {
     val resource = object {}.javaClass.classLoader.getResource("languages") ?: return emptyList()
     return try {
         when (resource.protocol) {
@@ -26,6 +26,7 @@ private fun getAvailableLanguages(): List<String> { //TODO: rework? dont know wh
                 dir.listFiles { file -> file.isFile && file.name.endsWith(".json") }
                     ?.map { it.name.removeSuffix(".json") } ?: emptyList()
             }
+
             "jar" -> {
                 val conn = resource.openConnection()
                 val jar = (conn as JarURLConnection).jarFile
@@ -35,6 +36,7 @@ private fun getAvailableLanguages(): List<String> { //TODO: rework? dont know wh
                     .map { it.substringAfterLast('/').removeSuffix(".json") }
                     .toList()
             }
+
             else -> {
                 emptyList()
             }
@@ -73,7 +75,7 @@ fun populateTranslationCaches() {
 
     logger.info("Found ${languages.size} language files for translation caching. [$languages]")
 
-    Material.entries.forEach { material ->
+    Material.entries.filter { !it.isLegacy }.forEach { material ->
         materialTranslationCache[material] = getMaterialTranslations(material, languages)
     }
 
@@ -143,8 +145,8 @@ fun getAllCachedTranslationsFor(itemStack: ItemStack): Set<String> {
         }
 
         if (meta is PotionMeta) {
-            meta.basePotionType?.effectType?.let { effectType ->
-                potionTranslationCache[effectType]?.values?.forEach { add(it) }
+            meta.basePotionType?.potionEffects?.forEach { effectType ->
+                potionTranslationCache[effectType.type]?.values?.forEach { add(it) }
             }
             meta.customEffects.forEach { effect ->
                 potionTranslationCache[effect.type]?.values?.forEach { add(it) }
