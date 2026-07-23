@@ -44,7 +44,7 @@ class ShopRepository {
     }
 
     suspend fun saveShop(shop: Shop) = suspendTransaction {
-        ShopsTable.upsert {
+        ShopsTable.upsert(ShopsTable.shopUuid) {
             it[shopUuid] = shop.shopUuid
             it[item] = shop.itemString
             it[storedItemCount] = shop.storedItemCount
