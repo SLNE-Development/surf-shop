@@ -7,7 +7,15 @@ import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
+import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
+import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
+import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
@@ -23,39 +31,37 @@ import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 
-object BuyShopItemView : View() {
-    private val shopState = initialState<Shop>("buy-shop")
-    private val amountState = mutableState(1)
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Items kaufen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(3)
-            .layout("OOOOOOOOO", "O   I C O", "OOOOBOOOO")
-            .cancelInteractions()
-            .build()
+val buyShopItemView = surfView("Items Kaufen") {
+    val shopState = initialState<Shop>("buy-shop")
+    val amountState = mutableState(1)
+
+    settings {
+        rows(3)
+        cancelAllInteractions()
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I')
+    containerDefaults {
+        blockRow(1)
+        blockRow(2, exemptColumns = intArrayOf(4, 6, 8))
+        blockRow(3)
+    }
+
+    onFirstRender {
+        layoutSlot('I')
             .renderWith {
-                val initialShop = shopState.get(render)
+                val initialShop = shopState[this]
                 val shop = initialShop.updatedShop ?: initialShop
                 shop.item.clone().apply {
                     val oldLore = lore()?.toMutableList() ?: mutableListOf()
                     val newEntries = mutableListOf<Component>()
 
-                    val amount = amountState.get(render)
+                    val amount = amountState[this@onFirstRender]
 
                     newEntries.add(Component.empty())
                     newEntries.add(buildText {
@@ -144,9 +150,9 @@ object BuyShopItemView : View() {
                     lore(oldLore + newEntries)
                 }
             }
-            .updateOnStateChange(amountState)
             .onClick { context ->
                 context.playGeneralClickSound()
+                context.update()
 
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
@@ -157,7 +163,7 @@ object BuyShopItemView : View() {
                     return@onClick
                 }
 
-                val currentShop = shopState.get(context).updatedShop ?: run {
+                val currentShop = shopState[context].updatedShop ?: run {
                     context.player.sendText {
                         appendErrorPrefix()
                         error("Dieser Shop existiert nicht mehr!")
@@ -175,7 +181,7 @@ object BuyShopItemView : View() {
                     return@onClick
                 }
 
-                var amount = amountState.get(context)
+                var amount = amountState[context]
 
                 if (currentShop.storedItemCount <= 0) {
                     context.player.sendText {
@@ -189,7 +195,7 @@ object BuyShopItemView : View() {
 
                 if (amount > currentShop.storedItemCount) {
                     amount = currentShop.storedItemCount
-                    amountState.set(amount, context)
+                    amountState[this] = amount
                     context.player.sendText {
                         appendErrorPrefix()
                         error("Die Anzahl wurde auf den verfügbaren Lagerbestand (${currentShop.storedItemCount}) angepasst!")
@@ -212,7 +218,7 @@ object BuyShopItemView : View() {
                         context.player.playNoSound()
                         return@onClick
                     }
-                    amountState.set(amount + 64, context)
+                    amountState[this] = amount + 64
                     return@onClick
                 }
 
@@ -226,7 +232,7 @@ object BuyShopItemView : View() {
                         context.player.playNoSound()
                         return@onClick
                     }
-                    amountState.set(amount + 1, context)
+                    amountState[this] = amount + 1
                     return@onClick
                 }
 
@@ -241,7 +247,7 @@ object BuyShopItemView : View() {
                         return@onClick
                     }
 
-                    amountState.set(amount - 64, context)
+                    amountState[this] = amount - 64
                     return@onClick
                 }
 
@@ -255,12 +261,12 @@ object BuyShopItemView : View() {
                         context.player.playNoSound()
                         return@onClick
                     }
-                    amountState.set(amount - 1, context)
+                    amountState[this] = amount - 1
                     return@onClick
                 }
             }
 
-        render.layoutSlot('C')
+        this.layoutSlot('C')
             .renderWith {
                 MenuHeads.CHECK.clone().apply {
                     displayName {
@@ -282,21 +288,23 @@ object BuyShopItemView : View() {
                             spacer("-")
                             appendSpace()
                             shopColored("Anzahl: ")
-                            variableValue(amountState.get(render))
+                            variableValue(amountState[this@onFirstRender])
                         }
 
                         line {
                             spacer("-")
                             appendSpace()
                             shopColored("Gesamtpreis: ")
-                            variableValue(amountState.get(render) * shopState.get(render).pricePerItem)
+                            variableValue(
+                                amountState[this@onFirstRender] * shopState[this@onFirstRender].pricePerItem
+                            )
                         }
                     }
                 }
             }
-            .updateOnStateChange(amountState)
             .onClick { context ->
                 context.playGeneralClickSound()
+                context.update()
 
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
@@ -307,7 +315,7 @@ object BuyShopItemView : View() {
                     return@onClick
                 }
 
-                val shop = shopState.get(context).updatedShop ?: run {
+                val shop = shopState[context].updatedShop ?: run {
                     context.player.sendText {
                         appendErrorPrefix()
                         error("Dieser Shop existiert nicht mehr!")
@@ -325,7 +333,7 @@ object BuyShopItemView : View() {
                     return@onClick
                 }
 
-                val amount = amountState.get(context)
+                val amount = amountState[context]
 
                 if (shop.isBlocked) {
                     context.player.sendText {
@@ -362,7 +370,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.OtherInsufficientFounds -> {
@@ -372,7 +380,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.SelfInsufficientFounds -> {
@@ -382,7 +390,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.ShopBlocked -> {
@@ -392,7 +400,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.ShopDeleted -> {
@@ -402,7 +410,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         is Deal.DealResult.Success -> {
@@ -432,7 +440,7 @@ object BuyShopItemView : View() {
                                 spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
                             }
 
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.TransactionFailed -> {
@@ -442,7 +450,7 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
 
                         Deal.DealResult.PlayerNotFound -> {
@@ -452,12 +460,12 @@ object BuyShopItemView : View() {
                             }
 
                             context.player.playNoSound()
-                            openListView(render)
+                            openListView(this@onFirstRender)
                         }
                     }
                 }
             }
-        render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+        this.layoutSlot('B', MenuHeads.CROSS.clone().apply {
             displayName {
                 error("Abbrechen")
             }
@@ -473,16 +481,16 @@ object BuyShopItemView : View() {
             }
         }
     }
-
-    private suspend fun openListView(context: RenderContext) =
-        withContext(plugin.entityDispatcher(context.player)) {
-            if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
-                StaticShopState.setInStaticShop(context.player.uniqueId, false)
-                context.player.closeInventory()
-            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                viewFrame.open(OwnShopsListView::class.java, context.player)
-            } else {
-                viewFrame.open(ShopListView::class.java, context.player)
-            }
-        }
 }
+
+private suspend fun openListView(context: RenderContext) =
+    withContext(plugin.entityDispatcher(context.player)) {
+        if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+            StaticShopState.setInStaticShop(context.player.uniqueId, false)
+            context.player.closeInventory()
+        } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
+            viewFrame.open(OwnShopsListView::class.java, context.player)
+        } else {
+            viewFrame.open(ShopListView::class.java, context.player)
+        }
+    }
