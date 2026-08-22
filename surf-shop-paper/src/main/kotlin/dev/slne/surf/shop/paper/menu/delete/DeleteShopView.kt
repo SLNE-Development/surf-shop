@@ -54,7 +54,7 @@ object DeleteShopView : View() {
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 context.openForPlayer(OwnShopsListView::class.java)
             } else {
-                context.openForPlayer(ShopListView::class.java)
+                context.openForPlayer(shopListView::class.java)
             }
         }
 
@@ -115,7 +115,7 @@ object DeleteShopView : View() {
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
-                        context.openForPlayer(ShopListView::class.java)
+                        context.openForPlayer(shopListView::class.java)
                     }
                 }
             }

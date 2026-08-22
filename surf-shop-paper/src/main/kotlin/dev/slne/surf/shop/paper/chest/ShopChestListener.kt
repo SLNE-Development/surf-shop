@@ -14,7 +14,7 @@ import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.StaticShopState
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
 import dev.slne.surf.shop.paper.permission.PermissionRegistry
 import dev.slne.surf.shop.paper.plugin
 import kotlinx.coroutines.withContext
@@ -51,7 +51,8 @@ object ShopChestListener : Listener {
         z = z
     )
 
-    private fun isTransitioningChest(block: Block) = block.chestBlockLocation() in transitioningChests
+    private fun isTransitioningChest(block: Block) =
+        block.chestBlockLocation() in transitioningChests
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
@@ -284,7 +285,7 @@ object ShopChestListener : Listener {
             StaticShopState.setInStaticShop(player.uniqueId, true)
             ChestShopEditState.setChest(player.uniqueId, null)
             viewFrame.open(
-                BuyShopItemView::class.java,
+                buyShopItemView::class.java,
                 player,
                 ImmutableMap.of("buy-shop", shop)
             )

@@ -18,7 +18,7 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
 import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
@@ -272,7 +272,7 @@ object OwnShopsListView : View() {
                 }
             } else {
                 context.openForPlayer(
-                    BuyShopItemView::class.java,
+                    buyShopItemView::class.java,
                     ImmutableMap.of(
                         "buy-shop",
                         shop
@@ -354,7 +354,7 @@ object OwnShopsListView : View() {
         }
         render.layoutSlot('C', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.openForPlayer(ShopListView::class.java)
+            context.openForPlayer(shopListView::class.java)
             OwnShopState.setInOwn(context.player.uniqueId, false)
         }
         render

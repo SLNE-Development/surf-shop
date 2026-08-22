@@ -129,7 +129,7 @@ object DoneDealsView : View() {
             if (OwnShopState.isInOwn(click.player.uniqueId)) {
                 click.openForPlayer(OwnShopsListView::class.java)
             } else {
-                click.openForPlayer(ShopListView::class.java)
+                click.openForPlayer(shopListView::class.java)
             }
         }
     }

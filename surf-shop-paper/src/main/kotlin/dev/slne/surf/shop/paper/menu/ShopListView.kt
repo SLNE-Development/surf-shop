@@ -11,7 +11,19 @@ import dev.slne.surf.api.core.util.dateTimeFormatter
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
+import dev.slne.surf.api.paper.inventory.framework.view.layoutTarget
+import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
+import dev.slne.surf.api.paper.inventory.framework.view.paginatedSurfView
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.AbstractPaginatedSurfView
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
+import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
@@ -20,15 +32,17 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.*
-import kotlinx.coroutines.*
+import dev.slne.surf.shop.paper.util.appendBlob
+import dev.slne.surf.shop.paper.util.displayKey
+import dev.slne.surf.shop.paper.util.formatPriceNice
+import dev.slne.surf.shop.paper.util.searchInputCache
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
+import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.context.Context
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
@@ -41,56 +55,180 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import java.util.*
 
-object ShopListView : View() {
-    private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
+val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
+    val selectedSort = mutableState(ShopSortingType.TIME_ASC)
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName {
-            spacer("")
-        }
+    settings {
+        paginationViewRows(PaginationViewRows.FOUR)
     }
 
-    private val createItem = MenuHeads.CREATE_BUTTON.clone().apply {
-        displayName {
-            shopColored("Shop erstellen")
-        }
-    }
+    layoutTarget('I')
 
-    private val viewOnlyItem = buildItem(Material.SPYGLASS) {
-        displayName {
-            shopColored("Ansichtsmodus")
-        }
-
-        buildLore {
-            emptyLine()
-            line {
-                appendBlob()
-                spacer("Du kannst Shops hier ansehen und durchsuchen.".toSmallCaps())
-            }
-            line {
-                appendBlob()
-                spacer("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.".toSmallCaps())
-            }
-            line {
-                appendBlob()
-                spacer("Eigene Shops kannst du hier im Preis anpassen.".toSmallCaps())
+    pagination {
+        lazyAsyncSource { context ->
+            plugin.scope.future {
+                getLoadedShopsSortedFiltered(
+                    plugin.getSorting(context.player.uniqueId),
+                    searchInputCache[context.player.uniqueId],
+                    context
+                ).toMutableList()
             }
         }
-    }
 
-    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
-        displayName {
-            shopColored("Vorherige Seite")
+        itemFactory { shop ->
+            withItem(
+                shop.second
+            ).onClick { context ->
+                context.playGeneralClickSound()
+                val shop = shop.first
+
+                if (!context.player.canUseFullShopView()) {
+                    if (shop.seller == context.player.uniqueId) {
+                        context.openForPlayer(
+                            EditShopView::class.java,
+                            ImmutableMap.of(
+                                "edit-shop",
+                                shop
+                            )
+                        )
+                    } else {
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
+                        }
+                    }
+                    return@onClick
+                }
+
+                if (shop.seller == context.player.uniqueId) {
+                    if (context.isShiftLeftClick) {
+                        context.openForPlayer(
+                            DeleteShopView::class.java,
+                            ImmutableMap.of(
+                                "delete-shop",
+                                shop
+                            )
+                        )
+                    } else {
+                        context.openForPlayer(
+                            EditShopView::class.java,
+                            ImmutableMap.of(
+                                "edit-shop",
+                                shop
+                            )
+                        )
+                    }
+                } else {
+                    context.openForPlayer(
+                        buyShopItemView::class.java,
+                        ImmutableMap.of(
+                            "buy-shop",
+                            shop
+                        )
+                    )
+                }
+            }
         }
     }
 
-    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply {
-        displayName {
-            shopColored("Nächste Seite")
+    onFirstRender {
+        selectedSort[this] = plugin.getSorting(this.player.uniqueId)
+
+        slot(5, 1)
+            .updateOnClick()
+            .renderWith { sortItem(selectedSort[this@onFirstRender]) }
+            .onClick { context ->
+                context.playGeneralClickSound()
+
+                if (context.isRightClick) {
+                    selectedSort[this@onFirstRender] = selectedSort[this@onFirstRender].previous()
+                } else {
+                    selectedSort[this] = selectedSort[this].next()
+                }
+
+                plugin.setSorting(context.player.uniqueId, selectedSort[this])
+                this@onFirstRender.openForPlayer(shopListView::class.java)
+            }
+        slot(5, 2, searchItem(this.player.uniqueId)).onClick { context ->
+            context.playGeneralClickSound()
+
+            if (context.isShiftClick) {
+                searchInputCache.remove(context.player.uniqueId)
+                context.openForPlayer(shopListView::class.java)
+                return@onClick
+            }
+
+            context.player.closeInventory()
+            context.player.showDialog(
+                searchShopItemDialog(
+                    searchInputCache.getOrDefault(
+                        context.player.uniqueId,
+                        ""
+                    )
+                )
+            )
+        }
+        if (this.player.canUseFullShopView()) {
+            slot(5, 9, createItem).onClick { context ->
+                context.playGeneralClickSound()
+                context.openForPlayer(
+                    CreateShopView::class.java,
+                    ImmutableMap.of(
+                        "create-item",
+                        ItemStack.empty(),
+                        "create-price",
+                        0.0
+                    )
+                )
+            }
+        } else {
+            slot(5, 9, viewOnlyItem).onClick { context ->
+                context.playGeneralClickSound()
+                context.player.sendText {
+                    appendInfoPrefix()
+                    info("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.")
+                }
+            }
+        }
+        slot(5, 8, ownShopsItem(this)).onClick { click ->
+            click.openForPlayer(OwnShopsListView::class.java)
+            click.playGeneralClickSound()
+
+            OwnShopState.setInOwn(click.player.uniqueId, true)
         }
     }
+}
 
-    private fun searchItem(playerUuid: UUID) = buildItem(Material.BRUSH) {
+private val createItem = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
+    displayName {
+        text("Shop erstellen", TextColor.fromHexString("#91CE22"), TextDecoration.BOLD)
+    }
+}
+
+private val viewOnlyItem = buildItem(Material.SPYGLASS) {
+    displayName {
+        shopColored("Ansichtsmodus")
+    }
+
+    buildLore {
+        emptyLine()
+        line {
+            appendBlob()
+            spacer("Du kannst Shops hier ansehen und durchsuchen.".toSmallCaps())
+        }
+        line {
+            appendBlob()
+            spacer("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.".toSmallCaps())
+        }
+        line {
+            appendBlob()
+            spacer("Eigene Shops kannst du hier im Preis anpassen.".toSmallCaps())
+        }
+    }
+}
+
+private fun searchItem(playerUuid: UUID) =
+    ViewIcon(ViewIconType.SEARCH, ViewIconColor.YELLOW).build {
         displayName {
             shopColored("Suchen")
         }
@@ -123,33 +261,34 @@ object ShopListView : View() {
         }
     }
 
-    private fun ownShopsItem(context: RenderContext) = buildItem(Material.PLAYER_HEAD) {
-        displayName {
-            shopColored("Eigene Shops")
-        }
-
-        editMeta(SkullMeta::class.java) {
-            it.owningPlayer = context.player
-        }
-
-        buildLore {
-            emptyLine()
-            line {
-                appendBlob()
-                if (context.player.canUseFullShopView()) {
-                    spacer("Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps())
-                } else {
-                    spacer("Hier kannst du eigene Shops ansehen und Preise anpassen.".toSmallCaps())
-                }
-            }
-            line {
-                appendBlob()
-                spacer("Klicke, um alle deine Shops anzuzeigen.".toSmallCaps())
-            }
-        }
+private fun ownShopsItem(context: RenderContext) = buildItem(Material.PLAYER_HEAD) {
+    displayName {
+        shopColored("Eigene Shops")
     }
 
-    private fun sortItem(state: ShopSortingType) = buildItem(Material.COMPARATOR) {
+    editMeta(SkullMeta::class.java) {
+        it.owningPlayer = context.player
+    }
+
+    buildLore {
+        emptyLine()
+        line {
+            appendBlob()
+            if (context.player.canUseFullShopView()) {
+                spacer("Hier kannst du deine eigenen Shops ansehen und verwalten.".toSmallCaps())
+            } else {
+                spacer("Hier kannst du eigene Shops ansehen und Preise anpassen.".toSmallCaps())
+            }
+        }
+        line {
+            appendBlob()
+            spacer("Klicke, um alle deine Shops anzuzeigen.".toSmallCaps())
+        }
+    }
+}
+
+private fun sortItem(state: ShopSortingType) =
+    ViewIcon(ViewIconType.COG, ViewIconColor.YELLOW).build {
         displayName {
             shopColored("Sortieren")
         }
@@ -263,209 +402,6 @@ object ShopListView : View() {
             }
         }
     }
-
-    private val updateItem = buildItem(Material.REPEATER) {
-        displayName {
-            shopColored("Aktualisieren")
-        }
-    }
-
-    private val paginationState = buildLazyAsyncPaginationState { context ->
-        plugin.scope.future {
-            getLoadedShopsSortedFiltered(
-                plugin.getSorting(context.player.uniqueId),
-                searchInputCache[context.player.uniqueId],
-                context
-            ).toMutableList()
-        }
-    }.elementFactory { _, builder, _, shop ->
-        builder.withItem(
-            shop.second
-        ).onClick { context ->
-            context.playGeneralClickSound()
-            val shop = shop.first
-
-            if (!context.player.canUseFullShopView()) {
-                if (shop.seller == context.player.uniqueId) {
-                    context.openForPlayer(
-                        EditShopView::class.java,
-                        ImmutableMap.of(
-                            "edit-shop",
-                            shop
-                        )
-                    )
-                } else {
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
-                    }
-                }
-                return@onClick
-            }
-
-            if (shop.seller == context.player.uniqueId) {
-                if (context.isShiftLeftClick) {
-                    context.openForPlayer(
-                        DeleteShopView::class.java,
-                        ImmutableMap.of(
-                            "delete-shop",
-                            shop
-                        )
-                    )
-                } else {
-                    context.openForPlayer(
-                        EditShopView::class.java,
-                        ImmutableMap.of(
-                            "edit-shop",
-                            shop
-                        )
-                    )
-                }
-            } else {
-                context.openForPlayer(
-                    BuyShopItemView::class.java,
-                    ImmutableMap.of(
-                        "buy-shop",
-                        shop
-                    )
-                )
-            }
-        }
-    }.layoutTarget('R').build()
-
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Shops".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(6)
-            .layout(
-                "OOOOOOOOO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "UAOPCNO}S"
-            )
-            .cancelInteractions()
-    }
-
-    override fun onFirstRender(render: RenderContext) {
-        selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
-        val pagination = paginationState.get(render)
-
-        render.availableSlot(loadingItem)
-            .displayIf(pagination::isLoading)
-            .updateOnStateChange(paginationState)
-
-        render
-            .layoutSlot('S')
-            .updateOnClick()
-            .renderWith { sortItem(selectedSort.get(render)) }
-            .onClick { context ->
-                context.playGeneralClickSound()
-
-                if (context.isRightClick) {
-                    selectedSort.set(selectedSort.get(render).previous(), render)
-                } else {
-                    selectedSort.set(selectedSort.get(render).next(), render)
-                }
-
-                plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
-
-                render.openForPlayer(ShopListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
-            }
-        render.layoutSlot('U', updateItem).onClick { context ->
-            context.openForPlayer(ShopListView::class.java)
-            context.playGeneralClickSound()
-        }
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
-            context.playGeneralClickSound()
-
-            if (context.isShiftClick) {
-                searchInputCache.remove(context.player.uniqueId)
-                context.openForPlayer(ShopListView::class.java)
-                return@onClick
-            }
-
-            context.player.closeInventory()
-            context.player.showDialog(
-                searchShopItemDialog(
-                    searchInputCache.getOrDefault(
-                        context.player.uniqueId,
-                        ""
-                    )
-                )
-            )
-        }
-        if (render.player.canUseFullShopView()) {
-            render.layoutSlot('C', createItem).onClick { context ->
-                context.playGeneralClickSound()
-                context.openForPlayer(
-                    CreateShopView::class.java,
-                    ImmutableMap.of(
-                        "create-item",
-                        ItemStack.empty(),
-                        "create-price",
-                        0.0
-                    )
-                )
-            }
-        } else {
-            render.layoutSlot('C', viewOnlyItem).onClick { context ->
-                context.playGeneralClickSound()
-                context.player.sendText {
-                    appendInfoPrefix()
-                    info("Zum Kaufen, Erstellen und Lager bearbeiten musst du zum Spawn.")
-                }
-            }
-        }
-        render
-            .layoutSlot('P')
-            .renderWith {
-                if (pagination.canBack()) {
-                    previousItem
-                } else {
-                    outlineItem
-                }
-            }
-            .watch(paginationState)
-            .onClick { context ->
-                if (!pagination.canBack()) {
-                    return@onClick
-                }
-
-                context.playNewPageSound()
-                pagination.back()
-            }
-
-        render
-            .layoutSlot('N')
-            .renderWith {
-                if (pagination.canAdvance()) {
-                    nextItem
-                } else {
-                    outlineItem
-                }
-            }
-            .watch(paginationState)
-            .onClick { context ->
-                if (!pagination.canAdvance()) {
-                    return@onClick
-                }
-
-                context.playNewPageSound()
-                pagination.advance()
-            }
-        render.layoutSlot('}', ownShopsItem(render)).onClick { click ->
-            click.openForPlayer(OwnShopsListView::class.java)
-            click.playGeneralClickSound()
-
-            OwnShopState.setInOwn(click.player.uniqueId, true)
-        }
-    }
-}
 
 fun createShopItem(
     shop: Shop,

@@ -199,7 +199,7 @@ object CreateShopView : View() {
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 viewFrame.open(OwnShopsListView::class.java, context.player)
             } else {
-                viewFrame.open(ShopListView::class.java, context.player)
+                viewFrame.open(shopListView::class.java, context.player)
             }
         }
     }

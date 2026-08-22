@@ -20,8 +20,7 @@ import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.OwnShopsListView
-import dev.slne.surf.shop.paper.menu.ShopListView
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
 import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
 import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
 import dev.slne.surf.shop.paper.menu.edit.EditShopView
@@ -31,6 +30,7 @@ import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.shop.paper.menu.shopListView
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -48,7 +48,7 @@ class PaperMain : SuspendingJavaPlugin() {
         PaperShopInstance.paperLoader.onLoad()
         DealServiceImpl.plugin = this
 
-        viewFrame.with(ShopListView)
+        viewFrame.with(shopListView)
         viewFrame.with(CreateShopView)
         viewFrame.with(PlayerInventorySelectItemView)
         viewFrame.with(PriceSelectView)
@@ -57,7 +57,7 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(ItemStorageView)
         viewFrame.with(ItemStorageInsertView)
         viewFrame.with(ItemStorageRemoveView)
-        viewFrame.with(BuyShopItemView)
+        viewFrame.with(buyShopItemView)
         viewFrame.with(DeleteShopView)
         viewFrame.with(OwnShopsListView)
         viewFrame.with(ShopChestSetupView)

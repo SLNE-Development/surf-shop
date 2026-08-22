@@ -176,7 +176,7 @@ val buyShopItemView = surfView("Items Kaufen") {
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
-                        context.openForPlayer(ShopListView::class.java)
+                        context.openForPlayer(shopListView::class.java)
                     }
                     return@onClick
                 }
@@ -328,7 +328,7 @@ val buyShopItemView = surfView("Items Kaufen") {
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                         context.openForPlayer(OwnShopsListView::class.java)
                     } else {
-                        context.openForPlayer(ShopListView::class.java)
+                        context.openForPlayer(shopListView::class.java)
                     }
                     return@onClick
                 }
@@ -477,7 +477,7 @@ val buyShopItemView = surfView("Items Kaufen") {
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
                 context.openForPlayer(OwnShopsListView::class.java)
             } else {
-                context.openForPlayer(ShopListView::class.java)
+                context.openForPlayer(shopListView::class.java)
             }
         }
     }
@@ -491,6 +491,6 @@ private suspend fun openListView(context: RenderContext) =
         } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
             viewFrame.open(OwnShopsListView::class.java, context.player)
         } else {
-            viewFrame.open(ShopListView::class.java, context.player)
+            viewFrame.open(shopListView::class.java, context.player)
         }
     }
