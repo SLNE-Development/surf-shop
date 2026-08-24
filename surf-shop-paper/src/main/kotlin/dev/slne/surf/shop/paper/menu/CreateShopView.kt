@@ -3,14 +3,17 @@ package dev.slne.surf.shop.paper.menu
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.Colors
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
-import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
+import dev.slne.surf.api.paper.inventory.framework.view.onInit
+import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
@@ -26,41 +29,31 @@ import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.shop.paper.util.location
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-object CreateShopView : View() {
-    private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Double> = initialState("create-price")
+val createShopView = surfView("Shop erstellen") {
+    val itemState = initialState<ItemStack>("create-item")
+    val priceState = initialState<Double>("create-price")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Shop erstellen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(5)
-            .layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(5)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('P', pricePerItemItem.clone().apply {
-            if (priceState.get(render) > 0) {
+    onInit {
+        layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
+    }
+
+    onFirstRender {
+        layoutSlot('P', pricePerItemItem.clone().apply {
+            if (priceState[this@onFirstRender] > 0) {
                 buildLore {
                     emptyLine()
                     line {
                         spacer("-")
                         appendSpace()
-                        shopColored("Aktueller Preis Pro Item: ${priceState.get(render)}")
+                        shopColored("Aktueller Preis Pro Item: ${priceState[this@onFirstRender]}")
                     }
                 }
             }
@@ -69,27 +62,27 @@ object CreateShopView : View() {
             context.openForPlayer(
                 PriceSelectView::class.java,
                 ImmutableMap.of(
-                    "create-item", itemState.get(render),
-                    "create-price", priceState.get(render)
+                    "create-item", itemState[this@onFirstRender],
+                    "create-price", priceState[this@onFirstRender]
                 )
             )
         }
 
-        if (itemState.get(render)?.isEmpty == true) {
-            render.layoutSlot('I', itemNotSet).onClick { context ->
+        if (itemState[this].isEmpty) {
+            layoutSlot('I', itemNotSet).onClick { context ->
                 context.playGeneralClickSound()
                 context.openForPlayer(
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        priceState.get(context),
+                        priceState[context],
                         "create-item",
                         ItemStack.empty()
                     )
                 )
             }
         } else {
-            render.layoutSlot('I', itemState.get(render).clone().apply {
+            layoutSlot('I', itemState[this].clone().apply {
                 amount = 1
             }).onClick { context ->
                 context.playGeneralClickSound()
@@ -97,7 +90,7 @@ object CreateShopView : View() {
                     PlayerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
-                        priceState.get(context),
+                        priceState[context],
                         "create-item",
                         ItemStack.empty()
                     )
@@ -105,7 +98,7 @@ object CreateShopView : View() {
             }
         }
 
-        render.layoutSlot('C', createItem(render)).onClick { context ->
+        layoutSlot('C', createItem(itemState[this], priceState[this])).onClick { context ->
             context.playGeneralClickSound()
 
             if (!context.player.canCreateShopFromCurrentView()) {
@@ -117,8 +110,8 @@ object CreateShopView : View() {
                 return@onClick
             }
 
-            val item = itemState.get(context)
-            val price = priceState.get(context)
+            val item = itemState[context]
+            val price = priceState[context]
 
             if (item.isEmpty) {
                 context.player.sendText {
@@ -185,7 +178,7 @@ object CreateShopView : View() {
                 }
             }
         }
-        render.layoutSlot('B', backItem).onClick { context ->
+        layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
 
@@ -203,62 +196,56 @@ object CreateShopView : View() {
             }
         }
     }
+}
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName {
-            spacer("")
-        }
+private fun createItem(item: ItemStack, price: Double) = MenuHeads.CHECK.clone().apply {
+    displayName {
+        shopColored("Shop erstellen")
     }
 
-    private fun createItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
-        displayName {
-            shopColored("Shop erstellen")
+    buildLore {
+        emptyLine()
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Item: ")
+            if (item?.isEmpty == true) {
+                variableValue("Kein Item ausgewählt")
+            } else {
+                append(
+                    Component.translatable(item.type.translationKey())
+                        .color(Colors.VARIABLE_VALUE)
+                )
+            }
         }
 
-        buildLore {
-            emptyLine()
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Item: ")
-                if (itemState.get(context)?.isEmpty == true) {
-                    variableValue("Kein Item ausgewählt")
-                } else {
-                    append(
-                        Component.translatable(itemState.get(context).type.translationKey())
-                            .color(Colors.VARIABLE_VALUE)
-                    )
-                }
-            }
-
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Preis pro Item: ")
-                if (priceState.get(context) <= 0) {
-                    variableValue("Kein Preis festgelegt")
-                } else {
-                    variableValue(formatPriceNice(priceState.get(context)))
-                }
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Preis pro Item: ")
+            if (price <= 0) {
+                variableValue("Kein Preis festgelegt")
+            } else {
+                variableValue(formatPriceNice(price))
             }
         }
     }
+}
 
-    private val itemNotSet = MenuHeads.QUESTION.clone().apply {
-        displayName {
-            shopColored("Kein Item ausgewählt")
-        }
+private val itemNotSet = MenuHeads.QUESTION.clone().apply {
+    displayName {
+        shopColored("Kein Item ausgewählt")
     }
+}
 
-    private val backItem = MenuHeads.CROSS.clone().apply {
-        displayName {
-            error("Abbrechen")
-        }
+private val backItem = MenuHeads.CROSS.clone().apply {
+    displayName {
+        error("Abbrechen")
     }
+}
 
-    private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
-        displayName {
-            shopColored("Preis pro Item festlegen")
-        }
+private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
+    displayName {
+        shopColored("Preis pro Item festlegen")
     }
 }

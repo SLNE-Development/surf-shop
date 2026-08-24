@@ -9,7 +9,7 @@ import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.titleBuilder
 import dev.slne.surf.shop.core.paper.util.isAllowedToSell
-import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
@@ -30,7 +30,6 @@ object PlayerInventorySelectItemView : View() {
         context.player.inventory.storageContents.filterNotNull().toMutableList()
     }.itemFactory { builder, item ->
         builder.withItem(item).onClick { context ->
-
             if (!isAllowedToSell(item)) {
                 context.player.playSound(true) {
                     type(Sound.BLOCK_NOTE_BLOCK_BASS)
@@ -49,7 +48,7 @@ object PlayerInventorySelectItemView : View() {
             }
 
             context.openForPlayer(
-                CreateShopView::class.java,
+                createShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
                     item.clone().apply {
@@ -85,7 +84,7 @@ object PlayerInventorySelectItemView : View() {
         render.layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateShopView::class.java, ImmutableMap.of(
+                createShopView::class.java, ImmutableMap.of(
                     "create-price", priceState.get(context),
                     "create-item", itemState.get(context)
                 )
