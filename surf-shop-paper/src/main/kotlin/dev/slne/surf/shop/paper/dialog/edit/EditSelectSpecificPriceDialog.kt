@@ -3,7 +3,6 @@ package dev.slne.surf.shop.paper.dialog.edit
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.messages.adventure.appendNewline
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.dialog.base
 import dev.slne.surf.api.paper.dialog.builder.actionButton
@@ -11,7 +10,7 @@ import dev.slne.surf.api.paper.dialog.dialog
 import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 
@@ -49,7 +48,7 @@ fun createEditSpecificPriceDialog(
                     customPlayerClick { _, player ->
                         player.closeDialog()
                         viewFrame.open(
-                            EditShopView::class.java, player, ImmutableMap.of(
+                            editShopView::class.java, player, ImmutableMap.of(
                                 "edit-shop", shop,
                             )
                         )
@@ -76,7 +75,7 @@ fun createEditSpecificPriceDialog(
                             player.closeDialog()
 
                             viewFrame.open(
-                                EditShopView::class.java, player, ImmutableMap.of(
+                                editShopView::class.java, player, ImmutableMap.of(
                                     "edit-shop", shop.copy(pricePerItem = price)
                                 )
                             )
