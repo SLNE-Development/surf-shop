@@ -33,8 +33,8 @@ import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
-import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.delete.deleteShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
@@ -85,7 +85,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
                 if (!context.player.canUseFullShopView()) {
                     if (shop.seller == context.player.uniqueId) {
                         context.openForPlayer(
-                            EditShopView::class.java,
+                            editShopView::class.java,
                             ImmutableMap.of(
                                 "edit-shop",
                                 shop
@@ -103,7 +103,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
                 if (shop.seller == context.player.uniqueId) {
                     if (context.isShiftLeftClick) {
                         context.openForPlayer(
-                            DeleteShopView::class.java,
+                            deleteShopView::class.java,
                             ImmutableMap.of(
                                 "delete-shop",
                                 shop
@@ -111,7 +111,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
                         )
                     } else {
                         context.openForPlayer(
-                            EditShopView::class.java,
+                            editShopView::class.java,
                             ImmutableMap.of(
                                 "edit-shop",
                                 shop

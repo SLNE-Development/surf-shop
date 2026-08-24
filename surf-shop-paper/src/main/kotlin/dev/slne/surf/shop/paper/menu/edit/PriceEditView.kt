@@ -22,7 +22,7 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import kotlin.math.max
 
-val priceEditView = surfView("Preis bearbeiten") {
+val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
     val shopState = initialState<Shop>("edit-shop")
     val priceState = initialState<Double>("edit-price")
 

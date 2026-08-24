@@ -7,6 +7,7 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.layoutTarget
 import dev.slne.surf.api.paper.inventory.framework.view.paginatedSurfView
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.AbstractPaginatedSurfView
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
 import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
@@ -25,7 +26,7 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import java.util.concurrent.CompletableFuture
 
-val doneDealsView = paginatedSurfView("Verkaufsverlauf") {
+val doneDealsView: AbstractPaginatedSurfView = paginatedSurfView("Verkaufsverlauf") {
     settings {
         paginationViewRows(PaginationViewRows.FOUR)
     }

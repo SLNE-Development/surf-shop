@@ -33,7 +33,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.Sound
 
-val editShopView = surfView("Shop bearbeiten") {
+val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
     val shopState = initialState<Shop>("edit-shop")
 
     settings {
@@ -87,7 +87,7 @@ val editShopView = surfView("Shop bearbeiten") {
             }
 
             context.openForPlayer(
-                PriceEditView::class.java,
+                priceEditView::class.java,
                 ImmutableMap.of(
                     "edit-shop", shop,
                     "edit-price", shop.pricePerItem

@@ -21,13 +21,13 @@ import dev.slne.surf.shop.paper.hook.SurfNpcHook
 import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
-import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
-import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
-import dev.slne.surf.shop.paper.menu.edit.PriceEditView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageInsertView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
+import dev.slne.surf.shop.paper.menu.deal.doneDealsView
+import dev.slne.surf.shop.paper.menu.delete.deleteShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
+import dev.slne.surf.shop.paper.menu.edit.priceEditView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageInsertView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageRemoveView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.menu.shopListView
@@ -52,17 +52,17 @@ class PaperMain : SuspendingJavaPlugin() {
         viewFrame.with(CreateShopView)
         viewFrame.with(PlayerInventorySelectItemView)
         viewFrame.with(PriceSelectView)
-        viewFrame.with(EditShopView)
-        viewFrame.with(PriceEditView)
-        viewFrame.with(ItemStorageView)
-        viewFrame.with(ItemStorageInsertView)
-        viewFrame.with(ItemStorageRemoveView)
+        viewFrame.with(editShopView)
+        viewFrame.with(priceEditView)
+        viewFrame.with(itemStorageView)
+        viewFrame.with(itemStorageInsertView)
+        viewFrame.with(itemStorageRemoveView)
         viewFrame.with(buyShopItemView)
-        viewFrame.with(DeleteShopView)
+        viewFrame.with(deleteShopView)
         viewFrame.with(OwnShopsListView)
         viewFrame.with(ShopChestSetupView)
         viewFrame.with(ShopChestSelectShopView)
-        viewFrame.with(DoneDealsView)
+        viewFrame.with(doneDealsView)
     }
 
     override suspend fun onEnableAsync() {

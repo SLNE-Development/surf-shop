@@ -18,7 +18,7 @@ import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.PriceSelectView
 import dev.slne.surf.shop.paper.plugin
@@ -178,7 +178,7 @@ object CreateShopView : View() {
                 withContext(plugin.entityDispatcher(context.player)) {
                     context.player.closeInventory()
                     viewFrame.open(
-                        EditShopView::class.java,
+                        editShopView::class.java,
                         context.player,
                         ImmutableMap.of("edit-shop", shop)
                     )

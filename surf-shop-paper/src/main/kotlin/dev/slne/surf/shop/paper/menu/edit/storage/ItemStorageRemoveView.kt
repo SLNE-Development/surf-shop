@@ -33,7 +33,7 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import kotlin.math.max
 
-val itemStorageRemoveView = surfView("Anzahl auswählen") {
+val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
     val shopState = initialState<Shop>("edit-shop")
     val amountState = initialState<Int>("edit-amount")
 
@@ -81,7 +81,7 @@ val itemStorageRemoveView = surfView("Anzahl auswählen") {
         layoutSlot('Q', quitItem).onClick { click ->
             click.playGeneralClickSound()
             click.openForPlayer(
-                ItemStorageView::class.java,
+                itemStorageView::class.java,
                 ImmutableMap.of("edit-shop", shopState.get(this))
             )
         }
@@ -260,7 +260,7 @@ val itemStorageRemoveView = surfView("Anzahl auswählen") {
                     }
 
                     context.openForPlayer(
-                        ItemStorageView::class.java,
+                        itemStorageView::class.java,
                         ImmutableMap.of(
                             "edit-shop",
                             updatedShop

@@ -6,16 +6,13 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.view.*
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
-import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
-import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
-import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
-import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -26,7 +23,7 @@ import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import kotlinx.coroutines.withContext
 
-val deleteShopView = surfView("Shop löschen") {
+val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
     val shopState = initialState<Shop>("delete-shop")
 
     settings {

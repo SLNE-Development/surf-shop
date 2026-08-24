@@ -19,9 +19,9 @@ import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
-import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
-import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.deal.doneDealsView
+import dev.slne.surf.shop.paper.menu.delete.deleteShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
@@ -237,7 +237,7 @@ object OwnShopsListView : View() {
             if (!context.player.canUseFullShopView()) {
                 if (shop.seller == context.player.uniqueId) {
                     context.openForPlayer(
-                        EditShopView::class.java,
+                        editShopView::class.java,
                         ImmutableMap.of(
                             "edit-shop",
                             shop
@@ -255,7 +255,7 @@ object OwnShopsListView : View() {
             if (shop.seller == context.player.uniqueId) {
                 if (context.isShiftLeftClick) {
                     context.openForPlayer(
-                        DeleteShopView::class.java,
+                        deleteShopView::class.java,
                         ImmutableMap.of(
                             "delete-shop",
                             shop
@@ -263,7 +263,7 @@ object OwnShopsListView : View() {
                     )
                 } else {
                     context.openForPlayer(
-                        EditShopView::class.java,
+                        editShopView::class.java,
                         ImmutableMap.of(
                             "edit-shop",
                             shop
@@ -330,7 +330,7 @@ object OwnShopsListView : View() {
         }
         render.layoutSlot('W', doneDealsItem).onClick { click ->
             click.playGeneralClickSound()
-            click.openForPlayer(DoneDealsView::class.java)
+            click.openForPlayer(doneDealsView::class.java)
         }
         render.layoutSlot('O', outlineItem)
         render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->

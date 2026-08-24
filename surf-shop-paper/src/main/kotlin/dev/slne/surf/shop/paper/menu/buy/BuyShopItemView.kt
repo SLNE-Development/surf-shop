@@ -7,15 +7,12 @@ import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.view.*
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
-import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
-import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
-import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
-import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
@@ -37,7 +34,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 
 
-val buyShopItemView = surfView("Items Kaufen") {
+val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
     val shopState = initialState<Shop>("buy-shop")
     val amountState = mutableState(1)
 

@@ -28,7 +28,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-val itemStorageInsertView = surfView("Items einlagern") {
+val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
     val shopState = initialState<Shop>("edit-shop")
     val itemInsertedState = mutableState(0)
 

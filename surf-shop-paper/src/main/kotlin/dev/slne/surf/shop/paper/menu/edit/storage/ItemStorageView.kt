@@ -12,12 +12,12 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.util.MenuHeads
 
-val itemStorageView = surfView("Item Lager") {
+val itemStorageView: AbstractSurfView = surfView("Item Lager") {
     val shopState = initialState<Shop>("edit-shop")
 
     settings {
@@ -41,7 +41,7 @@ val itemStorageView = surfView("Item Lager") {
             context.player.closeInventory()
 
             viewFrame.open(
-                EditShopView::class.java,
+                editShopView::class.java,
                 context.player,
                 ImmutableMap.of("edit-shop", shopState.get(this))
             )
