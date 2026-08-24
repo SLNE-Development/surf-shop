@@ -3,9 +3,9 @@ package dev.slne.surf.shop.core.paper.util
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.sksamuel.aedile.core.expireAfterWrite
 import dev.slne.surf.api.core.util.objectListOf
+import dev.slne.surf.api.paper.util.namespacedKey
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -55,8 +55,10 @@ private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
     }
 }
 
+val denyShopKey = namespacedKey("deny_shop")
+
 fun isAllowedToSell(item: ItemStack): Boolean {
-    return !BLACKLISTED_ITEMS.contains(item.type)
+    return !BLACKLISTED_ITEMS.contains(item.type) || item.persistentDataContainer.has(denyShopKey)
 }
 
 fun isValidePrice(amount: Double): Boolean {

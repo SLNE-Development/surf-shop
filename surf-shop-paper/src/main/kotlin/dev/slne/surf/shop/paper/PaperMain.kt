@@ -15,12 +15,13 @@ import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
-import dev.slne.surf.shop.paper.menu.CreateShopView
 import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.deal.doneDealsView
 import dev.slne.surf.shop.paper.menu.delete.deleteShopView
 import dev.slne.surf.shop.paper.menu.edit.editShopView
@@ -49,7 +50,7 @@ class PaperMain : SuspendingJavaPlugin() {
         DealServiceImpl.plugin = this
 
         viewFrame.with(shopListView)
-        viewFrame.with(CreateShopView)
+        viewFrame.with(createShopView)
         viewFrame.with(PlayerInventorySelectItemView)
         viewFrame.with(PriceSelectView)
         viewFrame.with(editShopView)
@@ -84,6 +85,7 @@ class PaperMain : SuspendingJavaPlugin() {
         ShopChestListener.register()
 
         shopCommand()
+        denyShopCommand()
     }
 
     override suspend fun onDisableAsync() {
