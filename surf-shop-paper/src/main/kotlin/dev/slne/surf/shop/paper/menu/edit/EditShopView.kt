@@ -10,7 +10,9 @@ import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -18,42 +20,42 @@ import dev.slne.surf.shop.core.paper.util.MAX_PRICE
 import dev.slne.surf.shop.core.paper.util.MIN_PRICE
 import dev.slne.surf.shop.core.paper.util.isValidePrice
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
 import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 
-object EditShopView : View() {
-    private val shopState = initialState<Shop>("edit-shop")
+val editShopView = surfView("Shop bearbeiten") {
+    val shopState = initialState<Shop>("edit-shop")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Shop bearbeiten".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(5)
-            .layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(5)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        val canEditStorage = render.player.canEditShopStorageFromCurrentView()
+    containerDefaults {
+        blockRow(1)
+        blockColumn(0)
+        blockColumn(8)
+        blockRow(5)
+    }
 
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('P', pricePerItemItem.clone().apply {
-            if (shopState.get(render).pricePerItem > 0) {
+    onInit {
+        layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
+    }
+
+    onFirstRender {
+        val canEditStorage = this.player.canEditShopStorageFromCurrentView()
+
+        layoutSlot('P', pricePerItemItem.clone().apply {
+            if (shopState.get(this@onFirstRender).pricePerItem > 0) {
                 buildLore {
                     emptyLine()
                     line {
@@ -63,7 +65,7 @@ object EditShopView : View() {
                             "Aktueller Preis Pro Item: ${
                                 formatPriceNice(
                                     shopState.get(
-                                        render
+                                        this@onFirstRender
                                     ).pricePerItem
                                 )
                             }"
@@ -74,7 +76,7 @@ object EditShopView : View() {
         }).onClick { context ->
             context.playGeneralClickSound()
 
-            val shop = shopState.get(render)
+            val shop = shopState.get(this@onFirstRender)
             if (!context.player.canEditShopPrice(shop)) {
                 context.player.sendText {
                     appendErrorPrefix()
@@ -93,14 +95,14 @@ object EditShopView : View() {
             )
         }
 
-        render.layoutSlot('I', shopState.get(render).item.apply {
+        layoutSlot('I', shopState.get(this@onFirstRender).item.apply {
             amount = 1
         })
 
-        render.layoutSlot(
+        layoutSlot(
             'F',
-            if (canEditStorage) storageItem(shopState.get(render).storedItemCount) else lockedStorageItem(
-                shopState.get(render).storedItemCount
+            if (canEditStorage) storageItem(shopState.get(this@onFirstRender).storedItemCount) else lockedStorageItem(
+                shopState.get(this@onFirstRender).storedItemCount
             )
         )
             .onClick { context ->
@@ -115,14 +117,14 @@ object EditShopView : View() {
                 }
 
                 context.openForPlayer(
-                    ItemStorageView::class.java,
+                    itemStorageView::class.java,
                     ImmutableMap.of(
-                        "edit-shop", shopState.get(render)
+                        "edit-shop", shopState.get(this@onFirstRender)
                     )
                 )
             }
 
-        render.layoutSlot('C', saveItem(render)).onClick { context ->
+        layoutSlot('C', saveItem(shopState[this@onFirstRender])).onClick { context ->
             context.playGeneralClickSound()
 
             val shop = shopState.get(context)
@@ -157,7 +159,7 @@ object EditShopView : View() {
             }
 
             plugin.launch {
-                ShopService.saveShop(shopState.get(render))
+                ShopService.saveShop(shopState.get(this@onFirstRender))
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)
@@ -185,7 +187,7 @@ object EditShopView : View() {
                 }
             }
         }
-        render.layoutSlot('B', backItem).onClick { context ->
+        layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
 
@@ -203,90 +205,90 @@ object EditShopView : View() {
             }
         }
     }
+}
 
-    private fun saveItem(context: RenderContext) = MenuHeads.CHECK.clone().apply {
-        displayName {
-            shopColored("Speichern")
+private fun saveItem(shop: Shop) = MenuHeads.CHECK.clone().apply {
+    displayName {
+        shopColored("Speichern")
+    }
+
+    buildLore {
+        emptyLine()
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Item: ")
+            append(
+                Component.translatable(shop.item.type.translationKey())
+                    .color(Colors.VARIABLE_VALUE)
+            )
         }
 
-        buildLore {
-            emptyLine()
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Item: ")
-                append(
-                    Component.translatable(shopState.get(context).item.type.translationKey())
-                        .color(Colors.VARIABLE_VALUE)
-                )
-            }
-
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Preis pro Item: ")
-                if (shopState.get(context).pricePerItem <= 0) {
-                    variableValue("Kein Preis festgelegt")
-                } else {
-                    variableValue(formatPriceNice(shopState.get(context).pricePerItem))
-                }
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Preis pro Item: ")
+            if (shop.pricePerItem <= 0) {
+                variableValue("Kein Preis festgelegt")
+            } else {
+                variableValue(formatPriceNice(shop.pricePerItem))
             }
         }
     }
+}
 
-    private val backItem = MenuHeads.CROSS.clone().apply {
-        displayName {
-            error("Abbrechen")
-        }
+private val backItem = MenuHeads.CROSS.clone().apply {
+    displayName {
+        error("Abbrechen")
+    }
+}
+
+private fun storageItem(amount: Int) = buildItem(Material.CHEST) {
+    displayName {
+        shopColored("Item Lager")
     }
 
-    private fun storageItem(amount: Int) = buildItem(Material.CHEST) {
-        displayName {
-            shopColored("Item Lager")
-        }
+    buildLore {
+        emptyLine()
+        line {
+            shopColored("Auf Lager: ")
 
-        buildLore {
-            emptyLine()
-            line {
-                shopColored("Auf Lager: ")
-
-                if (amount <= 0) {
-                    error("Ausverkauft")
-                } else {
-                    variableValue("$amount Items")
-                }
+            if (amount <= 0) {
+                error("Ausverkauft")
+            } else {
+                variableValue("$amount Items")
             }
         }
     }
+}
 
-    private fun lockedStorageItem(amount: Int) = buildItem(Material.BARRIER) {
-        displayName {
-            shopColored("Item Lager")
-        }
-
-        buildLore {
-            emptyLine()
-            line {
-                shopColored("Auf Lager: ")
-
-                if (amount <= 0) {
-                    error("Ausverkauft")
-                } else {
-                    variableValue("$amount Items")
-                }
-            }
-
-            emptyLine()
-            line {
-                appendBlob()
-                spacer("Das Lager kannst du nur am Spawn bearbeiten.".toSmallCaps())
-            }
-        }
+private fun lockedStorageItem(amount: Int) = buildItem(Material.BARRIER) {
+    displayName {
+        shopColored("Item Lager")
     }
 
-    private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
-        displayName {
-            shopColored("Preis pro Item festlegen")
+    buildLore {
+        emptyLine()
+        line {
+            shopColored("Auf Lager: ")
+
+            if (amount <= 0) {
+                error("Ausverkauft")
+            } else {
+                variableValue("$amount Items")
+            }
         }
+
+        emptyLine()
+        line {
+            appendBlob()
+            spacer("Das Lager kannst du nur am Spawn bearbeiten.".toSmallCaps())
+        }
+    }
+}
+
+private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
+    displayName {
+        shopColored("Preis pro Item festlegen")
     }
 }

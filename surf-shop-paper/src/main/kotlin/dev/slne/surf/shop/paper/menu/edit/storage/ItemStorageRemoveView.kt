@@ -8,11 +8,14 @@ import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
+import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
@@ -22,42 +25,41 @@ import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
+import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import kotlin.math.max
 
-object ItemStorageRemoveView : View() {
-    private val shopState = initialState<Shop>("edit-shop")
-    private val amountState = initialState<Int>("edit-amount")
-    private val localAmountState = mutableState(0)
+val itemStorageRemoveView = surfView("Anzahl auswählen") {
+    val shopState = initialState<Shop>("edit-shop")
+    val amountState = initialState<Int>("edit-amount")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Anzahl auswählen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(5)
-            .layout(
-                "OOOOOOOOO",
-                "O   W   O",
-                "O21 P 34O",
-                "O       O",
-                "QOOOBOOOO"
-            )
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(5)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        localAmountState.set(amountState.get(render), render)
+    containerDefaults {
+        blockRow(1)
+        blockRow(5)
+        blockColumn(0)
+        blockColumn(8)
+    }
 
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('W', ownItem).onClick { context ->
+    onInit {
+        layout(
+            "OOOOOOOOO",
+            "O   W   O",
+            "O21 P 34O",
+            "O       O",
+            "QOOOBOOOO"
+        )
+    }
+
+    onFirstRender {
+        layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
                 context.player.sendText {
@@ -71,21 +73,21 @@ object ItemStorageRemoveView : View() {
             context.player.closeInventory()
             context.player.showDialog(
                 createEditSpecificRemoveAmountPriceDialog(
-                    shopState.get(render)
+                    shopState.get(this)
                 )
             )
         }
 
-        render.layoutSlot('Q', quitItem).onClick { click ->
+        layoutSlot('Q', quitItem).onClick { click ->
             click.playGeneralClickSound()
             click.openForPlayer(
                 ItemStorageView::class.java,
-                ImmutableMap.of("edit-shop", shopState.get(render))
+                ImmutableMap.of("edit-shop", shopState.get(this))
             )
         }
 
-        render.layoutSlot('1', minusOne).onClick { context ->
-            localAmountState.set(max(0, localAmountState.get(render) - 1), render)
+        layoutSlot('1', minusOne).onClick { context ->
+            amountState.set(max(0, amountState.get(this) - 1), this)
             context.update()
 
             context.player.playSound(true) {
@@ -93,8 +95,8 @@ object ItemStorageRemoveView : View() {
             }
         }
 
-        render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localAmountState.set(max(0, localAmountState.get(render) - 64), render)
+        layoutSlot('2', minusThirtyTwo).onClick { context ->
+            amountState.set(max(0, amountState.get(this) - 64), this)
             context.update()
 
             context.player.playSound(true) {
@@ -102,15 +104,15 @@ object ItemStorageRemoveView : View() {
             }
         }
 
-        render.layoutSlot('3', plusOne).onClick { context ->
-            handleIncrement(render, context, 1)
+        layoutSlot('3', plusOne).onClick { context ->
+            handleIncrement(this, context, 1, shopState, amountState)
         }
 
-        render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            handleIncrement(render, context, 64)
+        layoutSlot('4', plusThirtyTwo).onClick { context ->
+            handleIncrement(this, context, 64, shopState, amountState)
         }
 
-        render.layoutSlot('B', continueItem).onClick { context ->
+        layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
             if (!context.player.canEditShopStorageFromCurrentView()) {
                 context.player.sendText {
@@ -121,7 +123,7 @@ object ItemStorageRemoveView : View() {
                 return@onClick
             }
 
-            val toRemove = localAmountState.get(context)
+            val toRemove = amountState.get(context)
 
             if (toRemove <= 0) {
                 context.player.sendText {
@@ -246,7 +248,7 @@ object ItemStorageRemoveView : View() {
                 ShopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(context.player)) {
-                    val updatedShop = shopState.get(render).updatedShop
+                    val updatedShop = shopState.get(this@onFirstRender).updatedShop
 
                     if (updatedShop == null) {
                         context.player.sendText {
@@ -268,77 +270,83 @@ object ItemStorageRemoveView : View() {
             }
         }
 
-        render.layoutSlot('P').watch(localAmountState).renderWith {
-            valueItem(render)
+        layoutSlot('P').watch(amountState).renderWith {
+            valueItem(this, shopState, amountState)
         }
     }
+}
 
-    private val quitItem = buildItem(Material.RED_STAINED_GLASS_PANE) {
-        displayName { error("Abbrechen".toSmallCaps(), TextDecoration.BOLD) }
-    }
+private val quitItem = buildItem(Material.RED_STAINED_GLASS_PANE) {
+    displayName { error("Abbrechen".toSmallCaps(), TextDecoration.BOLD) }
+}
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName { spacer("") }
-    }
+private fun handleIncrement(
+    render: RenderContext,
+    context: SlotClickContext,
+    delta: Int,
+    shopState: MutableState<Shop>,
+    amountState: MutableState<Int>
+) {
+    val currentStock = shopState.get(context)
+        ?.shopUuid
+        ?.let(ShopService::getShop)
+        ?.storedItemCount ?: 0
 
-    private fun handleIncrement(render: RenderContext, context: SlotClickContext, delta: Int) {
-        val currentStock = shopState.get(context)
-            ?.shopUuid
-            ?.let(ShopService::getShop)
-            ?.storedItemCount ?: 0
+    val newAmount = amountState.get(render) + delta
 
-        val newAmount = localAmountState.get(render) + delta
-
-        if (newAmount > currentStock) {
-            context.player.sendText {
-                appendErrorPrefix()
-                error("Es sind nicht genügend Items auf Lager!")
-            }
-            return
+    if (newAmount > currentStock) {
+        context.player.sendText {
+            appendErrorPrefix()
+            error("Es sind nicht genügend Items auf Lager!")
         }
-
-        localAmountState.set(newAmount, render)
-        context.update()
-
-        context.player.playSound(true) {
-            type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
-        }
+        return
     }
 
-    private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
-        displayName {
-            shopColored("Anzahl: ", TextDecoration.BOLD)
-            appendSpace()
-            shopColored(
-                "${localAmountState.get(context)}/" + shopState.get(context)
-                    ?.shopUuid
-                    ?.let(ShopService::getShop)
-                    ?.storedItemCount
-            )
-        }
-    }
+    amountState.set(newAmount, render)
+    context.update()
 
-    private val plusOne = MenuHeads.PLUS.clone().apply {
-        displayName { shopColored("+1") }
+    context.player.playSound(true) {
+        type(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE)
     }
+}
 
-    private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { shopColored("+64") }
+private fun valueItem(
+    context: RenderContext,
+    shopState: MutableState<Shop>,
+    amountState: MutableState<Int>
+) = buildItem(Material.GOLD_INGOT) {
+    displayName {
+        shopColored("Anzahl: ", TextDecoration.BOLD)
+        appendSpace()
+        shopColored(
+            "${amountState.get(context)}/" + shopState.get(context)
+                ?.shopUuid
+                ?.let(ShopService::getShop)
+                ?.storedItemCount
+        )
     }
+}
 
-    private val minusOne = MenuHeads.MINUS.clone().apply {
-        displayName { shopColored("-1") }
-    }
+private val plusOne = MenuHeads.PLUS.clone().apply {
+    displayName { shopColored("+1") }
+}
 
-    private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { shopColored("-64") }
-    }
+private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
+    displayName { shopColored("+64") }
+}
 
-    private val continueItem = MenuHeads.CHECK.clone().apply {
-        displayName { shopColored("Auszahlen") }
-    }
+private val minusOne = MenuHeads.MINUS.clone().apply {
+    displayName { shopColored("-1") }
+}
 
-    private val ownItem = MenuHeads.DOLLAR.clone().apply {
-        displayName { shopColored("Eigene Anzahl eingeben") }
-    }
+private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
+    displayName { shopColored("-64") }
+}
+
+private val continueItem = MenuHeads.CHECK.clone().apply {
+    displayName { shopColored("Auszahlen") }
+}
+
+private val ownItem = MenuHeads.DOLLAR.clone().apply {
+    displayName { shopColored("Eigene Anzahl eingeben") }
 }

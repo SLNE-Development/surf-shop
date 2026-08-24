@@ -3,10 +3,14 @@ package dev.slne.surf.shop.paper.menu.delete
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
+import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
 import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
 import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
@@ -20,7 +24,6 @@ import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
 
 val deleteShopView = surfView("Shop löschen") {
@@ -37,9 +40,9 @@ val deleteShopView = surfView("Shop löschen") {
     }
 
     onFirstRender {
-        slot(2, 3, MenuHeads.CROSS.clone().apply {
+        slot(2, 3, ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
             displayName {
-                error("Abbrechen")
+                error("Abbrechen".toSmallCaps())
             }
         }).onClick { context ->
             context.playGeneralClickSound()
@@ -61,7 +64,7 @@ val deleteShopView = surfView("Shop löschen") {
         val shop = shopState[this]
 
         slot(1, 5, shop.item.clone())
-        slot(2, 5, MenuHeads.CHECK.clone().apply {
+        slot(2, 5, ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
             displayName {
                 success("Shop löschen")
             }

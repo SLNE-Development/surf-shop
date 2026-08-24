@@ -1,179 +1,169 @@
 package dev.slne.surf.shop.paper.menu.edit.storage
 
 import com.github.shynixn.mccoroutine.folia.launch
-import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
-import dev.slne.surf.shop.paper.menu.*
+import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
+import dev.slne.surf.shop.paper.menu.playNoSound
+import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.CloseContext
-import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.context.SlotClickContext
-import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-object ItemStorageInsertView : View() {
-    private val shopState = initialState<Shop>("edit-shop")
-    private val localShopState: MutableState<Shop> = mutableState(Shop.empty())
-    private val itemInsertedState = mutableState(0)
+val itemStorageInsertView = surfView("Items einlagern") {
+    val shopState = initialState<Shop>("edit-shop")
+    val itemInsertedState = mutableState(0)
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Items einlagern".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(5)
-            .layout("OOOOQOOOO", "OSSSSSSSO", "OSSSSSSSO", "OSSSSSSSO", "OOOOBOOOO")
-            .cancelOnClick().cancelOnDrop().cancelOnDrag()
-            .build()
+    settings {
+        rows(5)
+        cancelOnClick()
+        cancelOnDrag()
+        cancelOnDrop()
+        cancelOnPickup(false)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        localShopState.set(shopState.get(render), render)
+    containerDefaults {
+        blockRow(1)
+        blockColumn(0)
+        blockColumn(8)
+        blockRow(5)
+    }
 
-        render.layoutSlot('O', outlineItem)
+    onInit {
+        layout(
+            "         ",
+            " SSSSSSS ",
+            " SSSSSSS ",
+            " SSSSSSS ",
+            "         ",
+        )
+    }
 
-        render.layoutSlot('B', backItem).onClick { context ->
-            context.playGeneralClickSound()
-
-            context.openForPlayer(
-                ItemStorageView::class.java,
-                ImmutableMap.of("edit-shop", localShopState.get(render))
-            )
-        }
-
-        render.layoutSlot('S', ItemStack.empty()).onClick { context ->
+    onFirstRender {
+        layoutSlot('S', ItemStack.empty()).onClick { context ->
             context.isCancelled = false
         }
 
-        render.layoutSlot('Q').renderWith {
-            explainItem(localShopState.get(render).storedItemCount)
-        }.watch(localShopState)
+        slot(1, 5).renderWith {
+            explainItem(shopState[this].storedItemCount)
+        }
     }
 
-    override fun onClick(click: SlotClickContext) {
-        if (!click.clickedContainer.isEntityContainer) {
-            return
+    onClick {
+        if (!this.clickedContainer.isEntityContainer) {
+            return@onClick
         }
 
-        if (!click.player.canEditShopStorageFromCurrentView()) {
-            click.player.sendText {
+        if (!this.player.canEditShopStorageFromCurrentView()) {
+            this.player.sendText {
                 appendErrorPrefix()
                 error("Das Lager kannst du nur am Spawn bearbeiten.")
             }
-            click.player.playNoSound()
-            return
+            this.player.playNoSound()
+            return@onClick
         }
 
-        val item = click.item ?: return
-        val shop = localShopState.get(click)
+        val item = this.item ?: return@onClick
+        val shop = shopState[this]
 
         if (!item.isSimilar(shop.item)) {
-            return
+            return@onClick
         }
 
-        click.isCancelled = false
-        click.clickOrigin.currentItem = ItemStack.empty()
+        this.isCancelled = false
+        this.clickOrigin.currentItem = ItemStack.empty()
 
         plugin.launch {
             val amount = item.amount
 
-            val currentShop = localShopState.get(click)
+            val currentShop = shopState[this@onClick]
             val newShop = currentShop.copy(
                 storedItemCount = currentShop.storedItemCount + amount
             )
 
-            localShopState.set(newShop, click)
-
+            shopState[this@onClick] = newShop
             ShopService.saveShop(newShop)
-
-            itemInsertedState.set(
-                itemInsertedState.get(click) + amount,
-                click
-            )
+            itemInsertedState[this@onClick] = itemInsertedState[this@onClick] + amount
 
             if (plugin.auxProtectHook) {
-                AuxProtectHook.logDeposit(click.player, currentShop, amount)
+                AuxProtectHook.logDeposit(this@onClick.player, currentShop, amount)
             }
 
-            click.player.sendActionBar(buildText {
+            this@onClick.player.sendActionBar(buildText {
                 appendSuccessPrefix()
                 success("Du hast ")
                 variableValue("$amount Items")
                 success(" eingelagert.")
             })
 
-            click.player.playSound(true) {
+            this@onClick.player.playSound(true) {
                 type(Sound.ENTITY_PLAYER_LEVELUP)
             }
         }
     }
 
-    override fun onClose(close: CloseContext) {
-        val added = itemInsertedState.get(close)
+    onClose {
+        val added = itemInsertedState[this]
         if (added > 0) {
-            close.player.sendText {
+            this.player.sendText {
                 appendSuccessPrefix()
                 success("Du hast ")
                 variableValue("${added}x ")
-                translatable(shopState.get(close).item.type.translationKey())
+                translatable(shopState[this@onClose].item.type.translationKey())
                 success(" eingelagert.")
             }
 
-            close.player.playSound(true) {
+            this.player.playSound(true) {
                 type(Sound.ENTITY_VILLAGER_YES)
             }
         }
     }
+}
 
-    private val backItem = MenuHeads.CROSS.clone().apply {
-        displayName {
-            error("Zurück")
-        }
+private fun explainItem(amount: Int) = MenuHeads.QUESTION.clone().apply {
+    displayName {
+        shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
     }
 
-    private fun explainItem(amount: Int) = MenuHeads.QUESTION.clone().apply {
-        displayName {
-            shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
+    buildLore {
+        emptyLine()
+        line {
+            appendBlob()
+            shopColored("Klicke auf ein Item, um es einzulagern.")
         }
-
-        buildLore {
-            emptyLine()
-            line {
-                appendBlob()
-                shopColored("Klicke auf ein Item, um es einzulagern.")
-            }
-            line {
-                appendBlob()
-                shopColored("Das ausgewählte Item wird sofort in deinen Shop eingelagert")
-            }
-            line {
-                appendSpace()
-                appendSpace()
-                appendSpace()
-                shopColored("und steht zum Verkauf bereit.")
-            }
-            emptyLine()
-            line {
-                spacer("Derzeit sind ")
-                variableValue("$amount Items")
-                spacer(" im Lager.")
-            }
+        line {
+            appendBlob()
+            shopColored("Das ausgewählte Item wird sofort in deinen Shop eingelagert")
+        }
+        line {
+            appendSpace()
+            appendSpace()
+            appendSpace()
+            shopColored("und steht zum Verkauf bereit.")
+        }
+        emptyLine()
+        line {
+            spacer("Derzeit sind ")
+            variableValue("$amount Items")
+            spacer(" im Lager.")
         }
     }
 }
