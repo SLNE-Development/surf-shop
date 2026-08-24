@@ -3,10 +3,15 @@ package dev.slne.surf.shop.paper.menu.delete
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
+import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
+import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -17,27 +22,22 @@ import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
-import net.kyori.adventure.text.format.TextDecoration
 
-object DeleteShopView : View() {
-    private val shopState = initialState<Shop>("delete-shop")
+val deleteShopView = surfView("Shop löschen") {
+    val shopState = initialState<Shop>("delete-shop")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Shop löschen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(3)
-            .layout("OOOOOOOOO", "O   I C O", "OOOOBOOOO")
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(3)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+    containerDefaults {
+        blockRow(1)
+        blockRow(2)
+        blockRow(3)
+    }
+
+    onFirstRender {
+        slot(2, 3, MenuHeads.CROSS.clone().apply {
             displayName {
                 error("Abbrechen")
             }
@@ -58,11 +58,10 @@ object DeleteShopView : View() {
             }
         }
 
-        val shop = shopState.get(render)
+        val shop = shopState[this]
 
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I', shop.item.clone())
-        render.layoutSlot('C', MenuHeads.CHECK.clone().apply {
+        slot(1, 5, shop.item.clone())
+        slot(2, 5, MenuHeads.CHECK.clone().apply {
             displayName {
                 success("Shop löschen")
             }
