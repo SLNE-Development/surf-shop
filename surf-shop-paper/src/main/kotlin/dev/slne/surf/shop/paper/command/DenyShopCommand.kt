@@ -20,11 +20,7 @@ fun denyShopCommand() = commandTree("denyshop") {
             return@playerExecutor
         }
 
-        val isDenied = item.persistentDataContainer.getOrDefault(
-            denyShopKey,
-            PersistentDataType.BOOLEAN,
-            false
-        )
+        val isDenied = item.persistentDataContainer.has(denyShopKey)
 
         if (isDenied) {
             item.editPersistentDataContainer {

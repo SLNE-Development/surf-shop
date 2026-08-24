@@ -172,7 +172,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
             slot(5, 9, createItem).onClick { context ->
                 context.playGeneralClickSound()
                 context.openForPlayer(
-                    CreateShopView::class.java,
+                    createShopView::class.java,
                     ImmutableMap.of(
                         "create-item",
                         ItemStack.empty(),

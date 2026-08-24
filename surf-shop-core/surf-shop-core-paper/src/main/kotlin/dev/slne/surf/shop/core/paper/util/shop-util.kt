@@ -58,7 +58,7 @@ private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
 val denyShopKey = namespacedKey("deny_shop")
 
 fun isAllowedToSell(item: ItemStack): Boolean {
-    return !BLACKLISTED_ITEMS.contains(item.type) || item.persistentDataContainer.has(denyShopKey)
+    return !BLACKLISTED_ITEMS.contains(item.type) && !item.persistentDataContainer.has(denyShopKey)
 }
 
 fun isValidePrice(amount: Double): Boolean {
