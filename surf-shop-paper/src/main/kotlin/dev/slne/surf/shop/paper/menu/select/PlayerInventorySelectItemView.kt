@@ -64,7 +64,7 @@ val playerInventorySelectItemView: AbstractSurfView = paginatedSurfView("Item w√
                             amount = 1
                         },
                         "create-price",
-                        0.0
+                        priceState[context]
                     )
                 )
             }

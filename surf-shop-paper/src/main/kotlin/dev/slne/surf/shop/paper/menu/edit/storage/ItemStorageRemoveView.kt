@@ -3,7 +3,6 @@ package dev.slne.surf.shop.paper.menu.edit.storage
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
@@ -50,7 +49,7 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
 
     onInit {
         layout(
-            "        ",
+            "         ",
             "    W    ",
             " 21 P 34 ",
             "         ",
@@ -276,8 +275,8 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
     }
 }
 
-private val quitItem = buildItem(Material.RED_STAINED_GLASS_PANE) {
-    displayName { error("Abbrechen".toSmallCaps(), TextDecoration.BOLD) }
+private val quitItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+    displayName { error("Zurück") }
 }
 
 private fun handleIncrement(
