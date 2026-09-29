@@ -1,66 +1,58 @@
 package dev.slne.surf.shop.paper.menu.select
 
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.paper.dialog.create.createSpecificPriceDialog
-import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 import kotlin.math.max
 
-object PriceSelectView : View() {
-    private val itemState: State<ItemStack> = initialState("create-item")
-    private val priceState: State<Double> = initialState("create-price")
-    private val localPriceState = mutableState(0.01)
+val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
+    val itemState = initialState<ItemStack>("create-item")
+    val priceState = initialState<Double>("create-price")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Preis festlegen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(5)
-            .layout(
-                "OOOOOOOOO",
-                "O   W   O",
-                "O21 P 34O",
-                "O       O",
-                "OOOOBOOOO"
-            )
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(5)
+        cancelAllInteractions()
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        localPriceState.set(priceState.get(render), render)
+    onInit {
+        layout(
+            "OOOOOOOOO",
+            "O   W   O",
+            "O21 P 34O",
+            "O       O",
+            "OOOOBOOOO"
+        )
+    }
 
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('W', ownItem).onClick { context ->
+    onFirstRender {
+        layoutSlot('W', ownItem).onClick { context ->
             context.playGeneralClickSound()
             context.player.closeInventory()
             context.player.showDialog(
                 createSpecificPriceDialog(
-                    itemState.get(render),
-                    localPriceState.get(render)
+                    itemState[this],
+                    priceState[this]
                 )
             )
         }
 
-        render.layoutSlot('1', minusOne).onClick { context ->
-            localPriceState.set(max(0.01, localPriceState.get(render) - 1), render)
+        layoutSlot('1', minusOne).onClick { context ->
+            priceState[this] = max(0.01, priceState[this] - 1)
             context.update()
 
             context.player.playSound(true) {
@@ -68,8 +60,8 @@ object PriceSelectView : View() {
             }
         }
 
-        render.layoutSlot('2', minusThirtyTwo).onClick { context ->
-            localPriceState.set(max(0.01, localPriceState.get(render) - 50), render)
+        layoutSlot('2', minusThirtyTwo).onClick { context ->
+            priceState[this] = max(0.01, priceState[this] - 50)
             context.update()
 
             context.player.playSound(true) {
@@ -77,8 +69,8 @@ object PriceSelectView : View() {
             }
         }
 
-        render.layoutSlot('3', plusOne).onClick { context ->
-            localPriceState.set(localPriceState.get(render) + 1, render)
+        layoutSlot('3', plusOne).onClick { context ->
+            priceState[this] = priceState[this] + 1
             context.update()
 
             context.player.playSound(true) {
@@ -86,8 +78,8 @@ object PriceSelectView : View() {
             }
         }
 
-        render.layoutSlot('4', plusThirtyTwo).onClick { context ->
-            localPriceState.set(localPriceState.get(render) + 50, render)
+        layoutSlot('4', plusThirtyTwo).onClick { context ->
+            priceState[this] = priceState[this] + 50
             context.update()
 
             context.player.playSound(true) {
@@ -95,57 +87,53 @@ object PriceSelectView : View() {
             }
         }
 
-        render.layoutSlot('B', continueItem).onClick { context ->
+        layoutSlot('B', continueItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateShopView::class.java,
+                createShopView::class.java,
                 ImmutableMap.of(
                     "create-item",
-                    itemState.get(render),
+                    itemState[this],
                     "create-price",
-                    localPriceState.get(context)
+                    priceState[this]
                 )
             )
         }
 
-        render.layoutSlot('P').watch(localPriceState).renderWith {
-            valueItem(render)
+        layoutSlot('P').renderWith {
+            valueItem(priceState[this])
         }
     }
+}
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName { spacer("") }
+private fun valueItem(price: Double) = buildItem(Material.GOLD_INGOT) {
+    displayName {
+        shopColored("Preis: ", TextDecoration.BOLD)
+        appendSpace()
+        shopColored(formatPriceNice(price))
     }
+}
 
-    private fun valueItem(context: RenderContext) = buildItem(Material.GOLD_INGOT) {
-        displayName {
-            shopColored("Preis: ", TextDecoration.BOLD)
-            appendSpace()
-            shopColored(formatPriceNice(localPriceState.get(context)))
-        }
-    }
+private val plusOne = MenuHeads.PLUS.clone().apply {
+    displayName { shopColored("+1") }
+}
 
-    private val plusOne = MenuHeads.PLUS.clone().apply {
-        displayName { shopColored("+1") }
-    }
+private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
+    displayName { shopColored("+50") }
+}
 
-    private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-        displayName { shopColored("+50") }
-    }
+private val minusOne = MenuHeads.MINUS.clone().apply {
+    displayName { shopColored("-1") }
+}
 
-    private val minusOne = MenuHeads.MINUS.clone().apply {
-        displayName { shopColored("-1") }
-    }
+private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
+    displayName { shopColored("-50") }
+}
 
-    private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-        displayName { shopColored("-50") }
-    }
+private val continueItem = MenuHeads.CHECK.clone().apply {
+    displayName { shopColored("Übernehmen") }
+}
 
-    private val continueItem = MenuHeads.CHECK.clone().apply {
-        displayName { shopColored("Übernehmen") }
-    }
-
-    private val ownItem = MenuHeads.DOLLAR.clone().apply {
-        displayName { shopColored("Eigenen Preis eingeben") }
-    }
+private val ownItem = MenuHeads.DOLLAR.clone().apply {
+    displayName { shopColored("Eigenen Preis eingeben") }
 }

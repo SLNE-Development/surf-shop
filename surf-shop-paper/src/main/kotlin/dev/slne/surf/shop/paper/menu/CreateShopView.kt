@@ -22,8 +22,8 @@ import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.edit.editShopView
-import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
-import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
+import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
@@ -60,7 +60,7 @@ val createShopView = surfView("Shop erstellen") {
         }).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                PriceSelectView::class.java,
+                priceSelectView::class.java,
                 ImmutableMap.of(
                     "create-item", itemState[this@onFirstRender],
                     "create-price", priceState[this@onFirstRender]
@@ -72,7 +72,7 @@ val createShopView = surfView("Shop erstellen") {
             layoutSlot('I', itemNotSet).onClick { context ->
                 context.playGeneralClickSound()
                 context.openForPlayer(
-                    PlayerInventorySelectItemView::class.java,
+                    playerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
                         priceState[context],
@@ -87,7 +87,7 @@ val createShopView = surfView("Shop erstellen") {
             }).onClick { context ->
                 context.playGeneralClickSound()
                 context.openForPlayer(
-                    PlayerInventorySelectItemView::class.java,
+                    playerInventorySelectItemView::class.java,
                     ImmutableMap.of(
                         "create-price",
                         priceState[context],

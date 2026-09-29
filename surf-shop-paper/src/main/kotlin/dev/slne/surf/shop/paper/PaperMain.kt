@@ -29,8 +29,8 @@ import dev.slne.surf.shop.paper.menu.edit.priceEditView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageInsertView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
-import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
-import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
+import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.menu.shopListView
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -51,8 +51,8 @@ class PaperMain : SuspendingJavaPlugin() {
 
         viewFrame.with(shopListView)
         viewFrame.with(createShopView)
-        viewFrame.with(PlayerInventorySelectItemView)
-        viewFrame.with(PriceSelectView)
+        viewFrame.with(priceSelectView)
+        viewFrame.with(playerInventorySelectItemView)
         viewFrame.with(editShopView)
         viewFrame.with(priceEditView)
         viewFrame.with(itemStorageView)

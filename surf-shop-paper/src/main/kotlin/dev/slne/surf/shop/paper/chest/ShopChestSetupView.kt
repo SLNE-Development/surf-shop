@@ -11,7 +11,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
@@ -53,7 +53,7 @@ object ShopChestSetupView : View() {
         render.layoutSlot('C', createShopItem()).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateShopView::class.java,
+                createShopView::class.java,
                 ImmutableMap.of(
                     "create-item", ItemStack.empty(),
                     "create-price", 0.0

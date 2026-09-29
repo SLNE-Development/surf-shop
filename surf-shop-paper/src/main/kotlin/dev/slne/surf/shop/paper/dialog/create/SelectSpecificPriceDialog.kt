@@ -3,15 +3,12 @@ package dev.slne.surf.shop.paper.dialog.create
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.messages.adventure.appendNewline
-import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.dialog.base
 import dev.slne.surf.api.paper.dialog.builder.actionButton
 import dev.slne.surf.api.paper.dialog.dialog
 import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
-import dev.slne.surf.shop.paper.menu.CreateShopView
-import dev.slne.surf.shop.paper.menu.playNoSound
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import org.bukkit.inventory.ItemStack
@@ -51,7 +48,7 @@ fun createSpecificPriceDialog(
                     customPlayerClick { _, player ->
                         player.closeDialog()
                         viewFrame.open(
-                            CreateShopView::class.java, player, ImmutableMap.of(
+                            createShopView::class.java, player, ImmutableMap.of(
                                 "create-item", itemStack,
                                 "create-price", initialPrice
                             )
@@ -72,7 +69,7 @@ fun createSpecificPriceDialog(
                             player.closeDialog()
 
                             viewFrame.open(
-                                CreateShopView::class.java, player, ImmutableMap.of(
+                                createShopView::class.java, player, ImmutableMap.of(
                                     "create-item", itemStack,
                                     "create-price", price
                                 )
