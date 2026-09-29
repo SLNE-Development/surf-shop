@@ -22,6 +22,7 @@ val itemStorageView: AbstractSurfView = surfView("Item Lager") {
 
     settings {
         rows(3)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {

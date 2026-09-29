@@ -41,6 +41,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
     settings {
         rows(3)
         cancelAllInteractions()
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {
@@ -171,7 +172,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         StaticShopState.setInStaticShop(context.player.uniqueId, false)
                         context.player.closeInventory()
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        context.openForPlayer(OwnShopsListView::class.java)
+                        context.openForPlayer(ownShopsListView::class.java)
                     } else {
                         context.openForPlayer(shopListView::class.java)
                     }
@@ -323,7 +324,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         StaticShopState.setInStaticShop(context.player.uniqueId, false)
                         context.player.closeInventory()
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        context.openForPlayer(OwnShopsListView::class.java)
+                        context.openForPlayer(ownShopsListView::class.java)
                     } else {
                         context.openForPlayer(shopListView::class.java)
                     }
@@ -472,7 +473,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                 StaticShopState.setInStaticShop(context.player.uniqueId, false)
                 context.player.closeInventory()
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                context.openForPlayer(OwnShopsListView::class.java)
+                context.openForPlayer(ownShopsListView::class.java)
             } else {
                 context.openForPlayer(shopListView::class.java)
             }
@@ -486,7 +487,7 @@ private suspend fun openListView(context: RenderContext) =
             StaticShopState.setInStaticShop(context.player.uniqueId, false)
             context.player.closeInventory()
         } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-            viewFrame.open(OwnShopsListView::class.java, context.player)
+            viewFrame.open(ownShopsListView::class.java, context.player)
         } else {
             viewFrame.open(shopListView::class.java, context.player)
         }

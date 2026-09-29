@@ -30,6 +30,7 @@ val playerInventorySelectItemView: AbstractSurfView = paginatedSurfView("Item w√
         paginationEmptyRows(1)
         paginationEmptyRows(4)
         cancelAllInteractions()
+        navigateBackOnOutsideClick(false)
     }
 
     pagination {

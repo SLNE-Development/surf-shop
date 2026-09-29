@@ -28,6 +28,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
 
     settings {
         rows(3)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {
@@ -52,7 +53,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
                     ImmutableMap.of("shop-chest", chest)
                 )
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                context.openForPlayer(OwnShopsListView::class.java)
+                context.openForPlayer(ownShopsListView::class.java)
             } else {
                 context.openForPlayer(shopListView::class.java)
             }
@@ -112,7 +113,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
                             ImmutableMap.of("shop-chest", chest)
                         )
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        context.openForPlayer(OwnShopsListView::class.java)
+                        context.openForPlayer(ownShopsListView::class.java)
                     } else {
                         context.openForPlayer(shopListView::class.java)
                     }

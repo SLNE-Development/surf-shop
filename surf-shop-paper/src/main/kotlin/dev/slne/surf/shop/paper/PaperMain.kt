@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.api.paper.extensions.pluginManager
+import dev.slne.surf.api.paper.inventory.framework.register
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
@@ -19,7 +20,6 @@ import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
-import dev.slne.surf.shop.paper.menu.OwnShopsListView
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
 import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.deal.doneDealsView
@@ -29,6 +29,7 @@ import dev.slne.surf.shop.paper.menu.edit.priceEditView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageInsertView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageRemoveView
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
+import dev.slne.surf.shop.paper.menu.ownShopsListView
 import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.menu.shopListView
@@ -49,21 +50,22 @@ class PaperMain : SuspendingJavaPlugin() {
         PaperShopInstance.paperLoader.onLoad()
         DealServiceImpl.plugin = this
 
-        viewFrame.with(shopListView)
-        viewFrame.with(createShopView)
-        viewFrame.with(priceSelectView)
-        viewFrame.with(playerInventorySelectItemView)
-        viewFrame.with(editShopView)
-        viewFrame.with(priceEditView)
-        viewFrame.with(itemStorageView)
-        viewFrame.with(itemStorageInsertView)
-        viewFrame.with(itemStorageRemoveView)
-        viewFrame.with(buyShopItemView)
-        viewFrame.with(deleteShopView)
-        viewFrame.with(OwnShopsListView)
+        shopListView.register()
+        createShopView.register()
+        priceSelectView.register()
+        playerInventorySelectItemView.register()
+        editShopView.register()
+        priceEditView.register()
+        itemStorageView.register()
+        itemStorageInsertView.register()
+        itemStorageRemoveView.register()
+        buyShopItemView.register()
+        deleteShopView.register()
+        ownShopsListView.register()
+        doneDealsView.register()
+
         viewFrame.with(ShopChestSetupView)
         viewFrame.with(ShopChestSelectShopView)
-        viewFrame.with(doneDealsView)
     }
 
     override suspend fun onEnableAsync() {

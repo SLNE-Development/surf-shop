@@ -39,6 +39,7 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
 
     settings {
         rows(5)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {

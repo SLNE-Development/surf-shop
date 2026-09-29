@@ -38,6 +38,7 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
         cancelOnDrag()
         cancelOnDrop()
         cancelOnPickup(false)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {

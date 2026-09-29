@@ -38,6 +38,7 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
 
     settings {
         rows(5)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {
@@ -180,7 +181,7 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
                             ImmutableMap.of("shop-chest", chest)
                         )
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        viewFrame.open(OwnShopsListView::class.java, context.player)
+                        viewFrame.open(ownShopsListView::class.java, context.player)
                     } else {
                         viewFrame.open(shopListView::class.java, context.player)
                     }
@@ -199,7 +200,7 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
                     ImmutableMap.of("shop-chest", chest)
                 )
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                viewFrame.open(OwnShopsListView::class.java, context.player)
+                viewFrame.open(ownShopsListView::class.java, context.player)
             } else {
                 viewFrame.open(shopListView::class.java, context.player)
             }

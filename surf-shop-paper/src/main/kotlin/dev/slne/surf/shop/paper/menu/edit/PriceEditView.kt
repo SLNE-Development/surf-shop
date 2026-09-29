@@ -28,6 +28,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
 
     settings {
         rows(5)
+        navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {

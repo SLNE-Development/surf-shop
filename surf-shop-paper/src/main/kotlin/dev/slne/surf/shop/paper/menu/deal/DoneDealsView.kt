@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture
 val doneDealsView: AbstractPaginatedSurfView = paginatedSurfView("Verkaufsverlauf") {
     settings {
         paginationViewRows(PaginationViewRows.FOUR)
+        navigateBackOnOutsideClick(false)
     }
 
     layoutTarget('I')

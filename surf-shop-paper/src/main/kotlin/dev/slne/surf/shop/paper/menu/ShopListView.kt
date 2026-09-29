@@ -60,6 +60,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
 
     settings {
         paginationViewRows(PaginationViewRows.FOUR)
+        navigateBackOnOutsideClick(false)
     }
 
     layoutTarget('I')
@@ -191,7 +192,7 @@ val shopListView: AbstractPaginatedSurfView = paginatedSurfView("Shops") {
             }
         }
         slot(5, 8, ownShopsItem(this)).onClick { click ->
-            click.openForPlayer(OwnShopsListView::class.java)
+            click.openForPlayer(ownShopsListView::class.java)
             click.playGeneralClickSound()
 
             OwnShopState.setInOwn(click.player.uniqueId, true)

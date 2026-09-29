@@ -39,6 +39,7 @@ val createShopView = surfView("Shop erstellen") {
 
     settings {
         rows(5)
+        navigateBackOnOutsideClick(false)
     }
 
     onInit {
@@ -190,7 +191,7 @@ val createShopView = surfView("Shop erstellen") {
                     ImmutableMap.of("shop-chest", chest)
                 )
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                viewFrame.open(OwnShopsListView::class.java, context.player)
+                viewFrame.open(ownShopsListView::class.java, context.player)
             } else {
                 viewFrame.open(shopListView::class.java, context.player)
             }

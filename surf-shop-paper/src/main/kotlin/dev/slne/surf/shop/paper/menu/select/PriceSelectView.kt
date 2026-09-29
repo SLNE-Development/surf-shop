@@ -27,6 +27,7 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
     settings {
         rows(5)
         cancelAllInteractions()
+        navigateBackOnOutsideClick(false)
     }
 
     onInit {
