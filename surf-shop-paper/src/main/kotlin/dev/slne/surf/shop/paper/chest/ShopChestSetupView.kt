@@ -36,7 +36,7 @@ val shopChestSetupView: AbstractSurfView = surfView("Shop Chest") {
 
     containerDefaults {
         blockRow(1)
-        blockRow(2)
+        
         blockRow(3)
     }
 
