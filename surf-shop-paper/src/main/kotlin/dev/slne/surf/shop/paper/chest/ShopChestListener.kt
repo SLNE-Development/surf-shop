@@ -248,7 +248,7 @@ object ShopChestListener : Listener {
             if (chest.placedBy == player.uniqueId) {
                 ChestShopEditState.setChest(player.uniqueId, chest)
                 viewFrame.open(
-                    ShopChestSetupView::class.java,
+                    shopChestSetupView::class.java,
                     player,
                     ImmutableMap.of("shop-chest", chest)
                 )
@@ -280,7 +280,7 @@ object ShopChestListener : Listener {
             StaticShopState.setInStaticShop(player.uniqueId, false)
             ChestShopEditState.setChest(player.uniqueId, chest)
             viewFrame.open(
-                ShopChestSetupView::class.java,
+                shopChestSetupView::class.java,
                 player,
                 ImmutableMap.of("shop-chest", chest)
             )

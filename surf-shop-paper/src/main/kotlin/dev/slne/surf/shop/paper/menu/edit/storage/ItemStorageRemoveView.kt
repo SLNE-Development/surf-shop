@@ -16,7 +16,10 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
-import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
+import dev.slne.surf.api.paper.inventory.framework.view.state.StateHandle
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificRemoveAmountPriceDialog
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
@@ -86,7 +89,7 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
         }
 
         layoutSlot('1', minusOne).onClick { context ->
-            amountState.set(max(0, amountState.get(this) - 1), this)
+            amountState.set(this, max(0, amountState.get(this) - 1))
             context.update()
 
             context.player.playSound(true) {
@@ -95,7 +98,7 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
         }
 
         layoutSlot('2', minusThirtyTwo).onClick { context ->
-            amountState.set(max(0, amountState.get(this) - 64), this)
+            amountState.set(this, max(0, amountState.get(this) - 64))
             context.update()
 
             context.player.playSound(true) {
@@ -269,7 +272,7 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
             }
         }
 
-        layoutSlot('P').watch(amountState).renderWith {
+        layoutSlot('P').renderWith {
             valueItem(this, shopState, amountState)
         }
     }
@@ -283,8 +286,8 @@ private fun handleIncrement(
     render: RenderContext,
     context: SlotClickContext,
     delta: Int,
-    shopState: MutableState<Shop>,
-    amountState: MutableState<Int>
+    shopState: StateHandle<MutableState<Shop>>,
+    amountState: StateHandle<MutableState<Int>>
 ) {
     val currentStock = shopState.get(context)
         ?.shopUuid
@@ -301,7 +304,7 @@ private fun handleIncrement(
         return
     }
 
-    amountState.set(newAmount, render)
+    amountState.set(render, newAmount)
     context.update()
 
     context.player.playSound(true) {
@@ -311,8 +314,8 @@ private fun handleIncrement(
 
 private fun valueItem(
     context: RenderContext,
-    shopState: MutableState<Shop>,
-    amountState: MutableState<Int>
+    shopState: StateHandle<MutableState<Shop>>,
+    amountState: StateHandle<MutableState<Int>>
 ) = buildItem(Material.GOLD_INGOT) {
     displayName {
         shopColored("Anzahl: ", TextDecoration.BOLD)

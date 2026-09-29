@@ -11,7 +11,10 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
+import dev.slne.surf.api.paper.inventory.framework.view.state.StateHandle
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
 import dev.slne.surf.shop.paper.menu.canEditShopPrice
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -66,7 +69,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('1', minusOne).onClick { context ->
-            priceState.set(max(0.01, priceState.get(this) - 1), this)
+            priceState.set(this, max(0.01, priceState.get(this) - 1))
             context.update()
 
             context.player.playSound(true) {
@@ -75,7 +78,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('2', minusThirtyTwo).onClick { context ->
-            priceState.set(max(0.01, priceState.get(this) - 50), this)
+            priceState.set(this, max(0.01, priceState.get(this) - 50))
             context.update()
 
             context.player.playSound(true) {
@@ -84,7 +87,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('3', plusOne).onClick { context ->
-            priceState.set(priceState.get(this) + 1, this)
+            priceState.set(this, priceState.get(this) + 1)
             context.update()
 
             context.player.playSound(true) {
@@ -93,7 +96,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('4', plusThirtyTwo).onClick { context ->
-            priceState.set(priceState.get(this) + 50.0, this)
+            priceState.set(this, priceState.get(this) + 50.0)
             context.update()
 
             context.player.playSound(true) {
@@ -132,7 +135,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
             )
         }
 
-        layoutSlot('P').watch(priceState).renderWith {
+        layoutSlot('P').renderWith {
             valueItem(priceState[this])
         }
     }

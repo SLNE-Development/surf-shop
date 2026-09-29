@@ -19,7 +19,7 @@ import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.util.base64
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.FancyHologramsHook
 import dev.slne.surf.shop.paper.menu.edit.editShopView
@@ -191,7 +191,7 @@ val createShopView = surfView("Shop erstellen") {
             val chest = ChestShopEditState.getChest(context.player.uniqueId)
             if (chest != null) {
                 viewFrame.open(
-                    ShopChestSetupView::class.java,
+                    shopChestSetupView::class.java,
                     context.player,
                     ImmutableMap.of("shop-chest", chest)
                 )

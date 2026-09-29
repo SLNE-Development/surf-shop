@@ -22,8 +22,10 @@ import dev.slne.surf.shop.core.paper.util.MAX_PRICE
 import dev.slne.surf.shop.core.paper.util.MIN_PRICE
 import dev.slne.surf.shop.core.paper.util.isValidePrice
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.plugin
@@ -175,7 +177,7 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
                     val chest = ChestShopEditState.getChest(context.player.uniqueId)
                     if (chest != null) {
                         viewFrame.open(
-                            ShopChestSetupView::class.java,
+                            shopChestSetupView::class.java,
                             context.player,
                             ImmutableMap.of("shop-chest", chest)
                         )
@@ -194,7 +196,7 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
             val chest = ChestShopEditState.getChest(context.player.uniqueId)
             if (chest != null) {
                 viewFrame.open(
-                    ShopChestSetupView::class.java,
+                    shopChestSetupView::class.java,
                     context.player,
                     ImmutableMap.of("shop-chest", chest)
                 )

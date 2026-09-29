@@ -17,7 +17,7 @@ import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
@@ -47,7 +47,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
             if (chest != null) {
                 context.player.closeInventory()
                 viewFrame.open(
-                    ShopChestSetupView::class.java,
+                    shopChestSetupView::class.java,
                     context.player,
                     ImmutableMap.of("shop-chest", chest)
                 )
@@ -107,7 +107,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
                     if (chest != null) {
                         context.player.closeInventory()
                         viewFrame.open(
-                            ShopChestSetupView::class.java,
+                            shopChestSetupView::class.java,
                             context.player,
                             ImmutableMap.of("shop-chest", chest)
                         )

@@ -14,8 +14,8 @@ import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.service.DealServiceImpl
 import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
-import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.chest.shopChestSelectShopView
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
@@ -64,8 +64,8 @@ class PaperMain : SuspendingJavaPlugin() {
         ownShopsListView.register()
         doneDealsView.register()
 
-        viewFrame.with(ShopChestSetupView)
-        viewFrame.with(ShopChestSelectShopView)
+        shopChestSetupView.register()
+        shopChestSelectShopView.register()
     }
 
     override suspend fun onEnableAsync() {
