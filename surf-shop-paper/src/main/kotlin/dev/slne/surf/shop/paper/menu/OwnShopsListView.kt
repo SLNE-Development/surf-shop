@@ -9,7 +9,15 @@ import dev.slne.surf.api.core.util.mutableObjectSetOf
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
+import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
+import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.api.shopchest.StaticShopChest
@@ -18,46 +26,160 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.paper.dialog.searchShopItemDialog
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
-import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
-import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
+import dev.slne.surf.shop.paper.menu.deal.doneDealsView
+import dev.slne.surf.shop.paper.menu.delete.deleteShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.searchInputCache
 import kotlinx.coroutines.future.future
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
 import me.devnatan.inventoryframework.context.Context
-import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import java.util.*
 
-object OwnShopsListView : View() {
-    private val selectedSort = mutableState(ShopSortingType.TIME_ASC)
+val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
+    val selectedSort = mutableState(ShopSortingType.TIME_ASC)
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName {
-            spacer("")
+    settings {
+        navigateBackOnOutsideClick(false)
+        paginationViewRows(PaginationViewRows.FOUR)
+    }
+
+    pagination {
+        lazyAsyncSource { context ->
+            plugin.scope.future {
+                getOwnLoadedShopsWithItems(
+                    context.player.uniqueId,
+                    plugin.getSorting(context.player.uniqueId),
+                    searchInputCache[context.player.uniqueId],
+                    context
+                )
+            }
+        }
+
+        itemFactory { shop ->
+            withItem(
+                shop.second
+            ).onClick { context ->
+                context.playGeneralClickSound()
+
+                val shop = shop.first
+
+                if (!context.player.canUseFullShopView()) {
+                    if (shop.seller == context.player.uniqueId) {
+                        context.openForPlayer(
+                            editShopView::class.java,
+                            ImmutableMap.of(
+                                "edit-shop",
+                                shop
+                            )
+                        )
+                    } else {
+                        context.player.sendText {
+                            appendErrorPrefix()
+                            error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
+                        }
+                    }
+                    return@onClick
+                }
+
+                if (shop.seller == context.player.uniqueId) {
+                    if (context.isShiftLeftClick) {
+                        context.openForPlayer(
+                            deleteShopView::class.java,
+                            ImmutableMap.of(
+                                "delete-shop",
+                                shop
+                            )
+                        )
+                    } else {
+                        context.openForPlayer(
+                            editShopView::class.java,
+                            ImmutableMap.of(
+                                "edit-shop",
+                                shop
+                            )
+                        )
+                    }
+                } else {
+                    context.openForPlayer(
+                        buyShopItemView::class.java,
+                        ImmutableMap.of(
+                            "buy-shop",
+                            shop
+                        )
+                    )
+                }
+            }
         }
     }
 
-    private val previousItem = MenuHeads.ARROW_LEFT.clone().apply {
-        displayName {
-            shopColored("Vorherige Seite")
-        }
+    layoutTarget('R')
+
+    onInit {
+        layout(
+            "ORRRRRRRO",
+            "ORRRRRRRO",
+            "ORRRRRRRO",
+            "ORRRRRRRO",
+            "WU     AS"
+        )
     }
 
-    private val nextItem = MenuHeads.ARROW_RIGHT.clone().apply {
-        displayName {
-            shopColored("Nächste Seite")
+    onFirstRender {
+        selectedSort[this] = plugin.getSorting(this.player.uniqueId)
+
+        slot(5, 9)
+            .updateOnClick()
+            .renderWith { sortItem(selectedSort[this]) }
+            .onClick { context ->
+                context.playGeneralClickSound()
+
+                if (context.isRightClick) {
+                    selectedSort[this] = selectedSort[this].previous()
+                } else {
+                    selectedSort[this] = selectedSort[this].next()
+                }
+
+                plugin.setSorting(context.player.uniqueId, selectedSort[this])
+                openForPlayer(ownShopsListView::class.java)
+            }
+        slot(5, 1, backItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(shopListView::class.java)
+            OwnShopState.setInOwn(context.player.uniqueId, false)
+        }
+        slot(5, 2, doneDealsItem).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(doneDealsView::class.java)
+        }
+        slot(5, 8, searchItem(this.player.uniqueId)).onClick { context ->
+            context.playGeneralClickSound()
+
+            if (context.isShiftClick) {
+                searchInputCache.remove(context.player.uniqueId)
+                context.openForPlayer(ownShopsListView::class.java)
+                return@onClick
+            }
+
+            context.player.closeInventory()
+            context.player.showDialog(
+                searchShopItemDialog(
+                    searchInputCache.getOrDefault(
+                        context.player.uniqueId,
+                        ""
+                    )
+                )
+            )
         }
     }
+}
 
-    private fun searchItem(playerUuid: UUID) = buildItem(Material.BRUSH) {
+private fun searchItem(playerUuid: UUID) =
+    ViewIcon(ViewIconType.SEARCH, ViewIconColor.YELLOW).build {
         displayName {
             shopColored("Suchen")
         }
@@ -90,7 +212,8 @@ object OwnShopsListView : View() {
         }
     }
 
-    private fun sortItem(state: ShopSortingType) = buildItem(Material.COMPARATOR) {
+private fun sortItem(state: ShopSortingType) =
+    ViewIcon(ViewIconType.COG, ViewIconColor.YELLOW).build {
         displayName {
             shopColored("Sortieren")
         }
@@ -205,195 +328,9 @@ object OwnShopsListView : View() {
         }
     }
 
-    private val backItem = MenuHeads.CROSS.clone().apply {
-        displayName {
-            error("Zurück")
-        }
-    }
-
-    private val updateItem = buildItem(Material.REPEATER) {
-        displayName {
-            shopColored("Aktualisieren")
-        }
-    }
-
-    private val paginationState = buildLazyAsyncPaginationState { context ->
-        plugin.scope.future {
-            getOwnLoadedShopsWithItems(
-                context.player.uniqueId,
-                plugin.getSorting(context.player.uniqueId),
-                searchInputCache[context.player.uniqueId],
-                context
-            )
-        }
-    }.elementFactory { context, builder, _, shop ->
-        builder.withItem(
-            shop.second
-        ).onClick { context ->
-            context.playGeneralClickSound()
-
-            val shop = shop.first
-
-            if (!context.player.canUseFullShopView()) {
-                if (shop.seller == context.player.uniqueId) {
-                    context.openForPlayer(
-                        EditShopView::class.java,
-                        ImmutableMap.of(
-                            "edit-shop",
-                            shop
-                        )
-                    )
-                } else {
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error("Du kannst unterwegs nichts kaufen! Bitte begib dich zum Spawn.")
-                    }
-                }
-                return@onClick
-            }
-
-            if (shop.seller == context.player.uniqueId) {
-                if (context.isShiftLeftClick) {
-                    context.openForPlayer(
-                        DeleteShopView::class.java,
-                        ImmutableMap.of(
-                            "delete-shop",
-                            shop
-                        )
-                    )
-                } else {
-                    context.openForPlayer(
-                        EditShopView::class.java,
-                        ImmutableMap.of(
-                            "edit-shop",
-                            shop
-                        )
-                    )
-                }
-            } else {
-                context.openForPlayer(
-                    BuyShopItemView::class.java,
-                    ImmutableMap.of(
-                        "buy-shop",
-                        shop
-                    )
-                )
-            }
-        }
-    }.layoutTarget('R').build()
-
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Meine Shops".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(6)
-            .layout(
-                "OOOOOOOOO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "ORRRRRRRO",
-                "WUOPCNOAS"
-            )
-            .cancelInteractions()
-    }
-
-    override fun onFirstRender(render: RenderContext) {
-        selectedSort.set(plugin.getSorting(render.player.uniqueId), render)
-        val pagination = paginationState.get(render)
-
-        render.availableSlot(loadingItem)
-            .displayIf(pagination::isLoading)
-            .updateOnStateChange(paginationState)
-
-        render
-            .layoutSlot('S')
-            .updateOnClick()
-            .renderWith { sortItem(selectedSort.get(render)) }
-            .onClick { context ->
-                context.playGeneralClickSound()
-
-                if (context.isRightClick) {
-                    selectedSort.set(selectedSort.get(render).previous(), render)
-                } else {
-                    selectedSort.set(selectedSort.get(render).next(), render)
-                }
-
-                plugin.setSorting(context.player.uniqueId, selectedSort.get(render))
-
-                render.openForPlayer(OwnShopsListView::class.java) // Re-open to apply new sorting - this is currently necessary, inventory framework dev is working on a fix.
-            }
-        render.layoutSlot('U', updateItem).onClick { context ->
-            context.openForPlayer(OwnShopsListView::class.java)
-            context.playGeneralClickSound()
-        }
-        render.layoutSlot('W', doneDealsItem).onClick { click ->
-            click.playGeneralClickSound()
-            click.openForPlayer(DoneDealsView::class.java)
-        }
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('A', searchItem(render.player.uniqueId)).onClick { context ->
-            context.playGeneralClickSound()
-
-            if (context.isShiftClick) {
-                searchInputCache.remove(context.player.uniqueId)
-                context.openForPlayer(OwnShopsListView::class.java)
-                return@onClick
-            }
-
-            context.player.closeInventory()
-            context.player.showDialog(
-                searchShopItemDialog(
-                    searchInputCache.getOrDefault(
-                        context.player.uniqueId,
-                        ""
-                    )
-                )
-            )
-        }
-        render.layoutSlot('C', backItem).onClick { context ->
-            context.playGeneralClickSound()
-            context.openForPlayer(ShopListView::class.java)
-            OwnShopState.setInOwn(context.player.uniqueId, false)
-        }
-        render
-            .layoutSlot('P')
-            .renderWith {
-                if (pagination.canBack()) {
-                    previousItem
-                } else {
-                    outlineItem
-                }
-            }
-            .watch(paginationState)
-            .onClick { context ->
-                if (!pagination.canBack()) {
-                    return@onClick
-                }
-
-                context.playNewPageSound()
-                pagination.back()
-            }
-
-        render
-            .layoutSlot('N')
-            .renderWith {
-                if (pagination.canAdvance()) {
-                    nextItem
-                } else {
-                    outlineItem
-                }
-            }
-            .watch(paginationState)
-            .onClick { context ->
-                if (!pagination.canAdvance()) {
-                    return@onClick
-                }
-
-                context.playNewPageSound()
-                pagination.advance()
-            }
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+    displayName {
+        error("Zurück")
     }
 }
 

@@ -6,40 +6,40 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
-import net.kyori.adventure.text.format.TextDecoration
 
-object DeleteShopView : View() {
-    private val shopState = initialState<Shop>("delete-shop")
+val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
+    val shopState = initialState<Shop>("delete-shop")
 
-    override fun onInit(config: ViewConfigBuilder) {
-        config
-            .titleBuilder {
-                shopColored("Shop löschen".toSmallCaps(), TextDecoration.BOLD)
-            }
-            .size(3)
-            .layout("OOOOOOOOO", "O   I C O", "OOOOBOOOO")
-            .cancelInteractions()
-            .build()
+    settings {
+        rows(3)
+        navigateBackOnOutsideClick(false)
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+    containerDefaults {
+        blockRow(1)
+        blockRow(3)
+    }
+
+    onFirstRender {
+        slot(2, 4, ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
             displayName {
-                error("Abbrechen")
+                error("Abbrechen".toSmallCaps())
             }
         }).onClick { context ->
             context.playGeneralClickSound()
@@ -47,22 +47,21 @@ object DeleteShopView : View() {
             if (chest != null) {
                 context.player.closeInventory()
                 viewFrame.open(
-                    ShopChestSetupView::class.java,
+                    shopChestSetupView::class.java,
                     context.player,
                     ImmutableMap.of("shop-chest", chest)
                 )
             } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                context.openForPlayer(OwnShopsListView::class.java)
+                context.openForPlayer(ownShopsListView::class.java)
             } else {
-                context.openForPlayer(ShopListView::class.java)
+                context.openForPlayer(shopListView::class.java)
             }
         }
 
-        val shop = shopState.get(render)
+        val shop = shopState[this]
 
-        render.layoutSlot('O', outlineItem)
-        render.layoutSlot('I', shop.item.clone())
-        render.layoutSlot('C', MenuHeads.CHECK.clone().apply {
+        slot(1, 5, shop.item.clone())
+        slot(2, 6, ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
             displayName {
                 success("Shop löschen")
             }
@@ -108,14 +107,14 @@ object DeleteShopView : View() {
                     if (chest != null) {
                         context.player.closeInventory()
                         viewFrame.open(
-                            ShopChestSetupView::class.java,
+                            shopChestSetupView::class.java,
                             context.player,
                             ImmutableMap.of("shop-chest", chest)
                         )
                     } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        context.openForPlayer(OwnShopsListView::class.java)
+                        context.openForPlayer(ownShopsListView::class.java)
                     } else {
-                        context.openForPlayer(ShopListView::class.java)
+                        context.openForPlayer(shopListView::class.java)
                     }
                 }
             }

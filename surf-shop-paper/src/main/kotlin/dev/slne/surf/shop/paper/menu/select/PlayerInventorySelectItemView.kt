@@ -4,130 +4,121 @@ import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
-import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.titleBuilder
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
+import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
+import dev.slne.surf.api.paper.inventory.framework.view.state.get
+import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.shop.core.paper.util.isAllowedToSell
-import dev.slne.surf.shop.paper.menu.CreateShopView
+import dev.slne.surf.shop.paper.menu.createShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.MenuHeads
-import me.devnatan.inventoryframework.View
-import me.devnatan.inventoryframework.ViewConfigBuilder
-import me.devnatan.inventoryframework.context.RenderContext
-import me.devnatan.inventoryframework.state.State
 import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
 
-object PlayerInventorySelectItemView : View() {
-    private val priceState: State<Double> = initialState("create-price")
-    private val itemState = initialState<ItemStack>("create-item")
+val playerInventorySelectItemView: AbstractSurfView = paginatedSurfView("Item wählen") {
+    val priceState = initialState<Double>("create-price")
+    val itemState = initialState<ItemStack>("create-item")
 
-    private val paginationState = buildComputedPaginationState { context ->
-        context.player.inventory.storageContents.filterNotNull().toMutableList()
-    }.itemFactory { builder, item ->
-        builder.withItem(item).onClick { context ->
+    settings {
+        paginationEmptyRows(1)
+        paginationViewRows(PaginationViewRows.FOUR)
+        cancelAllInteractions()
+        navigateBackOnOutsideClick(false)
+    }
 
-            if (!isAllowedToSell(item)) {
+    pagination {
+        computedSource { context ->
+            context.player.inventory.storageContents.filterNotNull().toMutableList()
+        }
+
+        itemFactory { item ->
+            withItem(item).onClick { context ->
+                if (!isAllowedToSell(item)) {
+                    context.player.playSound(true) {
+                        type(Sound.BLOCK_NOTE_BLOCK_BASS)
+                        pitch(2f)
+                    }
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Dieses Item kann nicht verkauft werden.")
+                    }
+                    return@onClick
+                }
+
                 context.player.playSound(true) {
-                    type(Sound.BLOCK_NOTE_BLOCK_BASS)
+                    type(Sound.BLOCK_NOTE_BLOCK_PLING)
                     pitch(2f)
                 }
-                context.player.sendText {
-                    appendErrorPrefix()
-                    error("Dieses Item kann nicht verkauft werden.")
-                }
-                return@onClick
-            }
 
-            context.player.playSound(true) {
-                type(Sound.BLOCK_NOTE_BLOCK_PLING)
-                pitch(2f)
-            }
-
-            context.openForPlayer(
-                CreateShopView::class.java,
-                ImmutableMap.of(
-                    "create-item",
-                    item.clone().apply {
-                        amount = 1
-                    },
-                    "create-price",
-                    priceState.get(context)
+                context.openForPlayer(
+                    createShopView::class.java,
+                    ImmutableMap.of(
+                        "create-item",
+                        item.clone().apply {
+                            amount = 1
+                        },
+                        "create-price",
+                        priceState[context]
+                    )
                 )
-            )
+            }
         }
-    }.layoutTarget('I').build()
-
-    override fun onInit(config: ViewConfigBuilder) {
-        config.titleBuilder {
-            shopColored("Item wählen".toSmallCaps(), TextDecoration.BOLD)
-        }
-            .size(6)
-            .layout(
-                "XXXXQXXXX",
-                "IIIIIIIII",
-                "IIIIIIIII",
-                "IIIIIIIII",
-                "IIIIIIIII",
-                "XXXXBXXXX"
-            )
-            .cancelInteractions()
-            .build()
     }
 
-    override fun onFirstRender(render: RenderContext) {
-        render.layoutSlot('X', outlineItem)
-        render.layoutSlot('Q', explainItem)
-        render.layoutSlot('B', backItem).onClick { context ->
+    layoutTarget('I')
+
+    containerDefaults {
+        blockRow(1)
+    }
+
+    onFirstRender {
+        slot(1, 5, explainItem)
+        slot(5, 1, backItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
-                CreateShopView::class.java, ImmutableMap.of(
-                    "create-price", priceState.get(context),
-                    "create-item", itemState.get(context)
+                createShopView::class.java, ImmutableMap.of(
+                    "create-price", priceState[context],
+                    "create-item", itemState[context]
                 )
             )
         }
     }
+}
 
-    private val outlineItem = buildItem(Material.GRAY_STAINED_GLASS_PANE) {
-        displayName {
-            spacer("")
-        }
+private val backItem = MenuHeads.CROSS.clone().apply {
+    displayName {
+        error("Abbrechen")
+    }
+}
+
+private val explainItem = MenuHeads.QUESTION.clone().apply {
+    displayName {
+        shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
     }
 
-    private val backItem = MenuHeads.CROSS.clone().apply {
-        displayName {
-            error("Abbrechen")
+    buildLore {
+        emptyLine()
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Klicke auf ein Item, um es auszuwählen.")
         }
-    }
-
-    private val explainItem = MenuHeads.QUESTION.clone().apply {
-        displayName {
-            shopColored("Erklärung".toSmallCaps(), TextDecoration.BOLD)
+        line {
+            spacer("-")
+            appendSpace()
+            shopColored("Nach der Auswahl kommst du in das Vorschau-Menü,")
         }
-
-        buildLore {
-            emptyLine()
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Klicke auf ein Item, um es auszuwählen.")
-            }
-            line {
-                spacer("-")
-                appendSpace()
-                shopColored("Nach der Auswahl kommst du in das Vorschau-Menü,")
-            }
-            line {
-                appendSpace()
-                appendSpace()
-                appendSpace()
-                shopColored("in dem du deinen Shop erstellen kannst.")
-            }
+        line {
+            appendSpace()
+            appendSpace()
+            appendSpace()
+            shopColored("in dem du deinen Shop erstellen kannst.")
         }
     }
 }

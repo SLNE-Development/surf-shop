@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.api.paper.extensions.pluginManager
+import dev.slne.surf.api.paper.inventory.framework.register
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.ShopSortingType
 import dev.slne.surf.shop.core.common.service.DealService
@@ -13,24 +14,25 @@ import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.service.DealServiceImpl
 import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
-import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView
-import dev.slne.surf.shop.paper.chest.ShopChestSetupView
+import dev.slne.surf.shop.paper.chest.shopChestSelectShopView
+import dev.slne.surf.shop.paper.chest.shopChestSetupView
+import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
-import dev.slne.surf.shop.paper.menu.CreateShopView
-import dev.slne.surf.shop.paper.menu.OwnShopsListView
-import dev.slne.surf.shop.paper.menu.ShopListView
-import dev.slne.surf.shop.paper.menu.buy.BuyShopItemView
-import dev.slne.surf.shop.paper.menu.deal.DoneDealsView
-import dev.slne.surf.shop.paper.menu.delete.DeleteShopView
-import dev.slne.surf.shop.paper.menu.edit.EditShopView
-import dev.slne.surf.shop.paper.menu.edit.PriceEditView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageInsertView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageRemoveView
-import dev.slne.surf.shop.paper.menu.edit.storage.ItemStorageView
-import dev.slne.surf.shop.paper.menu.select.PlayerInventorySelectItemView
-import dev.slne.surf.shop.paper.menu.select.PriceSelectView
+import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
+import dev.slne.surf.shop.paper.menu.createShopView
+import dev.slne.surf.shop.paper.menu.deal.doneDealsView
+import dev.slne.surf.shop.paper.menu.delete.deleteShopView
+import dev.slne.surf.shop.paper.menu.edit.editShopView
+import dev.slne.surf.shop.paper.menu.edit.priceEditView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageInsertView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageRemoveView
+import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
+import dev.slne.surf.shop.paper.menu.ownShopsListView
+import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
+import dev.slne.surf.shop.paper.menu.select.priceSelectView
+import dev.slne.surf.shop.paper.menu.shopListView
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -48,21 +50,22 @@ class PaperMain : SuspendingJavaPlugin() {
         PaperShopInstance.paperLoader.onLoad()
         DealServiceImpl.plugin = this
 
-        viewFrame.with(ShopListView)
-        viewFrame.with(CreateShopView)
-        viewFrame.with(PlayerInventorySelectItemView)
-        viewFrame.with(PriceSelectView)
-        viewFrame.with(EditShopView)
-        viewFrame.with(PriceEditView)
-        viewFrame.with(ItemStorageView)
-        viewFrame.with(ItemStorageInsertView)
-        viewFrame.with(ItemStorageRemoveView)
-        viewFrame.with(BuyShopItemView)
-        viewFrame.with(DeleteShopView)
-        viewFrame.with(OwnShopsListView)
-        viewFrame.with(ShopChestSetupView)
-        viewFrame.with(ShopChestSelectShopView)
-        viewFrame.with(DoneDealsView)
+        shopListView.register()
+        createShopView.register()
+        priceSelectView.register()
+        playerInventorySelectItemView.register()
+        editShopView.register()
+        priceEditView.register()
+        itemStorageView.register()
+        itemStorageInsertView.register()
+        itemStorageRemoveView.register()
+        buyShopItemView.register()
+        deleteShopView.register()
+        ownShopsListView.register()
+        doneDealsView.register()
+
+        shopChestSetupView.register()
+        shopChestSelectShopView.register()
     }
 
     override suspend fun onEnableAsync() {
@@ -84,6 +87,7 @@ class PaperMain : SuspendingJavaPlugin() {
         ShopChestListener.register()
 
         shopCommand()
+        denyShopCommand()
     }
 
     override suspend fun onDisableAsync() {

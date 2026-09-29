@@ -10,7 +10,7 @@ import dev.slne.surf.npc.api.npc.skin.NpcSkinPart
 import dev.slne.surf.shop.paper.menu.ChestShopEditState
 import dev.slne.surf.shop.paper.menu.NpcShopState
 import dev.slne.surf.shop.paper.menu.OwnShopState
-import dev.slne.surf.shop.paper.menu.ShopListView
+import dev.slne.surf.shop.paper.menu.shopListView
 import dev.slne.surf.shop.paper.util.searchInputCache
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
@@ -68,7 +68,7 @@ object SurfNpcHook {
             if (event.npc.uniqueName.startsWith("surf_shop_npc-")) {
                 searchInputCache.remove(event.player.uniqueId)
                 NpcShopState.setInNpcShop(event.player.uniqueId, true)
-                viewFrame.open(ShopListView::class.java, event.player)
+                viewFrame.open(shopListView::class.java, event.player)
                 OwnShopState.setInOwn(event.player.uniqueId, false)
                 ChestShopEditState.setChest(event.player.uniqueId, null)
             }
