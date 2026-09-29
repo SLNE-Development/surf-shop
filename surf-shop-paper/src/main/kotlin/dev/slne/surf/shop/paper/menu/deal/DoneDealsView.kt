@@ -5,7 +5,11 @@ import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.util.dateTimeFormatter
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.layoutTarget
+import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
 import dev.slne.surf.api.paper.inventory.framework.view.paginatedSurfView
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.AbstractPaginatedSurfView
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
@@ -17,6 +21,7 @@ import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.boughtByName
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.paper.menu.ownShopsListView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.util.formatPriceNice
@@ -51,6 +56,15 @@ val doneDealsView: AbstractPaginatedSurfView = paginatedSurfView("Verkaufsverlau
             builder.withItem(createDealAndShopItem(dealToShop)).onClick { context ->
                 context.playGeneralClickSound()
             }
+        }
+    }
+
+    onFirstRender {
+        slot(5, 1, ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+            displayName { error("Zurück") }
+        }).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(ownShopsListView::class.java)
         }
     }
 }

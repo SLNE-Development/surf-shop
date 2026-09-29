@@ -148,8 +148,9 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
                 openForPlayer(ownShopsListView::class.java)
             }
         slot(5, 1, backItem).onClick { context ->
-            context.openForPlayer(ownShopsListView::class.java)
             context.playGeneralClickSound()
+            context.openForPlayer(shopListView::class.java)
+            OwnShopState.setInOwn(context.player.uniqueId, false)
         }
         slot(5, 2, doneDealsItem).onClick { click ->
             click.playGeneralClickSound()
@@ -173,11 +174,6 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
                     )
                 )
             )
-        }
-        layoutSlot('C', backItem).onClick { context ->
-            context.playGeneralClickSound()
-            context.openForPlayer(shopListView::class.java)
-            OwnShopState.setInOwn(context.player.uniqueId, false)
         }
     }
 }

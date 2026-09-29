@@ -32,7 +32,7 @@ val itemStorageView: AbstractSurfView = surfView("Item Lager") {
     }
 
     onInit {
-        layout("        ", "   A C    ", "B        ")
+        layout("         ", "   A C   ", "B        ")
     }
 
     onFirstRender {
