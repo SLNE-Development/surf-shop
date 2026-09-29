@@ -11,8 +11,10 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
-import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -25,7 +27,6 @@ import dev.slne.surf.shop.paper.chest.ShopChestSetupView
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import kotlinx.coroutines.withContext
@@ -43,13 +44,11 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
 
     containerDefaults {
         blockRow(1)
-        blockColumn(0)
-        blockColumn(8)
         blockRow(5)
     }
 
     onInit {
-        layout("OOOOIOOOO", "O       O", "O P F C O", "O       O", "OOOOBOOOO")
+        layout("    I    ", "         ", "  P F C  ", "         ", "B        ")
     }
 
     onFirstRender {
@@ -208,9 +207,9 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
     }
 }
 
-private fun saveItem(shop: Shop) = MenuHeads.CHECK.clone().apply {
+private fun saveItem(shop: Shop) = ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
     displayName {
-        shopColored("Speichern")
+        success("Speichern")
     }
 
     buildLore {
@@ -238,7 +237,7 @@ private fun saveItem(shop: Shop) = MenuHeads.CHECK.clone().apply {
     }
 }
 
-private val backItem = MenuHeads.CROSS.clone().apply {
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
     displayName {
         error("Abbrechen")
     }
@@ -288,7 +287,7 @@ private fun lockedStorageItem(amount: Int) = buildItem(Material.BARRIER) {
     }
 }
 
-private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
+private val pricePerItemItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName {
         shopColored("Preis pro Item festlegen")
     }

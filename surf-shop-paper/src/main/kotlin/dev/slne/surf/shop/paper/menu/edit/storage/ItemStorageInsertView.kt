@@ -8,8 +8,10 @@ import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
-import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
@@ -19,6 +21,7 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
+import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
@@ -43,8 +46,6 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
 
     containerDefaults {
         blockRow(1)
-        blockColumn(0)
-        blockColumn(8)
         blockRow(5)
     }
 
@@ -54,7 +55,7 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
             " SSSSSSS ",
             " SSSSSSS ",
             " SSSSSSS ",
-            "         ",
+            "B        ",
         )
     }
 
@@ -65,6 +66,13 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
 
         slot(1, 5).renderWith {
             explainItem(shopState[this].storedItemCount)
+        }
+
+        layoutSlot('B', ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+            displayName { error("Zurück") }
+        }).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(itemStorageView::class.java, mapOf("edit-shop" to shopState[this]))
         }
     }
 

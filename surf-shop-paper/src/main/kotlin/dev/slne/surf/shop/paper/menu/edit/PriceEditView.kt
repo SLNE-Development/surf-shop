@@ -6,8 +6,10 @@ import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
-import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
 import dev.slne.surf.shop.paper.dialog.edit.createEditSpecificPriceDialog
@@ -15,7 +17,6 @@ import dev.slne.surf.shop.paper.menu.canEditShopPrice
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -27,24 +28,20 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
     val priceState = initialState<Double>("edit-price")
 
     settings {
-        rows(5)
+        rows(4)
         navigateBackOnOutsideClick(false)
     }
 
     containerDefaults {
-        blockRow(1)
-        blockRow(5)
-        blockColumn(0)
-        blockColumn(8)
+        blockRow(4)
     }
 
     onInit {
         layout(
-            "OOOOOOOOO",
-            "O   W   O",
-            "O21 P 34O",
-            "O       O",
-            "OOOOBOOOO"
+            "    W    ",
+            " 21 P 34 ",
+            "         ",
+            "#       B"
         )
     }
 
@@ -124,6 +121,17 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
             )
         }
 
+        layoutSlot('#', backItem).onClick { click ->
+            click.playGeneralClickSound()
+            click.openForPlayer(
+                editShopView::class.java,
+                ImmutableMap.of(
+                    "edit-shop",
+                    shopState.get(this)
+                )
+            )
+        }
+
         layoutSlot('P').watch(priceState).renderWith {
             valueItem(priceState[this])
         }
@@ -138,26 +146,30 @@ private fun valueItem(price: Double) = buildItem(Material.GOLD_INGOT) {
     }
 }
 
-private val plusOne = MenuHeads.PLUS.clone().apply {
+private val plusOne = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
     displayName { shopColored("+1") }
 }
 
-private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
+private val plusThirtyTwo = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
     displayName { shopColored("+50") }
 }
 
-private val minusOne = MenuHeads.MINUS.clone().apply {
+private val minusOne = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
     displayName { shopColored("-1") }
 }
 
-private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
+private val minusThirtyTwo = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
     displayName { shopColored("-50") }
 }
 
-private val continueItem = MenuHeads.CHECK.clone().apply {
-    displayName { shopColored("Übernehmen") }
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+    displayName { error("Zurück") }
 }
 
-private val ownItem = MenuHeads.DOLLAR.clone().apply {
+private val continueItem = ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
+    displayName { success("Übernehmen") }
+}
+
+private val ownItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName { shopColored("Eigenen Preis eingeben") }
 }

@@ -9,8 +9,10 @@ import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
-import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.paper.util.item
@@ -23,7 +25,6 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
@@ -45,17 +46,15 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
     containerDefaults {
         blockRow(1)
         blockRow(5)
-        blockColumn(0)
-        blockColumn(8)
     }
 
     onInit {
         layout(
-            "OOOOOOOOO",
-            "O   W   O",
-            "O21 P 34O",
-            "O       O",
-            "QOOOBOOOO"
+            "        ",
+            "    W    ",
+            " 21 P 34 ",
+            "         ",
+            "Q       B"
         )
     }
 
@@ -328,26 +327,26 @@ private fun valueItem(
     }
 }
 
-private val plusOne = MenuHeads.PLUS.clone().apply {
-    displayName { shopColored("+1") }
+private val plusOne = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
+    displayName { success("+1") }
 }
 
-private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
-    displayName { shopColored("+64") }
+private val plusThirtyTwo = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
+    displayName { success("+64") }
 }
 
-private val minusOne = MenuHeads.MINUS.clone().apply {
-    displayName { shopColored("-1") }
+private val minusOne = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
+    displayName { error("-1") }
 }
 
-private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
-    displayName { shopColored("-64") }
+private val minusThirtyTwo = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
+    displayName { error("-64") }
 }
 
-private val continueItem = MenuHeads.CHECK.clone().apply {
-    displayName { shopColored("Auszahlen") }
+private val continueItem = ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
+    displayName { success("Auszahlen") }
 }
 
-private val ownItem = MenuHeads.DOLLAR.clone().apply {
+private val ownItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName { shopColored("Eigene Anzahl eingeben") }
 }

@@ -115,6 +115,8 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
         }
     }
 
+    layoutTarget('R')
+
     onInit {
         layout(
             "OOOOOOOOO",
@@ -122,7 +124,7 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
             "ORRRRRRRO",
             "ORRRRRRRO",
             "ORRRRRRRO",
-            "WUOPCNOAS"
+            "WU     AS"
         )
     }
 

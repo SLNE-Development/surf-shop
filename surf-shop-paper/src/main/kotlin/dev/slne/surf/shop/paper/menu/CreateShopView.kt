@@ -8,12 +8,13 @@ import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
-import dev.slne.surf.api.paper.inventory.framework.view.onInit
-import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
-import dev.slne.surf.api.paper.inventory.framework.view.surfView
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
@@ -25,7 +26,6 @@ import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.shop.paper.util.location
 import kotlinx.coroutines.withContext
@@ -38,12 +38,17 @@ val createShopView = surfView("Shop erstellen") {
     val priceState = initialState<Double>("create-price")
 
     settings {
-        rows(5)
+        rows(3)
         navigateBackOnOutsideClick(false)
     }
 
     onInit {
-        layout("OOOOOOOOO", "O       O", "O P I C O", "O       O", "OOOOBOOOO")
+        layout("         ", "O  P I  O", "         ", "B       C")
+    }
+
+
+    containerDefaults {
+        blockRow(3)
     }
 
     onFirstRender {
@@ -199,53 +204,54 @@ val createShopView = surfView("Shop erstellen") {
     }
 }
 
-private fun createItem(item: ItemStack, price: Double) = MenuHeads.CHECK.clone().apply {
-    displayName {
-        shopColored("Shop erstellen")
-    }
-
-    buildLore {
-        emptyLine()
-        line {
-            spacer("-")
-            appendSpace()
-            shopColored("Item: ")
-            if (item?.isEmpty == true) {
-                variableValue("Kein Item ausgewählt")
-            } else {
-                append(
-                    Component.translatable(item.type.translationKey())
-                        .color(Colors.VARIABLE_VALUE)
-                )
-            }
+private fun createItem(item: ItemStack, price: Double) =
+    ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
+        displayName {
+            success("Shop erstellen")
         }
 
-        line {
-            spacer("-")
-            appendSpace()
-            shopColored("Preis pro Item: ")
-            if (price <= 0) {
-                variableValue("Kein Preis festgelegt")
-            } else {
-                variableValue(formatPriceNice(price))
+        buildLore {
+            emptyLine()
+            line {
+                spacer("-")
+                appendSpace()
+                shopColored("Item: ")
+                if (item?.isEmpty == true) {
+                    variableValue("Kein Item ausgewählt")
+                } else {
+                    append(
+                        Component.translatable(item.type.translationKey())
+                            .color(Colors.VARIABLE_VALUE)
+                    )
+                }
+            }
+
+            line {
+                spacer("-")
+                appendSpace()
+                shopColored("Preis pro Item: ")
+                if (price <= 0) {
+                    variableValue("Kein Preis festgelegt")
+                } else {
+                    variableValue(formatPriceNice(price))
+                }
             }
         }
     }
-}
 
-private val itemNotSet = MenuHeads.QUESTION.clone().apply {
+private val itemNotSet = ViewIcon(ViewIconType.QUESTION_MARK, ViewIconColor.YELLOW).build {
     displayName {
         shopColored("Kein Item ausgewählt")
     }
 }
 
-private val backItem = MenuHeads.CROSS.clone().apply {
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
     displayName {
-        error("Abbrechen")
+        error("Zurück")
     }
 }
 
-private val pricePerItemItem = MenuHeads.DOLLAR.clone().apply {
+private val pricePerItemItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName {
         shopColored("Preis pro Item festlegen")
     }

@@ -5,8 +5,10 @@ import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
-import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockColumn
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.paper.chest.ShopChestSelectShopView.initialState
@@ -15,7 +17,6 @@ import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
 import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
-import dev.slne.surf.shop.paper.util.MenuHeads
 
 val itemStorageView: AbstractSurfView = surfView("Item Lager") {
     val shopState = initialState<Shop>("edit-shop")
@@ -27,13 +28,11 @@ val itemStorageView: AbstractSurfView = surfView("Item Lager") {
 
     containerDefaults {
         blockRow(1)
-        blockColumn(0)
-        blockColumn(8)
         blockRow(3)
     }
 
     onInit {
-        layout("OOOOOOOOO", "OOOAOCOOO", "OOOOBOOOO")
+        layout("        ", "   A C    ", "B        ")
     }
 
     onFirstRender {
@@ -105,25 +104,25 @@ val itemStorageView: AbstractSurfView = surfView("Item Lager") {
     }
 }
 
-private val backItem = MenuHeads.CROSS.clone().apply {
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
     displayName {
-        error("Abbrechen")
+        error("Zurück")
     }
 }
 
-private val insertItemsItem = MenuHeads.PLUS.clone().apply {
+private val insertItemsItem = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
     displayName {
         success("Items einlagern")
     }
 }
 
-private val removeItemsItem = MenuHeads.MINUS.clone().apply {
+private val removeItemsItem = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
     displayName {
         error("Items auslagern")
     }
 }
 
-private val removeItemsNotAvailable = MenuHeads.CROSS.clone().apply {
+private val removeItemsNotAvailable = ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
     displayName {
         error("Items auslagern")
     }
@@ -136,7 +135,7 @@ private val removeItemsNotAvailable = MenuHeads.CROSS.clone().apply {
     }
 }
 
-private val lockedStorageItem = MenuHeads.CROSS.clone().apply {
+private val lockedStorageItem = ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
     displayName {
         error("Nur am Spawn")
     }

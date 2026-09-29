@@ -6,11 +6,10 @@ import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.api.paper.inventory.framework.view.AbstractSurfView
-import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
-import dev.slne.surf.api.paper.inventory.framework.view.paginatedSurfView
+import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
-import dev.slne.surf.api.paper.inventory.framework.view.settings
+import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.shop.core.paper.util.isAllowedToSell
@@ -28,7 +27,7 @@ val playerInventorySelectItemView: AbstractSurfView = paginatedSurfView("Item wÃ
 
     settings {
         paginationEmptyRows(1)
-        paginationEmptyRows(4)
+        paginationViewRows(PaginationViewRows.FOUR)
         cancelAllInteractions()
         navigateBackOnOutsideClick(false)
     }
@@ -72,9 +71,15 @@ val playerInventorySelectItemView: AbstractSurfView = paginatedSurfView("Item wÃ
         }
     }
 
+    layoutTarget('I')
+
+    containerDefaults {
+        blockRow(1)
+    }
+
     onFirstRender {
         slot(1, 5, explainItem)
-        slot(6, 1, backItem).onClick { context ->
+        slot(5, 1, backItem).onClick { context ->
             context.playGeneralClickSound()
             context.openForPlayer(
                 createShopView::class.java, ImmutableMap.of(
