@@ -59,6 +59,9 @@ object ShopChestListener : Listener {
         val item = event.itemInHand
         if (!ShopChestRecipe.isShopChest(item)) return
 
+        if (event.isCancelled) return
+        if (event.blockPlaced.type != Material.CHEST) return
+
         val block = event.blockPlaced
         val player = event.player
         val blockLocation = block.chestBlockLocation()
