@@ -38,7 +38,7 @@ val createShopView = surfView("Shop erstellen") {
     val priceState = initialState<Double>("create-price")
 
     settings {
-        rows(3)
+        rows(4)
         navigateBackOnOutsideClick(false)
     }
 
@@ -48,7 +48,7 @@ val createShopView = surfView("Shop erstellen") {
 
 
     containerDefaults {
-        blockRow(3)
+        blockRow(4)
     }
 
     onFirstRender {

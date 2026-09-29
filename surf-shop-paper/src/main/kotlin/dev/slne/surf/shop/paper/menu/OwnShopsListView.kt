@@ -10,6 +10,9 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
 import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
@@ -28,7 +31,6 @@ import dev.slne.surf.shop.paper.menu.deal.doneDealsView
 import dev.slne.surf.shop.paper.menu.delete.deleteShopView
 import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.searchInputCache
 import kotlinx.coroutines.future.future
@@ -119,7 +121,6 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
 
     onInit {
         layout(
-            "OOOOOOOOO",
             "ORRRRRRRO",
             "ORRRRRRRO",
             "ORRRRRRRO",
@@ -131,7 +132,7 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
     onFirstRender {
         selectedSort[this] = plugin.getSorting(this.player.uniqueId)
 
-        layoutSlot('S')
+        slot(5, 9)
             .updateOnClick()
             .renderWith { sortItem(selectedSort[this]) }
             .onClick { context ->
@@ -146,15 +147,15 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
                 plugin.setSorting(context.player.uniqueId, selectedSort[this])
                 openForPlayer(ownShopsListView::class.java)
             }
-        layoutSlot('U', updateItem).onClick { context ->
+        slot(5, 1, backItem).onClick { context ->
             context.openForPlayer(ownShopsListView::class.java)
             context.playGeneralClickSound()
         }
-        layoutSlot('W', doneDealsItem).onClick { click ->
+        slot(5, 2, doneDealsItem).onClick { click ->
             click.playGeneralClickSound()
             click.openForPlayer(doneDealsView::class.java)
         }
-        layoutSlot('A', searchItem(this.player.uniqueId)).onClick { context ->
+        slot(5, 8, searchItem(this.player.uniqueId)).onClick { context ->
             context.playGeneralClickSound()
 
             if (context.isShiftClick) {
@@ -181,163 +182,159 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
     }
 }
 
-private fun searchItem(playerUuid: UUID) = buildItem(Material.BRUSH) {
-    displayName {
-        shopColored("Suchen")
-    }
+private fun searchItem(playerUuid: UUID) =
+    ViewIcon(ViewIconType.SEARCH, ViewIconColor.YELLOW).build {
+        displayName {
+            shopColored("Suchen")
+        }
 
-    buildLore {
-        emptyLine()
+        buildLore {
+            emptyLine()
 
-        if (searchInputCache.containsKey(playerUuid)) {
+            if (searchInputCache.containsKey(playerUuid)) {
+                line {
+                    appendBlob()
+                    spacer("Aktueller Suchbegriff: ".toSmallCaps())
+                    variableValue(searchInputCache[playerUuid] ?: "#null")
+                }
+
+                emptyLine()
+            }
+
             line {
                 appendBlob()
-                spacer("Aktueller Suchbegriff: ".toSmallCaps())
-                variableValue(searchInputCache[playerUuid] ?: "#null")
+                spacer("Nutze ".toSmallCaps())
+                white("@Name".toSmallCaps())
+                spacer(" für Verkäufersuche".toSmallCaps())
             }
 
+            line {
+                appendBlob()
+                white("SHIFT".toSmallCaps())
+                spacer(" zum resetten".toSmallCaps())
+            }
+        }
+    }
+
+private fun sortItem(state: ShopSortingType) =
+    ViewIcon(ViewIconType.COG, ViewIconColor.YELLOW).build {
+        displayName {
+            shopColored("Sortieren")
+        }
+
+        buildLore {
             emptyLine()
-        }
+            line { shopColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
 
-        line {
-            appendBlob()
-            spacer("Nutze ".toSmallCaps())
-            white("@Name".toSmallCaps())
-            spacer(" für Verkäufersuche".toSmallCaps())
-        }
-
-        line {
-            appendBlob()
-            white("SHIFT".toSmallCaps())
-            spacer(" zum resetten".toSmallCaps())
-        }
-    }
-}
-
-private fun sortItem(state: ShopSortingType) = buildItem(Material.COMPARATOR) {
-    displayName {
-        shopColored("Sortieren")
-    }
-
-    buildLore {
-        emptyLine()
-        line { shopColored("Sortierung".toSmallCaps(), TextDecoration.BOLD) }
-
-        line {
-            if (state == ShopSortingType.ITEM_NAME) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Itemname")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Itemname")
+            line {
+                if (state == ShopSortingType.ITEM_NAME) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Itemname")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Itemname")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.PRICE_ASC) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Preis aufsteigend")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Preis aufsteigend")
+            line {
+                if (state == ShopSortingType.PRICE_ASC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Preis aufsteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Preis aufsteigend")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.PRICE_DESC) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Preis absteigend")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Preis absteigend")
+            line {
+                if (state == ShopSortingType.PRICE_DESC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Preis absteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Preis absteigend")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.TIME_ASC) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Zeit aufsteigend")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Zeit aufsteigend")
+            line {
+                if (state == ShopSortingType.TIME_ASC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Zeit aufsteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Zeit aufsteigend")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.TIME_DESC) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Zeit absteigend")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Zeit absteigend")
+            line {
+                if (state == ShopSortingType.TIME_DESC) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Zeit absteigend")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Zeit absteigend")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.MOST_STORED) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Meiste gelagerte Items")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Meiste gelagerte Items")
+            line {
+                if (state == ShopSortingType.MOST_STORED) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Meiste gelagerte Items")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Meiste gelagerte Items")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.MOST_DEALS) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Meiste Verkäufe")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Meiste Verkäufe")
+            line {
+                if (state == ShopSortingType.MOST_DEALS) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Meiste Verkäufe")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Meiste Verkäufe")
+                }
             }
-        }
 
-        line {
-            if (state == ShopSortingType.SELLER_NAME) {
-                appendSpace()
-                spacer("-")
-                appendSpace()
-                shopColored("Verkäufer")
-            } else {
-                spacer("-")
-                appendSpace()
-                white("Verkäufer")
+            line {
+                if (state == ShopSortingType.SELLER_NAME) {
+                    appendSpace()
+                    spacer("-")
+                    appendSpace()
+                    shopColored("Verkäufer")
+                } else {
+                    spacer("-")
+                    appendSpace()
+                    white("Verkäufer")
+                }
             }
         }
     }
-}
 
-private val backItem = MenuHeads.CROSS.clone().apply {
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
     displayName {
         error("Zurück")
-    }
-}
-
-private val updateItem = buildItem(Material.REPEATER) {
-    displayName {
-        shopColored("Aktualisieren")
     }
 }
 

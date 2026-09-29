@@ -5,6 +5,9 @@ import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
@@ -32,11 +35,11 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
 
     onInit {
         layout(
-            "OOOOOOOOO",
-            "O   W   O",
-            "O21 P 34O",
-            "O       O",
-            "OOOOBOOOO"
+            "         ",
+            "    W    ",
+            " 21 P 34 ",
+            "         ",
+            "#       B"
         )
     }
 
@@ -47,6 +50,19 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
             context.player.showDialog(
                 createSpecificPriceDialog(
                     itemState[this],
+                    priceState[this]
+                )
+            )
+        }
+
+        layoutSlot('#', backItem).onClick { context ->
+            context.playGeneralClickSound()
+            context.openForPlayer(
+                playerInventorySelectItemView::class.java,
+                ImmutableMap.of(
+                    "create-item",
+                    itemState[this],
+                    "create-price",
                     priceState[this]
                 )
             )
@@ -115,26 +131,30 @@ private fun valueItem(price: Double) = buildItem(Material.GOLD_INGOT) {
     }
 }
 
-private val plusOne = MenuHeads.PLUS.clone().apply {
+private val plusOne = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
     displayName { shopColored("+1") }
 }
 
-private val plusThirtyTwo = MenuHeads.PLUS.clone().apply {
+private val plusThirtyTwo = ViewIcon(ViewIconType.PLUS, ViewIconColor.GREEN).build {
     displayName { shopColored("+50") }
 }
 
-private val minusOne = MenuHeads.MINUS.clone().apply {
+private val minusOne = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
     displayName { shopColored("-1") }
 }
 
-private val minusThirtyTwo = MenuHeads.MINUS.clone().apply {
+private val minusThirtyTwo = ViewIcon(ViewIconType.MINUS, ViewIconColor.RED).build {
     displayName { shopColored("-50") }
 }
 
-private val continueItem = MenuHeads.CHECK.clone().apply {
+private val continueItem = ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
     displayName { shopColored("Übernehmen") }
 }
 
-private val ownItem = MenuHeads.DOLLAR.clone().apply {
+private val ownItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName { shopColored("Eigenen Preis eingeben") }
+}
+
+private val backItem = ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
+    displayName { error("Zurück") }
 }

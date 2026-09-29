@@ -38,7 +38,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
     }
 
     onFirstRender {
-        slot(2, 3, ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
+        slot(2, 4, ViewIcon(ViewIconType.CROSS, ViewIconColor.RED).build {
             displayName {
                 error("Abbrechen".toSmallCaps())
             }
@@ -62,7 +62,7 @@ val deleteShopView: AbstractSurfView = surfView("Shop löschen") {
         val shop = shopState[this]
 
         slot(1, 5, shop.item.clone())
-        slot(2, 5, ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
+        slot(2, 7, ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
             displayName {
                 success("Shop löschen")
             }
