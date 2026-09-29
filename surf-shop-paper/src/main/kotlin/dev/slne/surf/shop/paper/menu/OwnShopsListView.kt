@@ -11,6 +11,7 @@ import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
+import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
@@ -42,7 +43,7 @@ val ownShopsListView: AbstractSurfView = paginatedSurfView("Deine Shops") {
 
     settings {
         navigateBackOnOutsideClick(false)
-        paginationEmptyRows(4)
+        paginationViewRows(PaginationViewRows.FOUR)
     }
 
     pagination {
