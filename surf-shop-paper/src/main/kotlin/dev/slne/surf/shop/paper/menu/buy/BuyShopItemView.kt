@@ -9,6 +9,9 @@ import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.view.*
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
+import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
@@ -48,6 +51,10 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
         blockRow(1)
         blockRow(2, exemptColumns = intArrayOf(4, 6, 8))
         blockRow(3)
+    }
+
+    onInit {
+        layout("         ", "    I C  ", "B        ")
     }
 
     onFirstRender {
@@ -463,7 +470,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                     }
                 }
             }
-        this.layoutSlot('B', MenuHeads.CROSS.clone().apply {
+        this.layoutSlot('B', ViewIcon(ViewIconType.RELOAD, ViewIconColor.RED).build {
             displayName {
                 error("Abbrechen")
             }
