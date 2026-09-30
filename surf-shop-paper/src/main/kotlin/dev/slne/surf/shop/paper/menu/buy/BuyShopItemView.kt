@@ -48,7 +48,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
 
     containerDefaults {
         blockRow(1)
-        blockRow(2, exemptColumns = intArrayOf(3, 4, 5, 6, 7))
+        blockRow(2)
         blockRow(3)
     }
 
