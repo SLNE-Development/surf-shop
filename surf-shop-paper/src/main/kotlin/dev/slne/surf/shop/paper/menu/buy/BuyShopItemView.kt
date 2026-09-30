@@ -26,7 +26,6 @@ import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.*
 import dev.slne.surf.shop.paper.plugin
-import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
@@ -49,7 +48,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
 
     containerDefaults {
         blockRow(1)
-        blockRow(2, exemptColumns = intArrayOf(4, 6, 8))
+        blockRow(2, exemptColumns = intArrayOf(3, 4, 5, 6, 7))
         blockRow(3)
     }
 
@@ -60,13 +59,13 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
     onFirstRender {
         layoutSlot('I')
             .renderWith {
-                val initialShop = shopState[this]
+                val initialShop = shopState[this@onFirstRender]
                 val shop = initialShop.updatedShop ?: initialShop
+                val amount = amountState[this@onFirstRender]
+
                 shop.item.clone().apply {
                     val oldLore = lore()?.toMutableList() ?: mutableListOf()
                     val newEntries = mutableListOf<Component>()
-
-                    val amount = amountState[this@onFirstRender]
 
                     newEntries.add(Component.empty())
                     newEntries.add(buildText {
@@ -133,7 +132,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         appendBlob()
                         displayKey("key.mouse.left")
                         spacer(" + ")
-                        white("SHIFT".toSmallCaps())
+                        white("Shift")
                         darkSpacer(":")
                         variableValue(" +64".toSmallCaps())
                     })
@@ -147,7 +146,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         appendBlob()
                         displayKey("key.mouse.right")
                         spacer(" + ")
-                        white("SHIFT".toSmallCaps())
+                        white("Shift")
                         darkSpacer(":")
                         variableValue(" -64".toSmallCaps())
                     })
@@ -157,7 +156,6 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
             }
             .onClick { context ->
                 context.playGeneralClickSound()
-                context.update()
 
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
@@ -186,96 +184,59 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                     return@onClick
                 }
 
-                var amount = amountState[context]
+                val stock = currentShop.storedItemCount
 
-                if (currentShop.storedItemCount <= 0) {
+                if (stock <= 0) {
                     context.player.sendText {
                         appendErrorPrefix()
                         error("Dieser Shop ist ausverkauft!")
                     }
-
                     context.player.playNoSound()
+                    context.update()
                     return@onClick
                 }
 
-                if (amount > currentShop.storedItemCount) {
-                    amount = currentShop.storedItemCount
-                    amountState[this] = amount
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error("Die Anzahl wurde auf den verfügbaren Lagerbestand (${currentShop.storedItemCount}) angepasst!")
-                    }
-
-                    context.player.playNoSound()
-
-                    if (!context.isRightClick && !context.isShiftRightClick) {
-                        return@onClick
-                    }
+                val delta = when {
+                    context.isShiftLeftClick -> 64
+                    context.isShiftRightClick -> -64
+                    context.isLeftClick -> 1
+                    context.isRightClick -> -1
+                    else -> return@onClick
                 }
 
-                if (context.isShiftLeftClick) {
-                    if (currentShop.storedItemCount < amount + 64) {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es sind nicht genügend Items auf Lager!")
-                        }
+                val current = amountState[context].coerceAtMost(stock)
+                val newAmount = current + delta
 
-                        context.player.playNoSound()
-                        return@onClick
-                    }
-                    amountState[this] = amount + 64
-                    return@onClick
-                }
-
-                if (context.isLeftClick) {
-                    if (currentShop.storedItemCount < amount + 1) {
-                        context.player.sendText {
-                            appendErrorPrefix()
-                            error("Es sind nicht genügend Items auf Lager!")
-                        }
-
-                        context.player.playNoSound()
-                        return@onClick
-                    }
-                    amountState[this] = amount + 1
-                    return@onClick
-                }
-
-                if (context.isShiftRightClick) {
-                    if (amount - 64 <= 0) {
+                when {
+                    newAmount < 1 -> {
                         context.player.sendText {
                             appendErrorPrefix()
                             error("Die Menge muss mindestens 1 betragen!")
                         }
-
                         context.player.playNoSound()
-                        return@onClick
+                        amountState[context] = current
                     }
 
-                    amountState[this] = amount - 64
-                    return@onClick
-                }
-
-                if (context.isRightClick) {
-                    if (amount - 1 <= 0) {
+                    newAmount > stock -> {
                         context.player.sendText {
                             appendErrorPrefix()
-                            error("Die Menge muss mindestens 1 betragen!")
+                            error("Es sind nicht genügend Items auf Lager! (Verfügbar: $stock)")
                         }
-
                         context.player.playNoSound()
-                        return@onClick
+                        amountState[context] = current
                     }
-                    amountState[this] = amount - 1
-                    return@onClick
+
+                    else -> amountState[context] = newAmount
                 }
+
+                context.update()
             }
 
         this.layoutSlot('C')
             .renderWith {
-                MenuHeads.CHECK.clone().apply {
+                ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).build {
                     displayName {
-                        shopColored("Kaufen")
+                        success("Kaufen")
                     }
 
                     buildLore {
@@ -309,7 +270,6 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
             }
             .onClick { context ->
                 context.playGeneralClickSound()
-                context.update()
 
                 if (!context.player.canUseShopTransactionsFromCurrentView()) {
                     context.player.sendText {
