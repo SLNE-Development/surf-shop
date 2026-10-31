@@ -354,9 +354,6 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
 
                 context.player.closeInventory()
 
-                if (plugin.auxProtectHook) {
-                    AuxProtectHook.logBuy(context.player, shop, amount)
-                }
 
                 plugin.launch {
                     val player = context.player

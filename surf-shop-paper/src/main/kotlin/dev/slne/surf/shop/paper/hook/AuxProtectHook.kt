@@ -5,11 +5,15 @@ import dev.heliosares.auxprotect.api.AuxProtectAPI
 import dev.heliosares.auxprotect.database.DbEntry
 import dev.heliosares.auxprotect.database.EntryAction
 import dev.heliosares.auxprotect.exceptions.AlreadyExistsException
+import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.paper.event.ShopPurchaseEvent
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.plugin
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,12 +36,13 @@ object AuxProtectHook {
     private const val MAX_CONNECT_ATTEMPTS = 60
 
     /**
-     * Registers the shop actions once AuxProtect's database is connected; registering earlier fails
-     * (e.g. `BusyException`) and would leave the actions unusable.
+     * Registers the shop actions once AuxProtect's database is connected (registering earlier fails, e.g.
+     * with `BusyException`) and starts logging committed purchases.
      */
     fun create() {
-        val attempts = AtomicInteger()
+        PurchaseListener.register()
 
+        val attempts = AtomicInteger()
         Bukkit.getAsyncScheduler().runAtFixedRate(plugin, { task ->
             if (AuxProtectAPI.getSQLManager()?.isConnected == true) {
                 task.cancel()
@@ -73,19 +78,25 @@ object AuxProtectHook {
         plugin.logger.info("Hooked into AuxProtect: ${actions.size}/${ShopAction.entries.size} shop actions are logged.")
     }
 
-    private fun log(action: ShopAction, player: Player, target: String, data: String) {
+    /** @param user a player or player UUID, see [AuxProtectPaper.getLabel] */
+    private fun log(action: ShopAction, user: Any, target: String, data: String) {
         val entryAction = actions[action] ?: return
-        val label = AuxProtectPaper.getLabel(player)
+        val label = AuxProtectPaper.getLabel(user)
 
         Bukkit.getAsyncScheduler().runNow(plugin) {
             AuxProtectAPI.add(DbEntry(label, entryAction, true, target, data))
         }
     }
 
-    fun logBuy(player: Player, shop: Shop, amount: Int) = log(
-        ShopAction.BOUGHT, player, AuxProtectPaper.getLabel(shop.seller),
-        "pricePerItem=${shop.pricePerItem}, paidPrice=${shop.pricePerItem * amount}; item=${shop.item}"
-    )
+    /** Logs purchases once they are paid – not when the buy button is clicked. */
+    private object PurchaseListener : Listener {
+        @EventHandler
+        fun onPurchase(event: ShopPurchaseEvent) = log(
+            ShopAction.BOUGHT, event.buyer, AuxProtectPaper.getLabel(event.shop.seller),
+            "pricePerItem=${event.shop.pricePerItem}, amount=${event.amount}, paidPrice=${event.total}; " +
+                    "item=${event.shop.item}; transaction=${event.transactionId}"
+        )
+    }
 
     fun logCreate(player: Player, shop: Shop) = log(
         ShopAction.CREATED, player, shop.item.type.toString(),

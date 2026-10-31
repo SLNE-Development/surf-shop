@@ -17,6 +17,7 @@ import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
+import dev.slne.surf.shop.core.paper.event.ShopPurchaseEvent
 import dev.slne.surf.shop.core.paper.util.giveItems
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.runOnOwningThread
@@ -119,6 +120,11 @@ class DealServiceImpl : DealService, Services.Fallback {
             is PurchaseOutcome.Failed -> outcome.result
             is PurchaseOutcome.Committed -> {
                 putDeal(outcome.deal)
+
+                // Async event: fired from the async scheduler so it never runs on a tick thread.
+                val event = ShopPurchaseEvent(player.uniqueId, outcome.shop, outcome.amount, outcome.total, outcome.transactionId)
+                Bukkit.getAsyncScheduler().runNow(plugin) { Bukkit.getPluginManager().callEvent(event) }
+
                 val delivered = deliverItems(player, outcome)
                 collectTax(outcome)
 
