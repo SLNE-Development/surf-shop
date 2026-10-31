@@ -9,7 +9,7 @@ private val service = requiredService<DealService>()
 
 data class ShopDealStats(
     val dealCount: Int = 0,
-    val totalSoldItems: Int = 0
+    val totalSoldItems: Long = 0
 )
 
 interface DealService {

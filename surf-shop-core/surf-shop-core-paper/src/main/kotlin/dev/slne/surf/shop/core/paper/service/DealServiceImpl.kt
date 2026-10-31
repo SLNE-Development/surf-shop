@@ -203,7 +203,7 @@ class DealServiceImpl : DealService, Services.Fallback {
         _deals[deal.dealUuid] = deal
         _dealStatsByShop.merge(
             deal.shopInternalId,
-            ShopDealStats(dealCount = 1, totalSoldItems = deal.amount)
+            ShopDealStats(dealCount = 1, totalSoldItems = deal.amount.toLong())
         ) { current, added ->
             ShopDealStats(
                 dealCount = current.dealCount + added.dealCount,

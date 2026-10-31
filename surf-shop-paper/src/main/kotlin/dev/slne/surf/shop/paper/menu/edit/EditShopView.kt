@@ -149,7 +149,17 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
             }
 
             plugin.launch {
-                ShopService.saveShop(shopState.get(this@onFirstRender))
+                // Only the price is taken from this view; stock stays whatever is current.
+                val updated = ShopService.updatePrice(shop.shopUuid, price)
+
+                if (updated == null) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Shop existiert nicht mehr.")
+                    }
+                    context.player.playNoSound()
+                    return@launch
+                }
 
                 context.player.playSound(true) {
                     type(Sound.ENTITY_PLAYER_LEVELUP)

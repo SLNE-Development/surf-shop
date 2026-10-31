@@ -14,6 +14,8 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StockChangeResult
+import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
@@ -27,6 +29,7 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
@@ -34,6 +37,7 @@ import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
+import java.util.logging.Level
 import kotlin.math.max
 
 val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
@@ -139,113 +143,85 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
             ShopService.blockShop(shop)
 
             plugin.launch {
-                val updatedShop =
-                    ShopService.getShop(shop.shopUuid)
+                // Take the items out of the stock first (atomically, up to what is stored),
+                // then hand out exactly what was taken.
+                val result = try {
+                    ShopService.changeStock(shop.shopUuid, -toRemove, allowPartialRemoval = true)
+                } catch (e: CancellationException) {
+                    ShopService.unblockShop(shop)
+                    throw e
+                } catch (e: Exception) {
+                    logger.log(Level.WARNING, "Failed to withdraw $toRemove items from shop ${shop.shopUuid}", e)
+                    null
+                }
 
-                if (updatedShop == null) {
+                if (result !is StockChangeResult.Changed) {
+                    ShopService.unblockShop(shop)
                     context.player.sendText {
                         appendErrorPrefix()
-                        error("Der Shop existiert nicht mehr.")
+                        error(
+                            if (result == StockChangeResult.NotFound) "Der Shop existiert nicht mehr."
+                            else "Die Items konnten nicht entnommen werden."
+                        )
                     }
                     return@launch
                 }
 
-                if (updatedShop.storedItemCount < toRemove) {
-                    val amountToGive = updatedShop.storedItemCount
+                val updatedShop = result.shop
+                val removed = -result.appliedDelta
 
-                    withContext(plugin.entityDispatcher(context.player)) {
-                        val player = context.player
-                        val owner = context.player.uniqueId
-                        var remainingAmount = amountToGive
-                        val maxStackSize = updatedShop.item.maxStackSize
+                withContext(plugin.entityDispatcher(context.player)) {
+                    val player = context.player
+                    val owner = context.player.uniqueId
+                    var remainingAmount = removed
+                    val maxStackSize = updatedShop.item.maxStackSize
 
-                        while (remainingAmount > 0) {
-                            val giveNow = minOf(maxStackSize, remainingAmount)
+                    while (remainingAmount > 0) {
+                        val giveNow = minOf(maxStackSize, remainingAmount)
 
-                            val stack = updatedShop.item.clone()
-                            stack.amount = giveNow
+                        val stack = updatedShop.item.clone()
+                        stack.amount = giveNow
 
-                            val leftover = player.inventory.addItem(stack)
+                        val leftover = player.inventory.addItem(stack)
 
-                            if (leftover.isNotEmpty()) {
-                                leftover.values.forEach { rest ->
-                                    val dropped =
-                                        player.world.dropItemNaturally(player.location, rest)
-                                    dropped.owner = owner
-                                }
+                        if (leftover.isNotEmpty()) {
+                            leftover.values.forEach { rest ->
+                                val dropped =
+                                    player.world.dropItemNaturally(player.location, rest)
+                                dropped.owner = owner
                             }
-
-                            remainingAmount -= giveNow
                         }
 
-                        player.playSound(true) {
-                            type(Sound.ENTITY_CHICKEN_EGG)
-                        }
+                        remainingAmount -= giveNow
                     }
 
-                    ShopService.saveShop(updatedShop.copy(storedItemCount = 0))
-
-                    context.player.sendText {
-                        appendSuccessPrefix()
-                        success("Der Shop wurde aktualisiert. Es konnten aber nur ")
-                        variableValue(amountToGive)
-                        success(" von ")
-                        variableValue(toRemove)
-                        success(" Items entnommen werden, da der Shop nur noch ")
-                        variableValue(amountToGive)
-                        success(" Items gelagert hatte.")
-                    }
-                } else {
-                    withContext(plugin.entityDispatcher(context.player)) {
-                        val player = context.player
-                        val owner = context.player.uniqueId
-                        var remainingAmount = toRemove
-                        val maxStackSize = updatedShop.item.maxStackSize
-
-                        while (remainingAmount > 0) {
-                            val giveNow = minOf(maxStackSize, remainingAmount)
-
-                            val stack = updatedShop.item.clone()
-                            stack.amount = giveNow
-
-                            val leftover = player.inventory.addItem(stack)
-
-                            if (leftover.isNotEmpty()) {
-                                leftover.values.forEach { rest ->
-                                    val dropped =
-                                        player.world.dropItemNaturally(player.location, rest)
-                                    dropped.owner = owner
-                                }
-                            }
-
-                            remainingAmount -= giveNow
-                        }
-
-                        player.playSound(true) {
-                            type(Sound.ENTITY_CHICKEN_EGG)
-                        }
-                    }
-
-                    ShopService.saveShop(
-                        updatedShop.copy(
-                            storedItemCount = updatedShop.storedItemCount - toRemove
-                        )
-                    )
-
-                    if (plugin.auxProtectHook) {
-                        AuxProtectHook.logWithdraw(context.player, shop, toRemove)
-                    }
-
-                    context.player.sendText {
-                        appendSuccessPrefix()
-                        success("Der Shop wurde aktualisiert und ")
-                        variableValue(toRemove)
-                        success(" Items wurden entnommen. Es sind nun noch ")
-                        variableValue(updatedShop.storedItemCount - toRemove)
-                        success(" Items in den Shop gelagert.")
+                    player.playSound(true) {
+                        type(Sound.ENTITY_CHICKEN_EGG)
                     }
                 }
 
+                if (plugin.auxProtectHook && removed > 0) {
+                    AuxProtectHook.logWithdraw(context.player, shop, removed)
+                }
+
+                context.player.sendText {
+                    appendSuccessPrefix()
+                    if (removed < toRemove) {
+                        success("Der Shop wurde aktualisiert. Es konnten aber nur ")
+                        variableValue(removed)
+                        success(" von ")
+                        variableValue(toRemove)
+                        success(" Items entnommen werden, da der Shop nur noch ")
+                        variableValue(removed)
+                        success(" Items gelagert hatte.")
+                    } else {
+                        success("Der Shop wurde aktualisiert und ")
+                        variableValue(removed)
+                        success(" Items wurden entnommen. Es sind nun noch ")
+                        variableValue(updatedShop.storedItemCount)
+                        success(" Items in den Shop gelagert.")
+                    }
+                }
 
                 ShopService.unblockShop(updatedShop)
 

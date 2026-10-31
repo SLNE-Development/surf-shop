@@ -6,6 +6,15 @@ import java.util.*
 
 private val service = requiredService<ShopService>()
 
+/** Result of [ShopService.changeStock]. */
+sealed interface StockChangeResult {
+    /** Stock was changed and persisted; [appliedDelta] can be smaller than requested for partial removals. */
+    data class Changed(val shop: Shop, val appliedDelta: Int) : StockChangeResult
+    data object NotFound : StockChangeResult
+    data class InsufficientStock(val available: Int) : StockChangeResult
+    data object Overflow : StockChangeResult
+}
+
 interface ShopService {
     val loadedShops: Collection<Shop>
 
@@ -24,6 +33,21 @@ interface ShopService {
     fun unblockShop(shop: Shop)
 
     suspend fun saveShop(shop: Shop): Shop
+
+    /**
+     * Changes the **current** stored item count of a shop by [delta] under the shop's lock and persists it.
+     * Use this instead of saving a copied shop, so concurrent changes never overwrite each other.
+     */
+    suspend fun changeStock(shopUuid: UUID, delta: Int, allowPartialRemoval: Boolean = false): StockChangeResult
+
+    /**
+     * Changes only the price of the **current** shop under the shop's lock and persists it.
+     *
+     * @return the updated shop, or `null` if the shop no longer exists
+     * @throws IllegalArgumentException if [pricePerItem] is not a valid price
+     */
+    suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): Shop?
+
     suspend fun deleteShop(shop: Shop): Boolean
     suspend fun fetchShops()
 

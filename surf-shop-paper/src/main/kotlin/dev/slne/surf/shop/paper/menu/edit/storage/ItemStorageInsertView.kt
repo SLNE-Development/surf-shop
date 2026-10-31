@@ -1,5 +1,6 @@
 package dev.slne.surf.shop.paper.menu.edit.storage
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
@@ -18,6 +19,8 @@ import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StockChangeResult
+import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
@@ -27,9 +30,12 @@ import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
+import java.util.logging.Level
 
 val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
     val shopState = initialState<Shop>("edit-shop")
@@ -101,19 +107,45 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
         this.clickOrigin.currentItem = ItemStack.empty()
 
         plugin.launch {
+            val player = this@onClick.player
             val amount = item.amount
+            val shopUuid = shopState[this@onClick].shopUuid
 
-            val currentShop = shopState[this@onClick]
-            val newShop = currentShop.copy(
-                storedItemCount = currentShop.storedItemCount + amount
-            )
+            val result = try {
+                ShopService.changeStock(shopUuid, amount)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.log(Level.WARNING, "Failed to deposit $amount items into shop $shopUuid", e)
+                null
+            }
 
-            shopState[this@onClick] = newShop
-            ShopService.saveShop(newShop)
+            if (result !is StockChangeResult.Changed) {
+                withContext(plugin.entityDispatcher(player)) {
+                    player.inventory.addItem(item).values.forEach {
+                        player.world.dropItemNaturally(player.location, it).owner = player.uniqueId
+                    }
+                }
+
+                player.sendText {
+                    appendErrorPrefix()
+                    error(
+                        when (result) {
+                            StockChangeResult.Overflow -> "Das Lager dieses Shops ist voll."
+                            StockChangeResult.NotFound -> "Der Shop existiert nicht mehr."
+                            else -> "Die Items konnten nicht eingelagert werden."
+                        }
+                    )
+                }
+                player.playNoSound()
+                return@launch
+            }
+
+            shopState[this@onClick] = result.shop
             itemInsertedState[this@onClick] = itemInsertedState[this@onClick] + amount
 
             if (plugin.auxProtectHook) {
-                AuxProtectHook.logDeposit(this@onClick.player, currentShop, amount)
+                AuxProtectHook.logDeposit(player, result.shop, amount)
             }
 
             this@onClick.player.sendActionBar(buildText {

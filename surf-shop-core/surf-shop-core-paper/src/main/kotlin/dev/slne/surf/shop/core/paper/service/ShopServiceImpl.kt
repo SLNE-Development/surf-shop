@@ -7,7 +7,10 @@ import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopReque
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
+import dev.slne.surf.shop.core.common.util.StockCalc
+import dev.slne.surf.shop.core.common.util.StockMath
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.rebuildSearchTokens
@@ -91,6 +94,35 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         putShop(updatedShop)
         return updatedShop
     }
+
+    override suspend fun changeStock(
+        shopUuid: UUID,
+        delta: Int,
+        allowPartialRemoval: Boolean
+    ): StockChangeResult = getLock(shopUuid).withLock {
+        val current = _shops[shopUuid] ?: return@withLock StockChangeResult.NotFound
+
+        when (val calc = StockMath.apply(current.storedItemCount, delta, allowPartialRemoval)) {
+            is StockCalc.Insufficient -> StockChangeResult.InsufficientStock(calc.available)
+            StockCalc.Overflow -> StockChangeResult.Overflow
+            is StockCalc.Ok -> {
+                val saved = saveShop(current.copy(storedItemCount = calc.newCount).keepBlockState(current))
+                StockChangeResult.Changed(saved, calc.appliedDelta)
+            }
+        }
+    }
+
+    override suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): Shop? {
+        require(ShopPriceRules.isValidPrice(pricePerItem)) { "Invalid shop price: $pricePerItem" }
+
+        return getLock(shopUuid).withLock {
+            val current = _shops[shopUuid] ?: return@withLock null
+            saveShop(current.copy(pricePerItem = pricePerItem).keepBlockState(current))
+        }
+    }
+
+    /** `copy()` does not carry the non-constructor `isBlocked` flag; keep it from [source]. */
+    private fun Shop.keepBlockState(source: Shop) = apply { isBlocked = source.isBlocked }
 
     override suspend fun deleteShop(shop: Shop): Boolean {
         val lock = getLock(shop.shopUuid)
