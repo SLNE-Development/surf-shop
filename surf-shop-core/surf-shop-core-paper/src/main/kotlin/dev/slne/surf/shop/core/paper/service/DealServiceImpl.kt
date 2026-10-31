@@ -377,7 +377,11 @@ class DealServiceImpl : DealService, Services.Fallback {
         }
 
         try {
-            withContext(plugin.entityDispatcher(player)) {
+            // For a player who left in the meantime, MCCoroutine runs this block on the calling thread;
+            // check again inside so an offline player is never counted as "delivered".
+            val handedOut = withContext(plugin.entityDispatcher(player)) {
+                if (!player.isOnline) return@withContext false
+
                 val leftover = player.inventory.addItem(*buildStacks(purchase.shop.item, purchase.amount))
 
                 if (leftover.isNotEmpty()) {
@@ -389,6 +393,13 @@ class DealServiceImpl : DealService, Services.Fallback {
                         }
                     }
                 }
+
+                true
+            }
+
+            if (!handedOut) {
+                logger.severe("$owed The buyer went offline before delivery.")
+                return false
             }
         } catch (e: CancellationException) {
             logger.severe("$owed Delivery was interrupted.")

@@ -143,6 +143,16 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
 
             if (result !is StockChangeResult.Changed) {
                 withContext(plugin.entityDispatcher(player)) {
+                    // An offline player's block runs on the calling thread; the item cannot be returned.
+                    if (!player.isOnline) {
+                        logger.severe(
+                            "MANUAL RECONCILIATION REQUIRED: deposit of $amount x ${item.type} into shop $shopUuid " +
+                                    "failed and ${player.name} (${player.uniqueId}) went offline before the item " +
+                                    "could be returned. Give the item back."
+                        )
+                        return@withContext
+                    }
+
                     player.inventory.addItem(item).values.forEach {
                         player.world.dropItemNaturally(player.location, it).owner = player.uniqueId
                     }

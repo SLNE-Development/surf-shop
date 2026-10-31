@@ -188,9 +188,12 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
                         "taken from the stock of shop ${shop.shopUuid} for ${context.player.name} " +
                         "(${context.player.uniqueId}) but may not have been handed out."
 
-                try {
+                val handedOut = try {
                     withContext(plugin.entityDispatcher(context.player)) {
                         val player = context.player
+                        // An offline player's block runs on the calling thread; never hand out there.
+                        if (!player.isOnline) return@withContext false
+
                         val owner = context.player.uniqueId
                         var remainingAmount = removed
                         val maxStackSize = updatedShop.item.maxStackSize
@@ -217,6 +220,8 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
                         player.playSound(true) {
                             type(Sound.ENTITY_CHICKEN_EGG)
                         }
+
+                        true
                     }
                 } catch (e: CancellationException) {
                     logger.severe("$notDelivered Delivery was interrupted.")
@@ -230,6 +235,12 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
                     return@launch
                 } finally {
                     ShopService.unblockShop(updatedShop)
+                }
+
+                if (!handedOut) {
+                    // Nothing was handed out, so the items can safely go back into the stock.
+                    if (removed > 0) restoreWithdrawnStock(shop, removed, context.player.name)
+                    return@launch
                 }
 
                 if (plugin.auxProtectHook && removed > 0) {
@@ -357,4 +368,25 @@ private val continueItem = ViewIcon(ViewIconType.CHECK, ViewIconColor.GREEN).bui
 
 private val ownItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName { shopColored("Eigene Anzahl eingeben") }
+}
+
+/** Puts withdrawn items back into the stock when they were provably not handed out. */
+private suspend fun restoreWithdrawnStock(shop: Shop, amount: Int, playerName: String) {
+    val restored = try {
+        ShopService.changeStock(shop.shopUuid, amount)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        logger.log(Level.SEVERE, "Restoring $amount withdrawn items to shop ${shop.shopUuid} failed", e)
+        null
+    }
+
+    if (restored is StockChangeResult.Changed) {
+        logger.info("$playerName went offline before withdrawing $amount items from shop ${shop.shopUuid}; they were put back into the stock")
+    } else {
+        logger.severe(
+            "MANUAL RECONCILIATION REQUIRED: $amount items withdrawn from shop ${shop.shopUuid} by $playerName " +
+                    "were not handed out (player offline) and could not be put back ($restored). Restore the stock."
+        )
+    }
 }

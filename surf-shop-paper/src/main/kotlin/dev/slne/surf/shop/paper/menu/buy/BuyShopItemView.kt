@@ -488,8 +488,14 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
     }
 }
 
-private suspend fun openListView(context: RenderContext) =
+private suspend fun openListView(context: RenderContext) {
+    // A player who already left has no entity scheduler anymore; MCCoroutine then runs the block on
+    // the calling thread, where opening an inventory throws. Nothing to show to an offline player.
+    if (!context.player.isOnline) return
+
     withContext(plugin.entityDispatcher(context.player)) {
+        if (!context.player.isOnline) return@withContext
+
         if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
             StaticShopState.setInStaticShop(context.player.uniqueId, false)
             context.player.closeInventory()
@@ -499,3 +505,4 @@ private suspend fun openListView(context: RenderContext) =
             viewFrame.open(shopListView::class.java, context.player)
         }
     }
+}
