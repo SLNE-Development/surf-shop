@@ -21,6 +21,16 @@ interface DealService {
     suspend fun buyInternal(shop: Shop, amount: Int, buyer: UUID): Deal
     suspend fun buy(playerUuid: UUID, shop: Shop, amount: Int): Deal.DealResult
 
+    /**
+     * Hands out purchases that were paid while the buyer was offline (call after the player joined).
+     *
+     * @return the number of purchases delivered
+     */
+    suspend fun deliverPendingPurchases(playerUuid: UUID): Int
+
+    /** Logs every purchase still waiting for delivery; the queue is in-memory, so call this on shutdown. */
+    fun reportPendingDeliveries()
+
     suspend fun fetchDeals()
 
     companion object : DealService by service

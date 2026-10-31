@@ -2,6 +2,7 @@ package dev.slne.surf.shop.core.paper.service
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.launch
 import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
 import dev.slne.surf.api.core.util.objectSetOf
@@ -10,6 +11,8 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.BuyRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.deal.LoadDealsRequestPacket
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.service.PendingDeliveries
+import dev.slne.surf.shop.core.common.service.PendingDelivery
 import dev.slne.surf.shop.core.common.service.ShopDealStats
 import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -54,6 +57,9 @@ class DealServiceImpl : DealService, Services.Fallback {
         _dealStatsByShop[shopInternalId] ?: ShopDealStats()
 
     private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
+
+    /** Paid purchases whose buyer went offline before delivery; handed out on the next join. */
+    private val pendingDeliveries = PendingDeliveries<ItemStack>()
 
     private fun getLock(shopUuid: UUID): Mutex {
         return shopLocks.computeIfAbsent(shopUuid) { Mutex() }
@@ -362,45 +368,18 @@ class DealServiceImpl : DealService, Services.Fallback {
     }
 
     /**
-     * Delivers a paid purchase. Failures are logged for manual reconciliation – the payment is final.
+     * Delivers a paid purchase – the payment is final. If the buyer is offline, the items are queued
+     * and handed out on the next join; other failures are logged for manual reconciliation.
      *
-     * @return `true` if the items were handed out (inventory or owner-tagged drops)
+     * @return `true` if the items were handed out now (inventory or owner-tagged drops)
      */
     private suspend fun deliverItems(player: Player, purchase: PurchaseOutcome.Committed): Boolean {
         val owed = "MANUAL RECONCILIATION REQUIRED: purchase ${purchase.transactionId} is PAID " +
                 "(total ${purchase.total}) but ${player.name} (${player.uniqueId}) may not have received " +
                 "${purchase.amount} x ${purchase.shop.item} from shop ${purchase.shop.shopUuid}."
 
-        if (!player.isOnline) {
-            logger.severe("$owed The buyer went offline before delivery.")
-            return false
-        }
-
-        try {
-            // For a player who left in the meantime, MCCoroutine runs this block on the calling thread;
-            // check again inside so an offline player is never counted as "delivered".
-            val handedOut = withContext(plugin.entityDispatcher(player)) {
-                if (!player.isOnline) return@withContext false
-
-                val leftover = player.inventory.addItem(*buildStacks(purchase.shop.item, purchase.amount))
-
-                if (leftover.isNotEmpty()) {
-                    val dropLocation = player.location.clone()
-
-                    withContext(plugin.regionDispatcher(dropLocation)) {
-                        leftover.values.forEach {
-                            dropLocation.world.dropItem(dropLocation, it).owner = player.uniqueId
-                        }
-                    }
-                }
-
-                true
-            }
-
-            if (!handedOut) {
-                logger.severe("$owed The buyer went offline before delivery.")
-                return false
-            }
+        val handedOut = try {
+            player.isOnline && handOut(player, purchase.shop.item, purchase.amount)
         } catch (e: CancellationException) {
             logger.severe("$owed Delivery was interrupted.")
             throw e
@@ -409,7 +388,104 @@ class DealServiceImpl : DealService, Services.Fallback {
             return false
         }
 
-        return true
+        if (!handedOut) queueDelivery(player, purchase)
+        return handedOut
+    }
+
+    /**
+     * Hands [amount] x [item] to [player] on the player's entity thread.
+     *
+     * @return `false` if the player is offline (nothing was handed out); throws on other failures
+     */
+    private suspend fun handOut(player: Player, item: ItemStack, amount: Int): Boolean =
+        // For a player who already left, MCCoroutine runs this block on the calling thread;
+        // check again inside so an offline player is never counted as "delivered".
+        withContext(plugin.entityDispatcher(player)) {
+            if (!player.isOnline) return@withContext false
+
+            val leftover = player.inventory.addItem(*buildStacks(item, amount))
+
+            if (leftover.isNotEmpty()) {
+                val dropLocation = player.location.clone()
+
+                withContext(plugin.regionDispatcher(dropLocation)) {
+                    leftover.values.forEach {
+                        dropLocation.world.dropItem(dropLocation, it).owner = player.uniqueId
+                    }
+                }
+            }
+
+            true
+        }
+
+    /** Remembers a paid but undelivered purchase until the buyer joins again. */
+    private fun queueDelivery(player: Player, purchase: PurchaseOutcome.Committed) {
+        pendingDeliveries.add(
+            player.uniqueId,
+            PendingDelivery(
+                transactionId = purchase.transactionId,
+                shopUuid = purchase.shop.shopUuid,
+                amount = purchase.amount,
+                item = purchase.shop.item.clone()
+            )
+        )
+
+        logger.warning(
+            "Purchase ${purchase.transactionId} is PAID (total ${purchase.total}) but ${player.name} " +
+                    "(${player.uniqueId}) went offline before delivery; queued ${purchase.amount} x " +
+                    "${purchase.shop.item} from shop ${purchase.shop.shopUuid} for the next join. If the server " +
+                    "stops before that, MANUAL RECONCILIATION REQUIRED."
+        )
+
+        // The buyer may already be back while this purchase was still running; deliver right away then.
+        if (Bukkit.getPlayer(player.uniqueId)?.isOnline == true) {
+            plugin.launch { deliverPendingPurchases(player.uniqueId) }
+        }
+    }
+
+    override suspend fun deliverPendingPurchases(playerUuid: UUID): Int {
+        val player = Bukkit.getPlayer(playerUuid) ?: return 0
+        val queued = pendingDeliveries.take(playerUuid)
+        var delivered = 0
+
+        for ((index, delivery) in queued.withIndex()) {
+            val description = "${delivery.amount} x ${delivery.item} from shop ${delivery.shopUuid} " +
+                    "(purchase ${delivery.transactionId}) for ${player.name} ($playerUuid)"
+
+            val handedOut = try {
+                player.isOnline && handOut(player, delivery.item, delivery.amount)
+            } catch (e: CancellationException) {
+                logger.severe("MANUAL RECONCILIATION REQUIRED: queued delivery of $description was interrupted.")
+                queued.drop(index + 1).forEach { pendingDeliveries.add(playerUuid, it) }
+                throw e
+            } catch (e: Exception) {
+                logger.log(Level.SEVERE, "MANUAL RECONCILIATION REQUIRED: queued delivery of $description failed.", e)
+                continue
+            }
+
+            if (!handedOut) {
+                // Left again before we were done: keep this and the remaining deliveries queued.
+                queued.drop(index).forEach { pendingDeliveries.add(playerUuid, it) }
+                break
+            }
+
+            delivered++
+            logger.info("Delivered queued purchase: $description")
+        }
+
+        return delivered
+    }
+
+    override fun reportPendingDeliveries() {
+        pendingDeliveries.snapshot().forEach { (playerUuid, deliveries) ->
+            deliveries.forEach {
+                logger.severe(
+                    "MANUAL RECONCILIATION REQUIRED: purchase ${it.transactionId} is PAID but was never " +
+                            "delivered (server stopping): player $playerUuid, ${it.amount} x ${it.item} from " +
+                            "shop ${it.shopUuid}."
+                )
+            }
+        }
     }
 
     private fun buildStacks(item: ItemStack, amount: Int): Array<ItemStack> {
