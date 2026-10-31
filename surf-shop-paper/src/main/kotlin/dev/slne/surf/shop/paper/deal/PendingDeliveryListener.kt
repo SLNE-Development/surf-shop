@@ -4,24 +4,22 @@ import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.paper.plugin
-import kotlinx.coroutines.delay
+import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerJoinEvent
-import kotlin.time.Duration.Companion.seconds
 
 /** Hands out purchases that were paid while the buyer was offline. */
 object PendingDeliveryListener : Listener {
-    /** Give the player a moment to finish joining before touching the inventory. */
-    private val JOIN_DELAY = 2.seconds
 
+    /**
+     * Fires once the client has loaded the world (or the server stopped waiting for it), so the
+     * player is fully in the game. Later firings (e.g. after a respawn) find an empty queue.
+     */
     @EventHandler
-    fun onJoin(event: PlayerJoinEvent) {
+    fun onClientLoadedWorld(event: PlayerClientLoadedWorldEvent) {
         val player = event.player
 
         plugin.launch {
-            delay(JOIN_DELAY)
-
             val delivered = DealService.deliverPendingPurchases(player.uniqueId)
             if (delivered > 0 && player.isOnline) {
                 player.sendText {
