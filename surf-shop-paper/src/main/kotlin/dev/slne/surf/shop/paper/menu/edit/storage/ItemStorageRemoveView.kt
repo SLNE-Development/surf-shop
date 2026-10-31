@@ -184,35 +184,52 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
 
                 val updatedShop = result.shop
                 val removed = -result.appliedDelta
+                val notDelivered = "MANUAL RECONCILIATION REQUIRED: $removed x ${updatedShop.item.type} were " +
+                        "taken from the stock of shop ${shop.shopUuid} for ${context.player.name} " +
+                        "(${context.player.uniqueId}) but may not have been handed out."
 
-                withContext(plugin.entityDispatcher(context.player)) {
-                    val player = context.player
-                    val owner = context.player.uniqueId
-                    var remainingAmount = removed
-                    val maxStackSize = updatedShop.item.maxStackSize
+                try {
+                    withContext(plugin.entityDispatcher(context.player)) {
+                        val player = context.player
+                        val owner = context.player.uniqueId
+                        var remainingAmount = removed
+                        val maxStackSize = updatedShop.item.maxStackSize
 
-                    while (remainingAmount > 0) {
-                        val giveNow = minOf(maxStackSize, remainingAmount)
+                        while (remainingAmount > 0) {
+                            val giveNow = minOf(maxStackSize, remainingAmount)
 
-                        val stack = updatedShop.item.clone()
-                        stack.amount = giveNow
+                            val stack = updatedShop.item.clone()
+                            stack.amount = giveNow
 
-                        val leftover = player.inventory.addItem(stack)
+                            val leftover = player.inventory.addItem(stack)
 
-                        if (leftover.isNotEmpty()) {
-                            leftover.values.forEach { rest ->
-                                val dropped =
-                                    player.world.dropItemNaturally(player.location, rest)
-                                dropped.owner = owner
+                            if (leftover.isNotEmpty()) {
+                                leftover.values.forEach { rest ->
+                                    val dropped =
+                                        player.world.dropItemNaturally(player.location, rest)
+                                    dropped.owner = owner
+                                }
                             }
+
+                            remainingAmount -= giveNow
                         }
 
-                        remainingAmount -= giveNow
+                        player.playSound(true) {
+                            type(Sound.ENTITY_CHICKEN_EGG)
+                        }
                     }
-
-                    player.playSound(true) {
-                        type(Sound.ENTITY_CHICKEN_EGG)
+                } catch (e: CancellationException) {
+                    logger.severe("$notDelivered Delivery was interrupted.")
+                    throw e
+                } catch (e: Exception) {
+                    logger.log(Level.SEVERE, "$notDelivered Delivery failed.", e)
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Beim Entnehmen ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
                     }
+                    return@launch
+                } finally {
+                    ShopService.unblockShop(updatedShop)
                 }
 
                 if (plugin.auxProtectHook && removed > 0) {
@@ -237,8 +254,6 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
                         success(" Items in den Shop gelagert.")
                     }
                 }
-
-                ShopService.unblockShop(updatedShop)
 
                 withContext(plugin.entityDispatcher(context.player)) {
                     val updatedShop = shopState.get(this@onFirstRender).updatedShop

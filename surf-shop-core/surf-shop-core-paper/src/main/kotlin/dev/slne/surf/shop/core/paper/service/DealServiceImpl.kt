@@ -27,9 +27,11 @@ import dev.slne.surf.transaction.api.transactional.PendingExecutionResult
 import dev.slne.surf.transaction.api.transactional.PendingRollbackPolicy
 import dev.slne.surf.transaction.api.user.TransactionUser
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import net.kyori.adventure.util.Services
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -39,6 +41,7 @@ import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
+import kotlin.time.Duration.Companion.seconds
 
 @AutoService(DealService::class)
 class DealServiceImpl : DealService, Services.Fallback {
@@ -111,9 +114,12 @@ class DealServiceImpl : DealService, Services.Fallback {
             is PurchaseOutcome.Failed -> outcome.result
             is PurchaseOutcome.Committed -> {
                 putDeal(outcome.deal)
-                deliverItems(player, outcome)
+                val delivered = deliverItems(player, outcome)
                 collectTax(outcome)
-                Deal.DealResult.Success(outcome.deal)
+
+                // A paid purchase whose delivery failed must not be reported as success;
+                // the buyer gets the support message and the case is logged for reconciliation.
+                if (delivered) Deal.DealResult.Success(outcome.deal) else Deal.DealResult.TransactionFailed
             }
         }
     }
@@ -299,6 +305,17 @@ class DealServiceImpl : DealService, Services.Fallback {
                 )
             ).deal
         } catch (e: CancellationException) {
+            logger.warning(
+                "Purchase $transactionId was cancelled after the stock of shop ${shop.shopUuid} was reduced " +
+                        "by $buyAmount; restoring stock. The payment reservation expires automatically."
+            )
+            withContext(NonCancellable) {
+                withTimeoutOrNull(STOCK_RESTORE_TIMEOUT) { restoreStock(shop, buyAmount, transactionId) }
+                    ?: logger.severe(
+                        "Restoring $buyAmount items to shop ${shop.shopUuid} after cancelled purchase " +
+                                "$transactionId timed out. Verify the stock manually."
+                    )
+            }
             throw e
         } catch (e: Exception) {
             logger.log(
@@ -344,15 +361,19 @@ class DealServiceImpl : DealService, Services.Fallback {
         }
     }
 
-    /** Delivers a paid purchase. Failures are logged for manual reconciliation – the payment is final. */
-    private suspend fun deliverItems(player: Player, purchase: PurchaseOutcome.Committed) {
+    /**
+     * Delivers a paid purchase. Failures are logged for manual reconciliation – the payment is final.
+     *
+     * @return `true` if the items were handed out (inventory or owner-tagged drops)
+     */
+    private suspend fun deliverItems(player: Player, purchase: PurchaseOutcome.Committed): Boolean {
         val owed = "MANUAL RECONCILIATION REQUIRED: purchase ${purchase.transactionId} is PAID " +
                 "(total ${purchase.total}) but ${player.name} (${player.uniqueId}) may not have received " +
                 "${purchase.amount} x ${purchase.shop.item} from shop ${purchase.shop.shopUuid}."
 
         if (!player.isOnline) {
             logger.severe("$owed The buyer went offline before delivery.")
-            return
+            return false
         }
 
         try {
@@ -374,7 +395,10 @@ class DealServiceImpl : DealService, Services.Fallback {
             throw e
         } catch (e: Exception) {
             logger.log(Level.SEVERE, "$owed Delivery failed.", e)
+            return false
         }
+
+        return true
     }
 
     private fun buildStacks(item: ItemStack, amount: Int): Array<ItemStack> {
@@ -448,5 +472,7 @@ class DealServiceImpl : DealService, Services.Fallback {
 
     companion object {
         lateinit var plugin: SuspendingJavaPlugin
+
+        private val STOCK_RESTORE_TIMEOUT = 10.seconds
     }
 }
