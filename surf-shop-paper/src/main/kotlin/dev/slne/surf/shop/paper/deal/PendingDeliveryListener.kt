@@ -26,9 +26,13 @@ object PendingDeliveryListener : Listener {
             if (delivered > 0 && player.isOnline) {
                 player.sendText {
                     appendSuccessPrefix()
-                    success("Du hast die Items aus ")
-                    variableValue(if (delivered == 1) "einem Kauf" else "$delivered Käufen")
-                    success(" erhalten, die abgeschlossen wurden, während du offline warst.")
+                    if (delivered == 1) {
+                        success("Dein Kauf wurde abgeschlossen, während du offline warst. ")
+                    } else {
+                        variableValue("$delivered Käufe")
+                        success(" wurden abgeschlossen, während du offline warst. ")
+                    }
+                    success("Du hast die Items jetzt erhalten.")
                 }
             }
         }
