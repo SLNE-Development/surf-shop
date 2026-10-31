@@ -18,6 +18,7 @@ import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.logger
@@ -111,13 +112,33 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
             val amount = item.amount
             val shopUuid = shopState[this@onClick].shopUuid
 
+            var outcomeUnknown = false
             val result = try {
                 ShopService.changeStock(shopUuid, amount)
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                logger.log(Level.WARNING, "Failed to deposit $amount items into shop $shopUuid", e)
+            } catch (e: ShopSaveRejectedException) {
+                logger.log(Level.WARNING, "Deposit of $amount items into shop $shopUuid was rejected", e)
                 null
+            } catch (e: Exception) {
+                outcomeUnknown = true
+                logger.log(
+                    Level.SEVERE,
+                    "MANUAL RECONCILIATION REQUIRED: deposit of $amount x ${item.type} by ${player.name} " +
+                            "(${player.uniqueId}) into shop $shopUuid has an unknown outcome; the items were NOT " +
+                            "returned. Verify the shop stock and refund the player if the deposit is missing.",
+                    e
+                )
+                null
+            }
+
+            if (outcomeUnknown) {
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Beim Einlagern ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
+                }
+                player.playNoSound()
+                return@launch
             }
 
             if (result !is StockChangeResult.Changed) {

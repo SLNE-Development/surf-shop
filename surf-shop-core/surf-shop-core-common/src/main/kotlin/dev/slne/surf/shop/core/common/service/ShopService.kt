@@ -6,6 +6,12 @@ import java.util.*
 
 private val service = requiredService<ShopService>()
 
+/**
+ * A shop save that was **definitely not persisted** (rejected locally or explicitly by the backend).
+ * Any other exception from a save means the outcome is unknown (e.g. a lost response).
+ */
+class ShopSaveRejectedException(message: String) : IllegalStateException(message)
+
 /** Result of [ShopService.changeStock]. */
 sealed interface StockChangeResult {
     /** Stock was changed and persisted; [appliedDelta] can be smaller than requested for partial removals. */

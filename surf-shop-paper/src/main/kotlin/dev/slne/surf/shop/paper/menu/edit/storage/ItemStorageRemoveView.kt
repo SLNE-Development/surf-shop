@@ -13,6 +13,7 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.logger
@@ -150,9 +151,23 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
                 } catch (e: CancellationException) {
                     ShopService.unblockShop(shop)
                     throw e
-                } catch (e: Exception) {
-                    logger.log(Level.WARNING, "Failed to withdraw $toRemove items from shop ${shop.shopUuid}", e)
+                } catch (e: ShopSaveRejectedException) {
+                    logger.log(Level.WARNING, "Withdrawal of $toRemove items from shop ${shop.shopUuid} was rejected", e)
                     null
+                } catch (e: Exception) {
+                    logger.log(
+                        Level.SEVERE,
+                        "MANUAL RECONCILIATION REQUIRED: withdrawal of up to $toRemove items from shop " +
+                                "${shop.shopUuid} by ${context.player.name} (${context.player.uniqueId}) has an " +
+                                "unknown outcome; NO items were handed out. Verify the shop stock.",
+                        e
+                    )
+                    ShopService.unblockShop(shop)
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Beim Entnehmen ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
+                    }
+                    return@launch
                 }
 
                 if (result !is StockChangeResult.Changed) {

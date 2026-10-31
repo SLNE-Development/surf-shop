@@ -6,6 +6,7 @@ import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.CreateShopReque
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
+import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
@@ -74,10 +75,13 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     /**
      * Persists [shop] first and only updates the local cache once the backend confirmed the save,
      * so a failed save never leaves the cache ahead of the database.
+     *
+     * @throws ShopSaveRejectedException if the save was definitely not persisted; any other exception
+     * means the outcome is unknown
      */
     override suspend fun saveShop(shop: Shop): Shop {
-        require(ShopPriceRules.isValidPrice(shop.pricePerItem)) {
-            "Invalid shop price: ${shop.pricePerItem} (shop ${shop.shopUuid})"
+        if (!ShopPriceRules.isValidPrice(shop.pricePerItem)) {
+            throw ShopSaveRejectedException("Invalid shop price: ${shop.pricePerItem} (shop ${shop.shopUuid})")
         }
 
         val updatedShop = shop.apply {
@@ -89,7 +93,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
                 updatedShop
             )
         ).value
-        check(saved) { "Backend rejected saving shop ${shop.shopUuid}" }
+        if (!saved) throw ShopSaveRejectedException("Backend rejected saving shop ${shop.shopUuid}")
 
         putShop(updatedShop)
         return updatedShop

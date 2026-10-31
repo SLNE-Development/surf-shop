@@ -20,6 +20,8 @@ import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.DealService
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
+import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.paper.util.updatedShop
@@ -29,7 +31,9 @@ import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
+import java.util.logging.Level
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
@@ -114,7 +118,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         spacer("-")
                         appendSpace()
                         shopColored("Gesamtpreis: ")
-                        variableValue(formatPriceNice(amount * shop.pricePerItem))
+                        variableValue(formatPriceNice(ShopPriceRules.totalPrice(shop.pricePerItem, amount)))
                     })
 
                     newEntries.add(Component.empty())
@@ -320,6 +324,29 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                     return@onClick
                 }
 
+                // The shop this view was opened with is the quote; refuse if the price changed since.
+                val quotedShop = shopState[context]
+                if (quotedShop.pricePerItem != shop.pricePerItem) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Preis dieses Shops hat sich geändert. Bitte prüfe den neuen Preis.")
+                    }
+
+                    context.player.playNoSound()
+                    plugin.launch { openListView(this@onFirstRender) }
+                    return@onClick
+                }
+
+                if (!ShopPriceRules.isAllowedTotal(ShopPriceRules.totalPrice(shop.pricePerItem, amount))) {
+                    context.player.sendText {
+                        appendErrorPrefix()
+                        error("Der Gesamtpreis ist zu hoch. Bitte kaufe weniger Items.")
+                    }
+
+                    context.player.playNoSound()
+                    return@onClick
+                }
+
                 context.player.closeInventory()
 
                 if (plugin.auxProtectHook) {
@@ -327,7 +354,20 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                 }
 
                 plugin.launch {
-                    when (val result = DealService.buy(context.player.uniqueId, shop, amount)) {
+                    val result = try {
+                        DealService.buy(context.player.uniqueId, quotedShop, amount)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logger.log(
+                            Level.SEVERE,
+                            "Purchase by ${context.player.uniqueId} in shop ${shop.shopUuid} failed unexpectedly",
+                            e
+                        )
+                        Deal.DealResult.TransactionFailed
+                    }
+
+                    when (result) {
                         Deal.DealResult.InsufficientStock -> {
                             context.player.sendText {
                                 appendErrorPrefix()
@@ -384,7 +424,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                                 success(
                                     "Du hast erfolgreich ${result.deal.amount} Items für ${
                                         formatPriceNice(
-                                            result.deal.amount * shop.pricePerItem
+                                            ShopPriceRules.totalPrice(quotedShop.pricePerItem, result.deal.amount)
                                         )
                                     } gekauft!"
                                 )
@@ -396,13 +436,13 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                                 info(" hat gerade ")
                                 append {
                                     if (result.deal.amount > 1) {
-                                        variableValue("${amount}x ")
+                                        variableValue("${result.deal.amount}x ")
                                     }
                                     append(shop.item.displayName())
                                     hoverEvent(shop.item.asHoverEvent())
                                 }
                                 info(" gekauft.")
-                                spacer(" (${formatPriceNice(shop.pricePerItem * result.deal.amount)} - 3% Steuern)")
+                                spacer(" (${formatPriceNice(ShopPriceRules.totalPrice(quotedShop.pricePerItem, result.deal.amount))} - 3% Steuern)")
                             }
 
                             openListView(this@onFirstRender)
@@ -411,7 +451,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                         Deal.DealResult.TransactionFailed -> {
                             context.player.sendText {
                                 appendErrorPrefix()
-                                error("Es ist ein Fehler aufgetreten. (TRANSACTION_FAILED)")
+                                error("Der Kauf konnte nicht abgeschlossen werden. Falls dir Geld abgebucht wurde, melde dich bitte beim Support. (TRANSACTION_FAILED)")
                             }
 
                             context.player.playNoSound()
