@@ -4,6 +4,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.StockCalc
 import dev.slne.surf.shop.core.common.util.StockMath
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
@@ -54,47 +55,60 @@ class ShopMutations(
 
     suspend fun changeStock(shopUuid: UUID, delta: Int, allowPartialRemoval: Boolean): StockChangeResult =
         lock(shopUuid).withLock {
-            ensureNotQuarantined(shopUuid)
+            if (shopUuid in quarantined) return@withLock StockChangeResult.Rejected(quarantineReason(shopUuid))
             val current = currentShop(shopUuid) ?: return@withLock StockChangeResult.NotFound
 
             when (val calc = StockMath.apply(current.storedItemCount, delta, allowPartialRemoval)) {
                 is StockCalc.Insufficient -> StockChangeResult.InsufficientStock(calc.available)
                 StockCalc.Overflow -> StockChangeResult.Overflow
-                is StockCalc.Ok -> StockChangeResult.Changed(
-                    save(current.copy(storedItemCount = calc.newCount)),
-                    calc.appliedDelta
-                )
+                is StockCalc.Ok -> when (val outcome = save(current.copy(storedItemCount = calc.newCount))) {
+                    is SaveOutcome.Saved -> StockChangeResult.Changed(outcome.shop, calc.appliedDelta)
+                    is SaveOutcome.Rejected -> StockChangeResult.Rejected(outcome.reason)
+                    is SaveOutcome.Unknown -> StockChangeResult.Unknown(outcome.cause)
+                }
             }
         }
 
-    suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): Shop? {
-        require(ShopPriceRules.isValidPrice(pricePerItem)) { "Invalid shop price: $pricePerItem" }
+    suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): PriceUpdateResult {
+        if (!ShopPriceRules.isValidPrice(pricePerItem)) {
+            return PriceUpdateResult.Rejected("Invalid shop price: $pricePerItem")
+        }
 
         return lock(shopUuid).withLock {
-            ensureNotQuarantined(shopUuid)
-            val current = currentShop(shopUuid) ?: return@withLock null
-            save(current.copy(pricePerItem = pricePerItem))
+            if (shopUuid in quarantined) return@withLock PriceUpdateResult.Rejected(quarantineReason(shopUuid))
+            val current = currentShop(shopUuid) ?: return@withLock PriceUpdateResult.NotFound
+
+            when (val outcome = save(current.copy(pricePerItem = pricePerItem))) {
+                is SaveOutcome.Saved -> PriceUpdateResult.Updated(outcome.shop)
+                is SaveOutcome.Rejected -> PriceUpdateResult.Rejected(outcome.reason)
+                is SaveOutcome.Unknown -> PriceUpdateResult.Unknown(outcome.cause)
+            }
         }
     }
 
-    private suspend fun save(shop: Shop): Shop {
+    private sealed interface SaveOutcome {
+        data class Saved(val shop: Shop) : SaveOutcome
+        data class Rejected(val reason: String) : SaveOutcome
+        data class Unknown(val cause: Throwable) : SaveOutcome
+    }
+
+    /** Classifies a save; cancellation is rethrown (after quarantining, as its outcome is unknown). */
+    private suspend fun save(shop: Shop): SaveOutcome {
         val saved = try {
             persist(shop)
         } catch (e: ShopSaveRejectedException) {
-            throw e
-        } catch (e: Throwable) {
+            return SaveOutcome.Rejected(e.message ?: "rejected")
+        } catch (e: CancellationException) {
             quarantined += shop.shopUuid
             throw e
+        } catch (e: Exception) {
+            quarantined += shop.shopUuid
+            return SaveOutcome.Unknown(e)
         }
 
-        return saved.apply { isBlocked = isBlocked(shopUuid) }
+        return SaveOutcome.Saved(saved.apply { isBlocked = isBlocked(shopUuid) })
     }
 
-    private fun ensureNotQuarantined(shopUuid: UUID) {
-        if (shopUuid in quarantined) {
-            throw ShopSaveRejectedException(
-                "Shop $shopUuid is quarantined after a save with unknown outcome; reload shops to reconcile"
-            )
-        }
-    }
+    private fun quarantineReason(shopUuid: UUID) =
+        "Shop $shopUuid is quarantined after a save with unknown outcome; reload shops to reconcile"
 }

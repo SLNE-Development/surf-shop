@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.paper.menu.edit.storage
 
-import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
@@ -18,11 +17,12 @@ import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.mutableState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.logger
+import dev.slne.surf.shop.core.paper.util.giveItems
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.runOnOwningThread
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.menu.canEditShopStorageFromCurrentView
 import dev.slne.surf.shop.paper.menu.playGeneralClickSound
@@ -31,8 +31,7 @@ import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.MenuHeads
 import dev.slne.surf.shop.paper.util.appendBlob
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withContext
+import dev.slne.surf.shop.paper.util.sendSupportError
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
@@ -112,82 +111,69 @@ val itemStorageInsertView: AbstractSurfView = surfView("Items einlagern") {
             val amount = item.amount
             val shopUuid = shopState[this@onClick].shopUuid
 
-            var outcomeUnknown = false
-            val result = try {
-                ShopService.changeStock(shopUuid, amount)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: ShopSaveRejectedException) {
-                logger.log(Level.WARNING, "Deposit of $amount items into shop $shopUuid was rejected", e)
-                null
-            } catch (e: Exception) {
-                outcomeUnknown = true
-                logger.log(
-                    Level.SEVERE,
-                    "MANUAL RECONCILIATION REQUIRED: deposit of $amount x ${item.type} by ${player.name} " +
-                            "(${player.uniqueId}) into shop $shopUuid has an unknown outcome; the items were NOT " +
-                            "returned. Verify the shop stock and refund the player if the deposit is missing.",
-                    e
-                )
-                null
-            }
+            when (val result = ShopService.changeStock(shopUuid, amount)) {
+                is StockChangeResult.Changed -> {
+                    shopState[this@onClick] = result.shop
+                    itemInsertedState[this@onClick] = itemInsertedState[this@onClick] + amount
 
-            if (outcomeUnknown) {
-                player.sendText {
-                    appendErrorPrefix()
-                    error("Beim Einlagern ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
+                    if (plugin.auxProtectHook) {
+                        AuxProtectHook.logDeposit(player, result.shop, amount)
+                    }
+
+                    player.runOnOwningThread(plugin) {
+                        player.sendActionBar(buildText {
+                            appendSuccessPrefix()
+                            success("Du hast ")
+                            variableValue("$amount Items")
+                            success(" eingelagert.")
+                        })
+                        player.playSound(true) { type(Sound.ENTITY_PLAYER_LEVELUP) }
+                    }
                 }
-                player.playNoSound()
-                return@launch
-            }
 
-            if (result !is StockChangeResult.Changed) {
-                withContext(plugin.entityDispatcher(player)) {
-                    // An offline player's block runs on the calling thread; the item cannot be returned.
-                    if (!player.isOnline) {
+                is StockChangeResult.Unknown -> {
+                    // In doubt, no items: the deposit may have been applied, so the item is not returned.
+                    logger.log(
+                        Level.SEVERE,
+                        "MANUAL RECONCILIATION REQUIRED: deposit of $amount x ${item.type} by ${player.name} " +
+                                "(${player.uniqueId}) into shop $shopUuid has an unknown outcome; the items were NOT " +
+                                "returned. Verify the shop stock and refund the player if the deposit is missing.",
+                        result.cause
+                    )
+                    player.sendSupportError("Beim Einlagern ist ein Fehler aufgetreten.")
+                    player.runOnOwningThread(plugin) { player.playNoSound() }
+                }
+
+                else -> {
+                    // Definitely not deposited: hand the item back.
+                    if (result is StockChangeResult.Rejected) {
+                        logger.warning("Deposit of $amount items into shop $shopUuid was rejected: ${result.reason}")
+                    }
+
+                    val returned = player.runOnOwningThread(plugin) {
+                        player.giveItems(item)
+                        player.playNoSound()
+                    }
+
+                    if (returned == null) {
                         logger.severe(
                             "MANUAL RECONCILIATION REQUIRED: deposit of $amount x ${item.type} into shop $shopUuid " +
-                                    "failed and ${player.name} (${player.uniqueId}) went offline before the item " +
-                                    "could be returned. Give the item back."
+                                    "failed and ${player.name} (${player.uniqueId}) left before the item could be " +
+                                    "returned. Give the item back."
                         )
-                        return@withContext
                     }
 
-                    player.inventory.addItem(item).values.forEach {
-                        player.world.dropItemNaturally(player.location, it).owner = player.uniqueId
+                    player.sendText {
+                        appendErrorPrefix()
+                        error(
+                            when (result) {
+                                StockChangeResult.Overflow -> "Das Lager dieses Shops ist voll."
+                                StockChangeResult.NotFound -> "Der Shop existiert nicht mehr."
+                                else -> "Die Items konnten nicht eingelagert werden."
+                            }
+                        )
                     }
                 }
-
-                player.sendText {
-                    appendErrorPrefix()
-                    error(
-                        when (result) {
-                            StockChangeResult.Overflow -> "Das Lager dieses Shops ist voll."
-                            StockChangeResult.NotFound -> "Der Shop existiert nicht mehr."
-                            else -> "Die Items konnten nicht eingelagert werden."
-                        }
-                    )
-                }
-                player.playNoSound()
-                return@launch
-            }
-
-            shopState[this@onClick] = result.shop
-            itemInsertedState[this@onClick] = itemInsertedState[this@onClick] + amount
-
-            if (plugin.auxProtectHook) {
-                AuxProtectHook.logDeposit(player, result.shop, amount)
-            }
-
-            this@onClick.player.sendActionBar(buildText {
-                appendSuccessPrefix()
-                success("Du hast ")
-                variableValue("$amount Items")
-                success(" eingelagert.")
-            })
-
-            this@onClick.player.playSound(true) {
-                type(Sound.ENTITY_PLAYER_LEVELUP)
             }
         }
     }

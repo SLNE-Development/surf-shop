@@ -29,6 +29,12 @@ fun formatPriceNice(price: Double): String = castCoinFormat.format(price)
 
 fun formatPriceNice(price: BigDecimal): String = castCoinFormat.format(price)
 
+/** Error message for failures with an unknown outcome that support has to check. */
+fun Player.sendSupportError(problem: String) = sendText {
+    appendErrorPrefix()
+    error("$problem Bitte melde dich beim Support.")
+}
+
 fun Player.sendInvalidPriceMessage() = sendText {
     appendErrorPrefix()
     error("Der angegebene Preis kann nicht angewendet werden. Er muss zwischen")

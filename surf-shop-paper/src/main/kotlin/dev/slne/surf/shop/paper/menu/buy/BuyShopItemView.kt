@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.paper.menu.buy
 
-import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
@@ -23,6 +22,7 @@ import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.runOnOwningThread
 import dev.slne.surf.shop.core.paper.util.sellerName
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
@@ -32,12 +32,12 @@ import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.displayKey
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withContext
 import java.util.logging.Level
 import me.devnatan.inventoryframework.context.RenderContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 
 
 val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
@@ -266,7 +266,12 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                             appendSpace()
                             shopColored("Gesamtpreis: ")
                             variableValue(
-                                amountState[this@onFirstRender] * shopState[this@onFirstRender].pricePerItem
+                                formatPriceNice(
+                                    ShopPriceRules.totalPrice(
+                                        shopState[this@onFirstRender].pricePerItem,
+                                        amountState[this@onFirstRender]
+                                    )
+                                )
                             )
                         }
                     }
@@ -333,7 +338,7 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                     }
 
                     context.player.playNoSound()
-                    plugin.launch { openListView(this@onFirstRender) }
+                    openListView(this@onFirstRender)
                     return@onClick
                 }
 
@@ -354,119 +359,26 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
                 }
 
                 plugin.launch {
+                    val player = context.player
                     val result = try {
-                        DealService.buy(context.player.uniqueId, quotedShop, amount)
+                        DealService.buy(player.uniqueId, quotedShop, amount)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         logger.log(
                             Level.SEVERE,
-                            "Purchase by ${context.player.uniqueId} in shop ${shop.shopUuid} failed unexpectedly",
+                            "Purchase by ${player.uniqueId} in shop ${shop.shopUuid} failed unexpectedly",
                             e
                         )
                         Deal.DealResult.TransactionFailed
                     }
 
-                    when (result) {
-                        Deal.DealResult.InsufficientStock -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Es sind nicht genügend Items auf Lager!")
-                            }
+                    player.sendBuyResult(result, quotedShop)
+                    if (result is Deal.DealResult.Success) notifySeller(player.name, quotedShop, result.deal.amount)
 
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.OtherInsufficientFounds -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.SelfInsufficientFounds -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.ShopBlocked -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Du kannst derzeit keine Items in diesem Shop kaufen!")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.ShopDeleted -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Dieser Shop existiert nicht mehr!")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        is Deal.DealResult.Success -> {
-                            context.player.sendText {
-                                appendSuccessPrefix()
-                                success(
-                                    "Du hast erfolgreich ${result.deal.amount} Items für ${
-                                        formatPriceNice(
-                                            ShopPriceRules.totalPrice(quotedShop.pricePerItem, result.deal.amount)
-                                        )
-                                    } gekauft!"
-                                )
-                            }
-
-                            Bukkit.getPlayer(shop.seller)?.sendText {
-                                appendInfoPrefix()
-                                variableValue(context.player.name)
-                                info(" hat gerade ")
-                                append {
-                                    if (result.deal.amount > 1) {
-                                        variableValue("${result.deal.amount}x ")
-                                    }
-                                    append(shop.item.displayName())
-                                    hoverEvent(shop.item.asHoverEvent())
-                                }
-                                info(" gekauft.")
-                                spacer(" (${formatPriceNice(ShopPriceRules.totalPrice(quotedShop.pricePerItem, result.deal.amount))} - 3% Steuern)")
-                            }
-
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.TransactionFailed -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Der Kauf konnte nicht abgeschlossen werden. Falls dir Geld abgebucht wurde, melde dich bitte beim Support. (TRANSACTION_FAILED)")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
-
-                        Deal.DealResult.PlayerNotFound -> {
-                            context.player.sendText {
-                                appendErrorPrefix()
-                                error("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
-                            }
-
-                            context.player.playNoSound()
-                            openListView(this@onFirstRender)
-                        }
+                    player.runOnOwningThread(plugin) {
+                        if (result !is Deal.DealResult.Success) player.playNoSound()
+                        openListView(this@onFirstRender)
                     }
                 }
             }
@@ -488,21 +400,61 @@ val buyShopItemView: AbstractSurfView = surfView("Items Kaufen") {
     }
 }
 
-private suspend fun openListView(context: RenderContext) {
-    // A player who already left has no entity scheduler anymore; MCCoroutine then runs the block on
-    // the calling thread, where opening an inventory throws. Nothing to show to an offline player.
-    if (!context.player.isOnline) return
+/** Returns the player to the shop list they came from. Must run on the player's thread. */
+private fun openListView(context: RenderContext) {
+    if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
+        StaticShopState.setInStaticShop(context.player.uniqueId, false)
+        context.player.closeInventory()
+    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
+        viewFrame.open(ownShopsListView::class.java, context.player)
+    } else {
+        viewFrame.open(shopListView::class.java, context.player)
+    }
+}
 
-    withContext(plugin.entityDispatcher(context.player)) {
-        if (!context.player.isOnline) return@withContext
+private fun Player.sendBuyResult(result: Deal.DealResult, quotedShop: Shop) = sendText {
+    fun failure(message: String) {
+        appendErrorPrefix()
+        error(message)
+    }
 
-        if (StaticShopState.isInStaticShop(context.player.uniqueId)) {
-            StaticShopState.setInStaticShop(context.player.uniqueId, false)
-            context.player.closeInventory()
-        } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-            viewFrame.open(ownShopsListView::class.java, context.player)
-        } else {
-            viewFrame.open(shopListView::class.java, context.player)
+    when (result) {
+        is Deal.DealResult.Success -> {
+            appendSuccessPrefix()
+            success(
+                "Du hast erfolgreich ${result.deal.amount} Items für ${
+                    formatPriceNice(ShopPriceRules.totalPrice(quotedShop.pricePerItem, result.deal.amount))
+                } gekauft!"
+            )
         }
+
+        Deal.DealResult.InsufficientStock -> failure("Es sind nicht genügend Items auf Lager!")
+        Deal.DealResult.SelfInsufficientFounds,
+        Deal.DealResult.OtherInsufficientFounds -> failure("Du hast nicht genügend Geld, um diesen Kauf zu tätigen!")
+
+        Deal.DealResult.ShopBlocked -> failure("Du kannst derzeit keine Items in diesem Shop kaufen!")
+        Deal.DealResult.ShopDeleted -> failure("Dieser Shop existiert nicht mehr!")
+        Deal.DealResult.TransactionFailed -> failure(
+            "Der Kauf konnte nicht abgeschlossen werden. Falls dir Geld abgebucht wurde, melde dich bitte beim Support. (TRANSACTION_FAILED)"
+        )
+
+        Deal.DealResult.PlayerNotFound -> failure("Es ist ein Fehler aufgetreten. (PLAYER_NOT_FOUND)")
+    }
+}
+
+private fun notifySeller(buyerName: String, shop: Shop, amount: Int) {
+    Bukkit.getPlayer(shop.seller)?.sendText {
+        appendInfoPrefix()
+        variableValue(buyerName)
+        info(" hat gerade ")
+        append {
+            if (amount > 1) {
+                variableValue("${amount}x ")
+            }
+            append(shop.item.displayName())
+            hoverEvent(shop.item.asHoverEvent())
+        }
+        info(" gekauft.")
+        spacer(" (${formatPriceNice(ShopPriceRules.totalPrice(shop.pricePerItem, amount))} - 3% Steuern)")
     }
 }

@@ -6,6 +6,7 @@ import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.CreateShopReque
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
+import dev.slne.surf.shop.core.common.service.PriceUpdateResult
 import dev.slne.surf.shop.core.common.service.ShopMutations
 import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
@@ -105,7 +106,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         allowPartialRemoval: Boolean
     ): StockChangeResult = mutations.changeStock(shopUuid, delta, allowPartialRemoval)
 
-    override suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): Shop? =
+    override suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): PriceUpdateResult =
         mutations.updatePrice(shopUuid, pricePerItem)
 
     override suspend fun deleteShop(shop: Shop): Boolean {

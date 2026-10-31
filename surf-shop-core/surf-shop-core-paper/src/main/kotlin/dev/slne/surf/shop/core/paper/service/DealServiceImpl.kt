@@ -1,9 +1,7 @@
 package dev.slne.surf.shop.core.paper.service
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
-import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
-import com.github.shynixn.mccoroutine.folia.regionDispatcher
 import com.google.auto.service.AutoService
 import dev.slne.surf.api.core.util.objectSetOf
 import dev.slne.surf.shop.api.deal.Deal
@@ -14,13 +12,14 @@ import dev.slne.surf.shop.core.common.service.DealService
 import dev.slne.surf.shop.core.common.service.PendingDeliveries
 import dev.slne.surf.shop.core.common.service.PendingDelivery
 import dev.slne.surf.shop.core.common.service.ShopDealStats
-import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
+import dev.slne.surf.shop.core.paper.util.giveItems
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.runOnOwningThread
 import dev.slne.surf.transaction.api.currency.Currency
 import dev.slne.surf.transaction.api.transaction.PendingTransactionResult
 import dev.slne.surf.transaction.api.transaction.TransactionResult
@@ -275,30 +274,27 @@ class DealServiceImpl : DealService, Services.Fallback {
     ): PendingExecutionDecision<Deal.DealResult> {
         if (!player.isOnline) return PendingExecutionDecision.Rollback(Deal.DealResult.PlayerNotFound)
 
-        val stock = try {
-            ShopService.changeStock(shop.shopUuid, -buyAmount)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: ShopSaveRejectedException) {
-            logger.log(Level.WARNING, "Stock reduction for purchase $transactionId was rejected", e)
-            return PendingExecutionDecision.Rollback(Deal.DealResult.TransactionFailed)
-        } catch (e: Exception) {
-            logger.log(
-                Level.SEVERE,
-                "Stock reduction for purchase $transactionId has an unknown outcome; payment is rolled back. " +
-                        "Verify the stock of shop ${shop.shopUuid} (possible reduction by $buyAmount).",
-                e
-            )
-            return PendingExecutionDecision.Rollback(Deal.DealResult.TransactionFailed)
-        }
-
-        when (stock) {
+        val stock = when (val result = ShopService.changeStock(shop.shopUuid, -buyAmount)) {
+            is StockChangeResult.Changed -> result
             StockChangeResult.NotFound -> return PendingExecutionDecision.Rollback(Deal.DealResult.ShopDeleted)
             is StockChangeResult.InsufficientStock ->
                 return PendingExecutionDecision.Rollback(Deal.DealResult.InsufficientStock)
 
             StockChangeResult.Overflow -> return PendingExecutionDecision.Rollback(Deal.DealResult.TransactionFailed)
-            is StockChangeResult.Changed -> Unit
+            is StockChangeResult.Rejected -> {
+                logger.warning("Stock reduction for purchase $transactionId was rejected: ${result.reason}")
+                return PendingExecutionDecision.Rollback(Deal.DealResult.TransactionFailed)
+            }
+
+            is StockChangeResult.Unknown -> {
+                logger.log(
+                    Level.SEVERE,
+                    "Stock reduction for purchase $transactionId has an unknown outcome; payment is rolled back. " +
+                            "Verify the stock of shop ${shop.shopUuid} (possible reduction by $buyAmount).",
+                    result.cause
+                )
+                return PendingExecutionDecision.Rollback(Deal.DealResult.TransactionFailed)
+            }
         }
 
         val deal = try {
@@ -347,22 +343,13 @@ class DealServiceImpl : DealService, Services.Fallback {
     }
 
     private suspend fun restoreStock(shop: Shop, amount: Int, transactionId: UUID) {
-        try {
-            val restored = ShopService.changeStock(shop.shopUuid, amount)
-            if (restored !is StockChangeResult.Changed) {
-                logger.severe(
-                    "Could not restore $amount items to shop ${shop.shopUuid} after aborted purchase " +
-                            "$transactionId: $restored. Restore the stock manually."
-                )
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
+        val restored = ShopService.changeStock(shop.shopUuid, amount)
+        if (restored !is StockChangeResult.Changed) {
             logger.log(
                 Level.SEVERE,
                 "Could not restore $amount items to shop ${shop.shopUuid} after aborted purchase " +
-                        "$transactionId. Verify the stock manually.",
-                e
+                        "$transactionId: $restored. Restore the stock manually.",
+                (restored as? StockChangeResult.Unknown)?.cause
             )
         }
     }
@@ -379,7 +366,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                 "${purchase.amount} x ${purchase.shop.item} from shop ${purchase.shop.shopUuid}."
 
         val handedOut = try {
-            player.isOnline && handOut(player, purchase.shop.item, purchase.amount)
+            handOut(player, purchase.shop.item, purchase.amount)
         } catch (e: CancellationException) {
             logger.severe("$owed Delivery was interrupted.")
             throw e
@@ -393,30 +380,12 @@ class DealServiceImpl : DealService, Services.Fallback {
     }
 
     /**
-     * Hands [amount] x [item] to [player] on the player's entity thread.
+     * Hands [amount] x [item] to [player] on the player's region thread.
      *
-     * @return `false` if the player is offline (nothing was handed out); throws on other failures
+     * @return `false` if the player left (Folia retired the entity, nothing was handed out); throws on other failures
      */
     private suspend fun handOut(player: Player, item: ItemStack, amount: Int): Boolean =
-        // For a player who already left, MCCoroutine runs this block on the calling thread;
-        // check again inside so an offline player is never counted as "delivered".
-        withContext(plugin.entityDispatcher(player)) {
-            if (!player.isOnline) return@withContext false
-
-            val leftover = player.inventory.addItem(*buildStacks(item, amount))
-
-            if (leftover.isNotEmpty()) {
-                val dropLocation = player.location.clone()
-
-                withContext(plugin.regionDispatcher(dropLocation)) {
-                    leftover.values.forEach {
-                        dropLocation.world.dropItem(dropLocation, it).owner = player.uniqueId
-                    }
-                }
-            }
-
-            true
-        }
+        player.runOnOwningThread(plugin) { player.giveItems(item, amount) } != null
 
     /** Remembers a paid but undelivered purchase until the buyer joins again. */
     private fun queueDelivery(player: Player, purchase: PurchaseOutcome.Committed) {
@@ -453,7 +422,7 @@ class DealServiceImpl : DealService, Services.Fallback {
                     "(purchase ${delivery.transactionId}) for ${player.name} ($playerUuid)"
 
             val handedOut = try {
-                player.isOnline && handOut(player, delivery.item, delivery.amount)
+                handOut(player, delivery.item, delivery.amount)
             } catch (e: CancellationException) {
                 logger.severe("MANUAL RECONCILIATION REQUIRED: queued delivery of $description was interrupted.")
                 queued.drop(index + 1).forEach { pendingDeliveries.add(playerUuid, it) }
@@ -488,19 +457,6 @@ class DealServiceImpl : DealService, Services.Fallback {
         }
     }
 
-    private fun buildStacks(item: ItemStack, amount: Int): Array<ItemStack> {
-        val maxStackSize = item.maxStackSize.coerceAtLeast(1)
-        val stacks = mutableListOf<ItemStack>()
-        var remaining = amount
-
-        while (remaining > 0) {
-            val stackSize = minOf(remaining, maxStackSize)
-            stacks += item.clone().apply { this.amount = stackSize }
-            remaining -= stackSize
-        }
-
-        return stacks.toTypedArray()
-    }
 
     /** Withdraws the shop tax from the seller; failures never invalidate the purchase. */
     private suspend fun collectTax(purchase: PurchaseOutcome.Committed) {

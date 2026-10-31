@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.paper.menu.edit.storage
 
-import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.messages.adventure.playSound
@@ -13,11 +12,12 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIcon
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.shop.api.shop.Shop
-import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StockChangeResult
 import dev.slne.surf.shop.core.common.util.logger
+import dev.slne.surf.shop.core.paper.util.giveItems
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.runOnOwningThread
 import dev.slne.surf.shop.core.paper.util.updatedShop
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
@@ -30,14 +30,15 @@ import dev.slne.surf.shop.paper.menu.playGeneralClickSound
 import dev.slne.surf.shop.paper.menu.playNoSound
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.util.sendSupportError
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withContext
 import me.devnatan.inventoryframework.context.RenderContext
 import me.devnatan.inventoryframework.context.SlotClickContext
 import me.devnatan.inventoryframework.state.MutableState
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.entity.Player
 import java.util.logging.Level
 import kotlin.math.max
 
@@ -144,147 +145,78 @@ val itemStorageRemoveView: AbstractSurfView = surfView("Anzahl auswählen") {
             ShopService.blockShop(shop)
 
             plugin.launch {
-                // Take the items out of the stock first (atomically, up to what is stored),
-                // then hand out exactly what was taken.
-                val result = try {
-                    ShopService.changeStock(shop.shopUuid, -toRemove, allowPartialRemoval = true)
-                } catch (e: CancellationException) {
-                    ShopService.unblockShop(shop)
-                    throw e
-                } catch (e: ShopSaveRejectedException) {
-                    logger.log(Level.WARNING, "Withdrawal of $toRemove items from shop ${shop.shopUuid} was rejected", e)
-                    null
-                } catch (e: Exception) {
-                    logger.log(
-                        Level.SEVERE,
-                        "MANUAL RECONCILIATION REQUIRED: withdrawal of up to $toRemove items from shop " +
-                                "${shop.shopUuid} by ${context.player.name} (${context.player.uniqueId}) has an " +
-                                "unknown outcome; NO items were handed out. Verify the shop stock.",
-                        e
-                    )
-                    ShopService.unblockShop(shop)
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error("Beim Entnehmen ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
+                val player = context.player
+
+                try {
+                    // Take the items out of the stock first (atomically, up to what is stored),
+                    // then hand out exactly what was taken.
+                    val result = ShopService.changeStock(shop.shopUuid, -toRemove, allowPartialRemoval = true)
+                    if (result !is StockChangeResult.Changed) {
+                        reportFailedWithdrawal(player, shop, toRemove, result)
+                        return@launch
                     }
-                    return@launch
-                }
 
-                if (result !is StockChangeResult.Changed) {
-                    ShopService.unblockShop(shop)
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error(
-                            if (result == StockChangeResult.NotFound) "Der Shop existiert nicht mehr."
-                            else "Die Items konnten nicht entnommen werden."
-                        )
+                    val updatedShop = result.shop
+                    val removed = -result.appliedDelta
+
+                    val handedOut = try {
+                        player.runOnOwningThread(plugin) {
+                            player.giveItems(updatedShop.item, removed)
+                            player.playSound(true) { type(Sound.ENTITY_CHICKEN_EGG) }
+                        } != null
+                    } catch (e: CancellationException) {
+                        logger.severe("${notHandedOut(removed, shop, player)} Delivery was interrupted.")
+                        throw e
+                    } catch (e: Exception) {
+                        logger.log(Level.SEVERE, "${notHandedOut(removed, shop, player)} Delivery failed.", e)
+                        player.sendSupportError("Beim Entnehmen ist ein Fehler aufgetreten.")
+                        return@launch
                     }
-                    return@launch
-                }
 
-                val updatedShop = result.shop
-                val removed = -result.appliedDelta
-                val notDelivered = "MANUAL RECONCILIATION REQUIRED: $removed x ${updatedShop.item.type} were " +
-                        "taken from the stock of shop ${shop.shopUuid} for ${context.player.name} " +
-                        "(${context.player.uniqueId}) but may not have been handed out."
+                    if (!handedOut) {
+                        // The player left before anything was handed out: the items go back into the stock.
+                        if (removed > 0) restoreWithdrawnStock(shop, removed, player.name)
+                        return@launch
+                    }
 
-                val handedOut = try {
-                    withContext(plugin.entityDispatcher(context.player)) {
-                        val player = context.player
-                        // An offline player's block runs on the calling thread; never hand out there.
-                        if (!player.isOnline) return@withContext false
+                    if (plugin.auxProtectHook && removed > 0) {
+                        AuxProtectHook.logWithdraw(player, shop, removed)
+                    }
 
-                        val owner = context.player.uniqueId
-                        var remainingAmount = removed
-                        val maxStackSize = updatedShop.item.maxStackSize
-
-                        while (remainingAmount > 0) {
-                            val giveNow = minOf(maxStackSize, remainingAmount)
-
-                            val stack = updatedShop.item.clone()
-                            stack.amount = giveNow
-
-                            val leftover = player.inventory.addItem(stack)
-
-                            if (leftover.isNotEmpty()) {
-                                leftover.values.forEach { rest ->
-                                    val dropped =
-                                        player.world.dropItemNaturally(player.location, rest)
-                                    dropped.owner = owner
-                                }
-                            }
-
-                            remainingAmount -= giveNow
+                    player.sendText {
+                        appendSuccessPrefix()
+                        if (removed < toRemove) {
+                            success("Der Shop wurde aktualisiert. Es konnten aber nur ")
+                            variableValue(removed)
+                            success(" von ")
+                            variableValue(toRemove)
+                            success(" Items entnommen werden, da der Shop nur noch ")
+                            variableValue(removed)
+                            success(" Items gelagert hatte.")
+                        } else {
+                            success("Der Shop wurde aktualisiert und ")
+                            variableValue(removed)
+                            success(" Items wurden entnommen. Es sind nun noch ")
+                            variableValue(updatedShop.storedItemCount)
+                            success(" Items in den Shop gelagert.")
                         }
-
-                        player.playSound(true) {
-                            type(Sound.ENTITY_CHICKEN_EGG)
-                        }
-
-                        true
                     }
-                } catch (e: CancellationException) {
-                    logger.severe("$notDelivered Delivery was interrupted.")
-                    throw e
-                } catch (e: Exception) {
-                    logger.log(Level.SEVERE, "$notDelivered Delivery failed.", e)
-                    context.player.sendText {
-                        appendErrorPrefix()
-                        error("Beim Entnehmen ist ein Fehler aufgetreten. Bitte melde dich beim Support.")
-                    }
-                    return@launch
                 } finally {
-                    ShopService.unblockShop(updatedShop)
+                    ShopService.unblockShop(shop)
                 }
 
-                if (!handedOut) {
-                    // Nothing was handed out, so the items can safely go back into the stock.
-                    if (removed > 0) restoreWithdrawnStock(shop, removed, context.player.name)
-                    return@launch
-                }
+                player.runOnOwningThread(plugin) {
+                    val current = shopState.get(this@onFirstRender).updatedShop
 
-                if (plugin.auxProtectHook && removed > 0) {
-                    AuxProtectHook.logWithdraw(context.player, shop, removed)
-                }
-
-                context.player.sendText {
-                    appendSuccessPrefix()
-                    if (removed < toRemove) {
-                        success("Der Shop wurde aktualisiert. Es konnten aber nur ")
-                        variableValue(removed)
-                        success(" von ")
-                        variableValue(toRemove)
-                        success(" Items entnommen werden, da der Shop nur noch ")
-                        variableValue(removed)
-                        success(" Items gelagert hatte.")
-                    } else {
-                        success("Der Shop wurde aktualisiert und ")
-                        variableValue(removed)
-                        success(" Items wurden entnommen. Es sind nun noch ")
-                        variableValue(updatedShop.storedItemCount)
-                        success(" Items in den Shop gelagert.")
-                    }
-                }
-
-                withContext(plugin.entityDispatcher(context.player)) {
-                    val updatedShop = shopState.get(this@onFirstRender).updatedShop
-
-                    if (updatedShop == null) {
-                        context.player.sendText {
+                    if (current == null) {
+                        player.sendText {
                             appendErrorPrefix()
                             error("Der Shop existiert nicht mehr.")
                         }
-                        context.player.closeInventory()
-                        return@withContext
+                        player.closeInventory()
+                    } else {
+                        context.openForPlayer(itemStorageView::class.java, ImmutableMap.of("edit-shop", current))
                     }
-
-                    context.openForPlayer(
-                        itemStorageView::class.java,
-                        ImmutableMap.of(
-                            "edit-shop",
-                            updatedShop
-                        )
-                    )
                 }
             }
         }
@@ -370,23 +302,51 @@ private val ownItem = ViewIcon(ViewIconType.BELL, ViewIconColor.YELLOW).build {
     displayName { shopColored("Eigene Anzahl eingeben") }
 }
 
+private fun notHandedOut(amount: Int, shop: Shop, player: Player) =
+    "MANUAL RECONCILIATION REQUIRED: $amount x ${shop.item.type} were taken from the stock of shop " +
+            "${shop.shopUuid} for ${player.name} (${player.uniqueId}) but may not have been handed out."
+
+/** Tells the player why nothing was withdrawn; nothing was handed out in any of these cases. */
+private fun reportFailedWithdrawal(player: Player, shop: Shop, requested: Int, result: StockChangeResult) {
+    when (result) {
+        is StockChangeResult.Unknown -> {
+            logger.log(
+                Level.SEVERE,
+                "MANUAL RECONCILIATION REQUIRED: withdrawal of up to $requested items from shop ${shop.shopUuid} " +
+                        "by ${player.name} (${player.uniqueId}) has an unknown outcome; NO items were handed out. " +
+                        "Verify the shop stock.",
+                result.cause
+            )
+            player.sendSupportError("Beim Entnehmen ist ein Fehler aufgetreten.")
+        }
+
+        else -> {
+            if (result is StockChangeResult.Rejected) {
+                logger.warning("Withdrawal of $requested items from shop ${shop.shopUuid} was rejected: ${result.reason}")
+            }
+            player.sendText {
+                appendErrorPrefix()
+                error(
+                    if (result == StockChangeResult.NotFound) "Der Shop existiert nicht mehr."
+                    else "Die Items konnten nicht entnommen werden."
+                )
+            }
+        }
+    }
+}
+
 /** Puts withdrawn items back into the stock when they were provably not handed out. */
 private suspend fun restoreWithdrawnStock(shop: Shop, amount: Int, playerName: String) {
-    val restored = try {
-        ShopService.changeStock(shop.shopUuid, amount)
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        logger.log(Level.SEVERE, "Restoring $amount withdrawn items to shop ${shop.shopUuid} failed", e)
-        null
-    }
+    val restored = ShopService.changeStock(shop.shopUuid, amount)
 
     if (restored is StockChangeResult.Changed) {
-        logger.info("$playerName went offline before withdrawing $amount items from shop ${shop.shopUuid}; they were put back into the stock")
+        logger.info("$playerName left before withdrawing $amount items from shop ${shop.shopUuid}; they were put back into the stock")
     } else {
-        logger.severe(
+        logger.log(
+            Level.SEVERE,
             "MANUAL RECONCILIATION REQUIRED: $amount items withdrawn from shop ${shop.shopUuid} by $playerName " +
-                    "were not handed out (player offline) and could not be put back ($restored). Restore the stock."
+                    "were not handed out (player left) and could not be put back ($restored). Restore the stock.",
+            (restored as? StockChangeResult.Unknown)?.cause
         )
     }
 }

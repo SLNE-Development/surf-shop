@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.core.common.service
 
 import dev.slne.surf.shop.api.shop.Shop
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -52,18 +53,18 @@ class ShopMutationsTest {
     @Test
     fun `save with unknown outcome quarantines the shop`(): Unit = runBlocking {
         store.failNext = IOException("response lost")
-        assertFailsWith<IOException> { mutations.changeStock(uuid, 5, false) }
+        assertIs<StockChangeResult.Unknown>(mutations.changeStock(uuid, 5, false))
 
         assertTrue(mutations.isQuarantined(uuid))
-        assertFailsWith<ShopSaveRejectedException> { mutations.changeStock(uuid, -2, false) }
-        assertFailsWith<ShopSaveRejectedException> { mutations.updatePrice(uuid, 2.0) }
+        assertIs<StockChangeResult.Rejected>(mutations.changeStock(uuid, -2, false))
+        assertIs<PriceUpdateResult.Rejected>(mutations.updatePrice(uuid, 2.0))
         assertEquals(1, store.persistCalls)
     }
 
     @Test
     fun `definitely rejected save does not quarantine`(): Unit = runBlocking {
         store.failNext = ShopSaveRejectedException("rejected")
-        assertFailsWith<ShopSaveRejectedException> { mutations.changeStock(uuid, 5, false) }
+        assertIs<StockChangeResult.Rejected>(mutations.changeStock(uuid, 5, false))
 
         assertFalse(mutations.isQuarantined(uuid))
         assertIs<StockChangeResult.Changed>(mutations.changeStock(uuid, -2, false))
@@ -71,13 +72,28 @@ class ShopMutationsTest {
     }
 
     @Test
+    fun `cancellation propagates and quarantines the shop`(): Unit = runBlocking {
+        store.failNext = CancellationException("shutdown")
+        assertFailsWith<CancellationException> { mutations.changeStock(uuid, 5, false) }
+
+        assertTrue(mutations.isQuarantined(uuid))
+    }
+
+    @Test
     fun `clearQuarantine allows mutations again`(): Unit = runBlocking {
         store.failNext = IOException("response lost")
-        assertFailsWith<IOException> { mutations.changeStock(uuid, 5, false) }
+        assertIs<StockChangeResult.Unknown>(mutations.changeStock(uuid, 5, false))
 
         mutations.clearQuarantine()
 
         assertIs<StockChangeResult.Changed>(mutations.changeStock(uuid, -2, false))
+    }
+
+    @Test
+    fun `updatePrice reports a missing shop and rejects invalid prices without saving`(): Unit = runBlocking {
+        assertIs<PriceUpdateResult.NotFound>(mutations.updatePrice(UUID.randomUUID(), 2.0))
+        assertIs<PriceUpdateResult.Rejected>(mutations.updatePrice(uuid, Double.NaN))
+        assertEquals(0, store.persistCalls)
     }
 
     @Test
@@ -106,6 +122,8 @@ class ShopMutationsTest {
         mutations.block(uuid)
         store.gate!!.complete(Unit)
 
-        assertTrue(pending.await()!!.isBlocked)
+        val result = pending.await()
+        assertIs<PriceUpdateResult.Updated>(result)
+        assertTrue(result.shop.isBlocked)
     }
 }
