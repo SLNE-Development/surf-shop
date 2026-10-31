@@ -26,7 +26,6 @@ fun createSpecificPriceDialog(
             plainMessage {
                 info("Hier kannst du einen Preis für das Item festlegen, welches du verkaufen möchtest.")
                 appendNewline(2)
-                appendWarningPrefix()
                 error("Bitte beachte, dass der Preis zwischen 0,01 und 100.000.000 CC liegen muss und höchstens 2 Nachkommastellen haben darf. Beachte außerdem, dass der Preis pro Item gilt, nicht für den gesamten Stapel.")
             }
 
