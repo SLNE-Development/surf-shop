@@ -18,9 +18,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
 
-const val MAX_PRICE = 100_000_000.0
-const val MIN_PRICE = 0.01
-
 private val BLACKLISTED_ITEMS = objectListOf(
     Material.PLAYER_HEAD
 )
@@ -59,10 +56,6 @@ val denyShopKey = namespacedKey("deny_shop")
 
 fun isAllowedToSell(item: ItemStack): Boolean {
     return !BLACKLISTED_ITEMS.contains(item.type) && !item.persistentDataContainer.has(denyShopKey)
-}
-
-fun isValidePrice(amount: Double): Boolean {
-    return amount in MIN_PRICE..MAX_PRICE
 }
 
 fun Shop.rebuildSearchTokens() {

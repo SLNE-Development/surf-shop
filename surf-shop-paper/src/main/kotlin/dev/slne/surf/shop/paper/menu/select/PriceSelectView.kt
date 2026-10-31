@@ -21,7 +21,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
-import kotlin.math.max
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 
 val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
     val itemState = initialState<ItemStack>("create-item")
@@ -69,7 +69,7 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
         }
 
         layoutSlot('1', minusOne).onClick { context ->
-            priceState[this] = max(0.01, priceState[this] - 1)
+            priceState[this] = ShopPriceRules.stepPrice(priceState[this], -1.0)
             context.update()
 
             context.player.playSound(true) {
@@ -78,7 +78,7 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
         }
 
         layoutSlot('2', minusThirtyTwo).onClick { context ->
-            priceState[this] = max(0.01, priceState[this] - 50)
+            priceState[this] = ShopPriceRules.stepPrice(priceState[this], -50.0)
             context.update()
 
             context.player.playSound(true) {
@@ -87,7 +87,7 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
         }
 
         layoutSlot('3', plusOne).onClick { context ->
-            priceState[this] = priceState[this] + 1
+            priceState[this] = ShopPriceRules.stepPrice(priceState[this], 1.0)
             context.update()
 
             context.player.playSound(true) {
@@ -96,7 +96,7 @@ val priceSelectView: AbstractSurfView = surfView("Preis festlegen") {
         }
 
         layoutSlot('4', plusThirtyTwo).onClick { context ->
-            priceState[this] = priceState[this] + 50
+            priceState[this] = ShopPriceRules.stepPrice(priceState[this], 50.0)
             context.update()
 
             context.player.playSound(true) {

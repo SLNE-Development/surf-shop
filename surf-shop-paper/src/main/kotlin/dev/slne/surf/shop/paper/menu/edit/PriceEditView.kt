@@ -24,7 +24,7 @@ import dev.slne.surf.shop.paper.util.formatPriceNice
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
-import kotlin.math.max
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 
 val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
     val shopState = initialState<Shop>("edit-shop")
@@ -69,7 +69,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('1', minusOne).onClick { context ->
-            priceState.set(this, max(0.01, priceState.get(this) - 1))
+            priceState.set(this, ShopPriceRules.stepPrice(priceState.get(this), -1.0))
             context.update()
 
             context.player.playSound(true) {
@@ -78,7 +78,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('2', minusThirtyTwo).onClick { context ->
-            priceState.set(this, max(0.01, priceState.get(this) - 50))
+            priceState.set(this, ShopPriceRules.stepPrice(priceState.get(this), -50.0))
             context.update()
 
             context.player.playSound(true) {
@@ -87,7 +87,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('3', plusOne).onClick { context ->
-            priceState.set(this, priceState.get(this) + 1)
+            priceState.set(this, ShopPriceRules.stepPrice(priceState.get(this), 1.0))
             context.update()
 
             context.player.playSound(true) {
@@ -96,7 +96,7 @@ val priceEditView: AbstractSurfView = surfView("Preis bearbeiten") {
         }
 
         layoutSlot('4', plusThirtyTwo).onClick { context ->
-            priceState.set(this, priceState.get(this) + 50.0)
+            priceState.set(this, ShopPriceRules.stepPrice(priceState.get(this), 50.0))
             context.update()
 
             context.player.playSound(true) {

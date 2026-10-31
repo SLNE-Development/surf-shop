@@ -1,9 +1,11 @@
 package dev.slne.surf.shop.core.common.util
 
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.MAX_PRICE
+import dev.slne.surf.shop.core.common.util.ShopPriceRules.formatPriceInput
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.isAllowedTotal
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.isValidPrice
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.parsePriceInput
+import dev.slne.surf.shop.core.common.util.ShopPriceRules.stepPrice
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.taxFor
 import dev.slne.surf.shop.core.common.util.ShopPriceRules.totalPrice
 import java.math.BigDecimal
@@ -56,6 +58,33 @@ class ShopPriceRulesTest {
         assertTrue(isAllowedTotal(totalPrice(MAX_PRICE, 99)))
         assertFalse(isAllowedTotal(totalPrice(MAX_PRICE, 100)))
         assertFalse(isAllowedTotal(BigDecimal.ZERO))
+    }
+
+    @Test
+    fun `formatPriceInput produces plain text that parsePriceInput accepts`() {
+        assertEquals("100000000", formatPriceInput(100_000_000.0))
+        assertEquals("12500000", formatPriceInput(12_500_000.0))
+        assertEquals("20", formatPriceInput(20.0))
+        assertEquals("1.5", formatPriceInput(1.5))
+        assertEquals("0.01", formatPriceInput(0.01))
+        listOf(100_000_000.0, 12_500_000.0, 20.0, 1.5, 0.01, 149_999.99)
+            .forEach { assertEquals(it, parsePriceInput(formatPriceInput(it))) }
+    }
+
+    @Test
+    fun `formatPriceInput rounds to cents so the result stays parseable`() {
+        assertEquals("0.02", formatPriceInput(0.015))
+        assertEquals("2.01", formatPriceInput(2.0100000000000002))
+    }
+
+    @Test
+    fun `stepPrice adds in cents and stays within bounds`() {
+        assertEquals(1.01, stepPrice(0.01, 1.0))
+        assertEquals(2.01, stepPrice(stepPrice(0.01, 1.0), 1.0))
+        assertEquals(0.01, stepPrice(0.01, -1.0))
+        assertEquals(0.01, stepPrice(30.0, -50.0))
+        assertEquals(MAX_PRICE, stepPrice(MAX_PRICE - 10, 50.0))
+        assertEquals(51.0, stepPrice(1.0, 50.0))
     }
 
     @Test

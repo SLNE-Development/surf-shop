@@ -36,6 +36,21 @@ object ShopPriceRules {
         return price.takeIf(::isValidPrice)
     }
 
+    /** Adds [delta] to [price] in exact cents and keeps the result within [MIN_PRICE]..[MAX_PRICE]. */
+    fun stepPrice(price: Double, delta: Double): Double =
+        price.toBigDecimal()
+            .add(delta.toBigDecimal())
+            .setScale(2, RoundingMode.HALF_UP)
+            .toDouble()
+            .coerceIn(MIN_PRICE, MAX_PRICE)
+
+    /** Plain text rounded to cents for prefilling a price input, e.g. `100000000` instead of `1.0E8`. */
+    fun formatPriceInput(price: Double): String =
+        price.toBigDecimal()
+            .setScale(2, RoundingMode.HALF_UP)
+            .stripTrailingZeros()
+            .toPlainString()
+
     /** Exact total for [amount] items, rounded to cents (`HALF_UP`). */
     fun totalPrice(pricePerItem: Double, amount: Int): BigDecimal =
         pricePerItem.toBigDecimal()

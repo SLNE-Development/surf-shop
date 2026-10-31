@@ -18,9 +18,7 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.service.ShopService
-import dev.slne.surf.shop.core.paper.util.MAX_PRICE
-import dev.slne.surf.shop.core.paper.util.MIN_PRICE
-import dev.slne.surf.shop.core.paper.util.isValidePrice
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.paper.util.item
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
@@ -31,6 +29,7 @@ import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.formatPriceNice
+import dev.slne.surf.shop.paper.util.sendInvalidPriceMessage
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
@@ -141,19 +140,8 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
                 return@onClick
             }
 
-            if (!isValidePrice(price)) {
-                context.player.sendText {
-                    appendErrorPrefix()
-                    error("Der angegebene Preis kann nicht angewendet werden. Er muss zwischen")
-                    appendSpace()
-                    variableValue(MIN_PRICE)
-                    appendSpace()
-                    error("und")
-                    appendSpace()
-                    variableValue(MAX_PRICE)
-                    appendSpace()
-                    error("liegen.")
-                }
+            if (!ShopPriceRules.isValidPrice(price)) {
+                context.player.sendInvalidPriceMessage()
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
                 }
