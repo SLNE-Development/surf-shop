@@ -7,6 +7,7 @@ import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopReque
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.rebuildSearchTokens
@@ -41,6 +42,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         pricePerItem: Double,
         seller: UUID
     ): Shop {
+        require(ShopPriceRules.isValidPrice(pricePerItem)) { "Invalid shop price: $pricePerItem" }
 
         val created = PaperShopInstance.rabbitApi.sendRequest(
             CreateShopRequestPacket(
@@ -66,19 +68,27 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         _shops[shop.shopUuid]?.let { it.isBlocked = false }
     }
 
+    /**
+     * Persists [shop] first and only updates the local cache once the backend confirmed the save,
+     * so a failed save never leaves the cache ahead of the database.
+     */
     override suspend fun saveShop(shop: Shop): Shop {
+        require(ShopPriceRules.isValidPrice(shop.pricePerItem)) {
+            "Invalid shop price: ${shop.pricePerItem} (shop ${shop.shopUuid})"
+        }
+
         val updatedShop = shop.apply {
             rebuildSearchTokens()
         }
 
-        putShop(updatedShop)
-
-        PaperShopInstance.rabbitApi.sendRequest(
+        val saved = PaperShopInstance.rabbitApi.sendRequest(
             SaveShopRequestPacket(
                 updatedShop
             )
-        )
+        ).value
+        check(saved) { "Backend rejected saving shop ${shop.shopUuid}" }
 
+        putShop(updatedShop)
         return updatedShop
     }
 
