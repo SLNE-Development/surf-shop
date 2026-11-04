@@ -1,6 +1,7 @@
 package dev.slne.surf.shop.paper
 
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
+import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.util.mutableObject2ObjectMapOf
 import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.api.paper.extensions.pluginManager
@@ -11,12 +12,14 @@ import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.service.DealServiceImpl
+import dev.slne.surf.shop.core.paper.util.loadSearchTranslations
 import dev.slne.surf.shop.paper.chest.ShopChestListener
 import dev.slne.surf.shop.paper.chest.ShopChestRecipe
 import dev.slne.surf.shop.paper.chest.shopChestSelectShopView
 import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
+import dev.slne.surf.shop.paper.config.ShopConfig
 import dev.slne.surf.shop.paper.deal.PendingDeliveryListener
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
@@ -33,6 +36,7 @@ import dev.slne.surf.shop.paper.menu.ownShopsListView
 import dev.slne.surf.shop.paper.menu.select.playerInventorySelectItemView
 import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.menu.shopListView
+import kotlinx.coroutines.Dispatchers
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
@@ -48,6 +52,7 @@ class PaperMain : SuspendingJavaPlugin() {
 
     override suspend fun onLoadAsync() {
         PaperShopInstance.paperLoader.onLoad()
+        ShopConfig.init()
         DealServiceImpl.plugin = this
 
         shopListView.register()
@@ -80,6 +85,10 @@ class PaperMain : SuspendingJavaPlugin() {
         }
 
         ShopService.fetchShops()
+        // In the background: until the languages are loaded (or if they cannot be), the search matches item keys.
+        launch(Dispatchers.IO) {
+            loadSearchTranslations(dataPath.resolve("search-translations"), ShopConfig.getConfig().searchLanguages)
+        }
         DealService.fetchDeals()
         StaticShopChestService.fetchChests()
 
