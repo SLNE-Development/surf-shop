@@ -52,7 +52,6 @@ class PaperMain : SuspendingJavaPlugin() {
 
     override suspend fun onLoadAsync() {
         PaperShopInstance.paperLoader.onLoad()
-        ShopConfig.init()
         DealServiceImpl.plugin = this
 
         shopListView.register()
@@ -87,7 +86,7 @@ class PaperMain : SuspendingJavaPlugin() {
         ShopService.fetchShops()
         // In the background: until the languages are loaded (or if they cannot be), the search matches item keys.
         launch(Dispatchers.IO) {
-            loadSearchTranslations(dataPath.resolve("search-translations"), ShopConfig.getConfig().searchLanguages)
+            loadSearchTranslations(dataPath.resolve("search-translations")) { ShopConfig.getConfig().searchLanguages }
         }
         DealService.fetchDeals()
         StaticShopChestService.fetchChests()

@@ -18,32 +18,28 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.logging.Level
 
-private val httpClient: HttpClient by lazy {
-    HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .followRedirects(HttpClient.Redirect.NORMAL)
-        .build()
-}
-
 /**
  * Loads the search [languages] (e.g. `en_us`, `de_de`) into [SearchTranslations] and rebuilds the search tokens
  * of all loaded shops. A language that cannot be loaded is skipped with a warning; the search then matches the
  * item keys as before.
  *
  * @param cacheDir where downloaded language files are kept, one folder per Minecraft version
+ * @param languages reads the configured languages; called here, so an invalid config only disables translated names
  */
-suspend fun loadSearchTranslations(cacheDir: Path, languages: List<String>) = withContext(Dispatchers.IO) {
+suspend fun loadSearchTranslations(cacheDir: Path, languages: () -> List<String>) = withContext(Dispatchers.IO) {
     val minecraftVersion = ServerBuildInfo.buildInfo().minecraftVersionId()
 
     try {
-        val files = LanguageFiles(cacheDir, minecraftVersion, ::download, ::serverLanguageFile)
-        val loaded = files.loadAll(languages) { language, cause ->
-            logger.log(
-                Level.WARNING,
-                "Could not load search language $language for Minecraft $minecraftVersion; " +
-                        "the search will not know its item names",
-                cause
-            )
+        val loaded = newHttpClient().use { client ->
+            LanguageFiles(cacheDir, minecraftVersion, { download(client, it) }, ::serverLanguageFile)
+                .loadAll(languages()) { language, cause ->
+                    logger.log(
+                        Level.WARNING,
+                        "Could not load search language $language for Minecraft $minecraftVersion; " +
+                                "the search will not know its item names",
+                        cause
+                    )
+                }
         }
 
         SearchTranslations.current = SearchTranslations(loaded.values)
@@ -57,14 +53,20 @@ suspend fun loadSearchTranslations(cacheDir: Path, languages: List<String>) = wi
     }
 }
 
-private suspend fun download(url: String): ByteArray {
+/** Only used while loading and closed afterwards, so no client threads outlive a plugin reload. */
+private fun newHttpClient(): HttpClient = HttpClient.newBuilder()
+    .connectTimeout(Duration.ofSeconds(10))
+    .followRedirects(HttpClient.Redirect.NORMAL)
+    .build()
+
+private suspend fun download(client: HttpClient, url: String): ByteArray {
     val request = HttpRequest.newBuilder(URI(url))
         .timeout(Duration.ofSeconds(30))
         .header("User-Agent", "surf-shop")
         .GET()
         .build()
 
-    val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray()).await()
+    val response = client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray()).await()
     check(response.statusCode() == 200) { "GET $url returned HTTP ${response.statusCode()}" }
     return response.body()
 }

@@ -130,6 +130,18 @@ class LanguageFilesTest {
     }
 
     @Test
+    fun `downloaded language is used even if it cannot be cached`() {
+        // The version folder cannot be created because a file is in the way.
+        cacheDir.resolve("26.3").writeText("not a directory")
+        val failures = mutableMapOf<String, Exception>()
+
+        val loaded = languageFiles(FakeMojang()).loadAllCollectingFailures(listOf("de_de"), failures)
+
+        assertEquals("Diamantschwert", loaded["de_de"]?.get("item.minecraft.diamond_sword"))
+        assertTrue(failures.isEmpty())
+    }
+
+    @Test
     fun `corrupt cached file is downloaded again`() {
         val cached = cacheDir.resolve("26.3").createDirectories().resolve("de_de.json")
         cached.writeText("{ broken")

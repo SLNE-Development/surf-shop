@@ -112,11 +112,16 @@ class LanguageFiles(
         return objects.mapValues { it.value.jsonObject.getValue("hash").jsonPrimitive.content }
     }
 
+    /** Best effort: if the cache cannot be written, the language is still used and downloaded again next start. */
     private fun writeCache(file: Path, bytes: ByteArray) {
-        versionDir.createDirectories()
         val temp = file.resolveSibling("${file.name}.tmp")
-        temp.writeBytes(bytes)
-        temp.moveTo(file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        try {
+            versionDir.createDirectories()
+            temp.writeBytes(bytes)
+            temp.moveTo(file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        } catch (_: IOException) {
+            runCatching { temp.deleteIfExists() }
+        }
     }
 
     /** Best effort: a folder that cannot be deleted must not keep the current languages from loading. */
