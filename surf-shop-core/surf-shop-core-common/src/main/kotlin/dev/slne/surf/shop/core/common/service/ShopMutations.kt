@@ -4,6 +4,7 @@ import dev.slne.surf.shop.api.shop.Shop
 import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.StockCalc
 import dev.slne.surf.shop.core.common.util.StockMath
+import dev.slne.surf.shop.core.common.util.logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -100,6 +101,14 @@ class ShopMutations(
             return SaveOutcome.Rejected(e.message ?: "rejected")
         } catch (e: CancellationException) {
             quarantined += shop.shopUuid
+            // The quarantine lives in memory only (e.g. lost on a server stop), so leave a trace to reconcile.
+            val cached = currentShop(shop.shopUuid)
+            logger.severe(
+                "MANUAL RECONCILIATION REQUIRED: saving shop ${shop.shopUuid} was cancelled before its outcome " +
+                        "was known. The database holds either the previous state (stock ${cached?.storedItemCount}, " +
+                        "price ${cached?.pricePerItem}) or the new one (stock ${shop.storedItemCount}, " +
+                        "price ${shop.pricePerItem}); verify the shop."
+            )
             throw e
         } catch (e: Exception) {
             quarantined += shop.shopUuid
