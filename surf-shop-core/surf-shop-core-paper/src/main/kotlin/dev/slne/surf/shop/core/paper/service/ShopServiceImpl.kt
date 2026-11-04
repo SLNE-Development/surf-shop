@@ -6,11 +6,15 @@ import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.CreateShopReque
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.DeleteShopRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.LoadShopsRequestPacket
 import dev.slne.surf.shop.core.common.rabbit.packet.request.shop.SaveShopRequestPacket
+import dev.slne.surf.shop.core.common.service.PriceUpdateResult
+import dev.slne.surf.shop.core.common.service.ShopMutations
+import dev.slne.surf.shop.core.common.service.ShopSaveRejectedException
 import dev.slne.surf.shop.core.common.service.ShopService
+import dev.slne.surf.shop.core.common.service.StockChangeResult
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.PaperShopInstance
 import dev.slne.surf.shop.core.paper.util.rebuildSearchTokens
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.kyori.adventure.util.Services
 import java.time.OffsetDateTime
@@ -29,11 +33,11 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     override fun getShop(shopUuid: UUID) = _shops[shopUuid]
     override fun getShopByInternalId(internalId: ULong) = _shopsByInternalId[internalId]
 
-    private val shopLocks = ConcurrentHashMap<UUID, Mutex>()
-
-    private fun getLock(shopUuid: UUID): Mutex {
-        return shopLocks.computeIfAbsent(shopUuid) { Mutex() }
-    }
+    /** Per-shop locks, quarantine after unknown saves and the blocked state (see [ShopMutations]). */
+    private val mutations = ShopMutations(
+        currentShop = { _shops[it] },
+        persist = { saveShop(it) }
+    )
 
     override suspend fun createShop(
         itemString: String,
@@ -41,6 +45,7 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         pricePerItem: Double,
         seller: UUID
     ): Shop {
+        require(ShopPriceRules.isValidPrice(pricePerItem)) { "Invalid shop price: $pricePerItem" }
 
         val created = PaperShopInstance.rabbitApi.sendRequest(
             CreateShopRequestPacket(
@@ -59,33 +64,53 @@ class ShopServiceImpl : ShopService, Services.Fallback {
     }
 
     override fun blockShop(shop: Shop) {
+        mutations.block(shop.shopUuid)
         _shops[shop.shopUuid]?.let { it.isBlocked = true }
     }
 
     override fun unblockShop(shop: Shop) {
+        mutations.unblock(shop.shopUuid)
         _shops[shop.shopUuid]?.let { it.isBlocked = false }
     }
 
+    /**
+     * Persists [shop] first and only updates the local cache once the backend confirmed the save,
+     * so a failed save never leaves the cache ahead of the database.
+     *
+     * @throws ShopSaveRejectedException if the save was definitely not persisted; any other exception
+     * means the outcome is unknown
+     */
     override suspend fun saveShop(shop: Shop): Shop {
+        if (!ShopPriceRules.isValidPrice(shop.pricePerItem)) {
+            throw ShopSaveRejectedException("Invalid shop price: ${shop.pricePerItem} (shop ${shop.shopUuid})")
+        }
+
         val updatedShop = shop.apply {
             rebuildSearchTokens()
         }
 
-        putShop(updatedShop)
-
-        PaperShopInstance.rabbitApi.sendRequest(
+        val saved = PaperShopInstance.rabbitApi.sendRequest(
             SaveShopRequestPacket(
                 updatedShop
             )
-        )
+        ).value
+        if (!saved) throw ShopSaveRejectedException("Backend rejected saving shop ${shop.shopUuid}")
 
+        putShop(updatedShop)
         return updatedShop
     }
 
-    override suspend fun deleteShop(shop: Shop): Boolean {
-        val lock = getLock(shop.shopUuid)
+    override suspend fun changeStock(
+        shopUuid: UUID,
+        delta: Int,
+        allowPartialRemoval: Boolean
+    ): StockChangeResult = mutations.changeStock(shopUuid, delta, allowPartialRemoval)
 
-        return lock.withLock {
+    override suspend fun updatePrice(shopUuid: UUID, pricePerItem: Double): PriceUpdateResult =
+        mutations.updatePrice(shopUuid, pricePerItem)
+
+    override suspend fun deleteShop(shop: Shop): Boolean {
+        return mutations.lock(shop.shopUuid).withLock {
 
             val deleted = PaperShopInstance.rabbitApi.sendRequest(
                 DeleteShopRequestPacket(
@@ -95,7 +120,6 @@ class ShopServiceImpl : ShopService, Services.Fallback {
 
             if (deleted) {
                 removeShop(shop)
-                shopLocks.remove(shop.shopUuid)
             }
 
             deleted
@@ -122,9 +146,15 @@ class ShopServiceImpl : ShopService, Services.Fallback {
         }
 
         logger.info("Loaded ${_shops.size} shops in ${ms}ms")
+
+        // The database is authoritative again; shops quarantined after unknown saves are usable.
+        val released = mutations.clearQuarantine()
+        if (released > 0) logger.info("Released $released quarantined shop(s) after reload")
     }
 
     private fun putShop(shop: Shop) {
+        shop.isBlocked = mutations.isBlocked(shop.shopUuid)
+
         _shops[shop.shopUuid]?.let { existing ->
             if (existing.internalId != shop.internalId) {
                 _shopsByInternalId.remove(existing.internalId)

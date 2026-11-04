@@ -17,6 +17,7 @@ import dev.slne.surf.shop.paper.chest.shopChestSelectShopView
 import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.command.denyShopCommand
 import dev.slne.surf.shop.paper.command.shopCommand
+import dev.slne.surf.shop.paper.deal.PendingDeliveryListener
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
 import dev.slne.surf.shop.paper.hook.SurfNpcHook
 import dev.slne.surf.shop.paper.menu.buy.buyShopItemView
@@ -84,12 +85,15 @@ class PaperMain : SuspendingJavaPlugin() {
 
         Bukkit.addRecipe(ShopChestRecipe.createRecipe())
         ShopChestListener.register()
+        PendingDeliveryListener.register()
 
         shopCommand()
         denyShopCommand()
     }
 
     override suspend fun onDisableAsync() {
+        // Queued deliveries live in memory only; whatever is left must be reconciled by hand.
+        DealService.reportPendingDeliveries()
         PaperShopInstance.paperLoader.onDisable()
     }
 

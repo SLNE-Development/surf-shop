@@ -3,16 +3,17 @@ package dev.slne.surf.shop.paper.dialog.edit
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
-import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.dialog.base
 import dev.slne.surf.api.paper.dialog.builder.actionButton
 import dev.slne.surf.api.paper.dialog.dialog
 import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.paper.menu.edit.editShopView
 import dev.slne.surf.shop.paper.menu.shopColored
 import dev.slne.surf.shop.paper.plugin
+import dev.slne.surf.shop.paper.util.sendInvalidPriceMessage
 
 @Suppress("UnstableApiUsage")
 fun createEditSpecificPriceDialog(
@@ -24,15 +25,14 @@ fun createEditSpecificPriceDialog(
             plainMessage {
                 info("Hier kannst du einen Preis für das Item festlegen, welches verkaufst.")
                 appendNewline(2)
-                appendWarningPrefix()
-                error("Bitte beachte, das der Preis nicht kleiner als 0.01 sein darf. Beachte außerdem, dass der Preis pro Item gilt, nicht für den gesamten Stapel.")
+                error("Bitte beachte, dass der Preis zwischen 0,01 und 100.000.000 CC liegen muss und höchstens 2 Nachkommastellen haben darf. Beachte außerdem, dass der Preis pro Item gilt, nicht für den gesamten Stapel.")
             }
 
             input {
                 text("price") {
                     label { shopColored("Preis pro Item") }
                     width(300)
-                    initial(shop.pricePerItem.toString())
+                    initial(ShopPriceRules.formatPriceInput(shop.pricePerItem))
                     maxLength(64)
                 }
             }
@@ -61,13 +61,10 @@ fun createEditSpecificPriceDialog(
 
                 action {
                     customPlayerClick { response, player ->
-                        val price = response.getText("price")?.trim()?.toDoubleOrNull() ?: 0.0
+                        val price = ShopPriceRules.parsePriceInput(response.getText("price"))
 
-                        if (price < 0.01) {
-                            player.sendText {
-                                appendErrorPrefix()
-                                error("Der Preis muss mindestens 0.01 CC betragen.")
-                            }
+                        if (price == null) {
+                            player.sendInvalidPriceMessage()
                             return@customPlayerClick
                         }
 

@@ -1,6 +1,5 @@
 package dev.slne.surf.shop.paper.menu.edit
 
-import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
 import com.google.common.collect.ImmutableMap
 import dev.slne.surf.api.core.font.toSmallCaps
@@ -17,11 +16,12 @@ import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.service.PriceUpdateResult
 import dev.slne.surf.shop.core.common.service.ShopService
-import dev.slne.surf.shop.core.paper.util.MAX_PRICE
-import dev.slne.surf.shop.core.paper.util.MIN_PRICE
-import dev.slne.surf.shop.core.paper.util.isValidePrice
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
+import dev.slne.surf.shop.core.common.util.logger
 import dev.slne.surf.shop.core.paper.util.item
+import dev.slne.surf.shop.core.paper.util.runOnOwningThread
 import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.view.state.set
 import dev.slne.surf.api.paper.inventory.framework.view.state.get
@@ -31,10 +31,13 @@ import dev.slne.surf.shop.paper.menu.edit.storage.itemStorageView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.appendBlob
 import dev.slne.surf.shop.paper.util.formatPriceNice
-import kotlinx.coroutines.withContext
+import dev.slne.surf.shop.paper.util.sendInvalidPriceMessage
+import dev.slne.surf.shop.paper.util.sendSupportError
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.entity.Player
+import java.util.logging.Level
 
 val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
     val shopState = initialState<Shop>("edit-shop")
@@ -141,19 +144,8 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
                 return@onClick
             }
 
-            if (!isValidePrice(price)) {
-                context.player.sendText {
-                    appendErrorPrefix()
-                    error("Der angegebene Preis kann nicht angewendet werden. Er muss zwischen")
-                    appendSpace()
-                    variableValue(MIN_PRICE)
-                    appendSpace()
-                    error("und")
-                    appendSpace()
-                    variableValue(MAX_PRICE)
-                    appendSpace()
-                    error("liegen.")
-                }
+            if (!ShopPriceRules.isValidPrice(price)) {
+                context.player.sendInvalidPriceMessage()
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
                 }
@@ -161,51 +153,69 @@ val editShopView: AbstractSurfView = surfView("Shop bearbeiten") {
             }
 
             plugin.launch {
-                ShopService.saveShop(shopState.get(this@onFirstRender))
+                val player = context.player
 
-                context.player.playSound(true) {
-                    type(Sound.ENTITY_PLAYER_LEVELUP)
-                }
+                // Only the price is taken from this view; stock stays whatever is current.
+                when (val result = ShopService.updatePrice(shop.shopUuid, price)) {
+                    is PriceUpdateResult.Updated -> {
+                        player.sendText {
+                            appendSuccessPrefix()
+                            success("Der Shop wurde aktualisiert!")
+                        }
+                        player.runOnOwningThread(plugin) {
+                            player.playSound(true) { type(Sound.ENTITY_PLAYER_LEVELUP) }
+                            player.returnToShopOverview()
+                        }
+                    }
 
-                context.player.sendText {
-                    appendSuccessPrefix()
-                    success("Der Shop wurde aktualisiert!")
-                }
+                    PriceUpdateResult.NotFound -> {
+                        player.sendText {
+                            appendErrorPrefix()
+                            error("Der Shop existiert nicht mehr.")
+                        }
+                        player.runOnOwningThread(plugin) { player.playNoSound() }
+                    }
 
-                withContext(plugin.entityDispatcher(context.player)) {
-                    context.player.closeInventory()
-                    val chest = ChestShopEditState.getChest(context.player.uniqueId)
-                    if (chest != null) {
-                        viewFrame.open(
-                            shopChestSetupView::class.java,
-                            context.player,
-                            ImmutableMap.of("shop-chest", chest)
+                    is PriceUpdateResult.Rejected -> {
+                        logger.warning("Price update of shop ${shop.shopUuid} to $price was rejected: ${result.reason}")
+                        player.sendText {
+                            appendErrorPrefix()
+                            error("Der Preis konnte nicht gespeichert werden.")
+                        }
+                        player.runOnOwningThread(plugin) { player.playNoSound() }
+                    }
+
+                    is PriceUpdateResult.Unknown -> {
+                        logger.log(
+                            Level.SEVERE,
+                            "Price update of shop ${shop.shopUuid} to $price has an unknown outcome; the shop is " +
+                                    "quarantined until shops are reloaded.",
+                            result.cause
                         )
-                    } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                        viewFrame.open(ownShopsListView::class.java, context.player)
-                    } else {
-                        viewFrame.open(shopListView::class.java, context.player)
+                        player.sendSupportError("Beim Speichern des Preises ist ein Fehler aufgetreten.")
+                        player.runOnOwningThread(plugin) { player.playNoSound() }
                     }
                 }
             }
         }
         layoutSlot('B', backItem).onClick { context ->
             context.playGeneralClickSound()
-            context.player.closeInventory()
-
-            val chest = ChestShopEditState.getChest(context.player.uniqueId)
-            if (chest != null) {
-                viewFrame.open(
-                    shopChestSetupView::class.java,
-                    context.player,
-                    ImmutableMap.of("shop-chest", chest)
-                )
-            } else if (OwnShopState.isInOwn(context.player.uniqueId)) {
-                viewFrame.open(ownShopsListView::class.java, context.player)
-            } else {
-                viewFrame.open(shopListView::class.java, context.player)
-            }
+            context.player.returnToShopOverview()
         }
+    }
+}
+
+/** Closes the editor and returns to where the player came from (shop chest, own shops or shop list). */
+private fun Player.returnToShopOverview() {
+    closeInventory()
+
+    val chest = ChestShopEditState.getChest(uniqueId)
+    if (chest != null) {
+        viewFrame.open(shopChestSetupView::class.java, this, ImmutableMap.of("shop-chest", chest))
+    } else if (OwnShopState.isInOwn(uniqueId)) {
+        viewFrame.open(ownShopsListView::class.java, this)
+    } else {
+        viewFrame.open(shopListView::class.java, this)
     }
 }
 

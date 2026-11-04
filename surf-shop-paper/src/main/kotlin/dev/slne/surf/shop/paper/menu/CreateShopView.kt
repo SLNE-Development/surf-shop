@@ -18,6 +18,7 @@ import dev.slne.surf.api.paper.inventory.framework.view.state.initialState
 import dev.slne.surf.api.paper.inventory.framework.viewFrame
 import dev.slne.surf.shop.core.common.service.ShopService
 import dev.slne.surf.shop.core.common.service.StaticShopChestService
+import dev.slne.surf.shop.core.common.util.ShopPriceRules
 import dev.slne.surf.shop.core.paper.util.base64
 import dev.slne.surf.shop.paper.chest.shopChestSetupView
 import dev.slne.surf.shop.paper.hook.AuxProtectHook
@@ -28,6 +29,7 @@ import dev.slne.surf.shop.paper.menu.select.priceSelectView
 import dev.slne.surf.shop.paper.plugin
 import dev.slne.surf.shop.paper.util.formatPriceNice
 import dev.slne.surf.shop.paper.util.location
+import dev.slne.surf.shop.paper.util.sendInvalidPriceMessage
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Sound
@@ -135,6 +137,14 @@ val createShopView = surfView("Shop erstellen") {
                     appendErrorPrefix()
                     error("Du musst einen Preis pro Item festlegen, um ein Shop zu erstellen.")
                 }
+                context.player.playSound(true) {
+                    type(Sound.ENTITY_VILLAGER_NO)
+                }
+                return@onClick
+            }
+
+            if (!ShopPriceRules.isValidPrice(price)) {
+                context.player.sendInvalidPriceMessage()
                 context.player.playSound(true) {
                     type(Sound.ENTITY_VILLAGER_NO)
                 }

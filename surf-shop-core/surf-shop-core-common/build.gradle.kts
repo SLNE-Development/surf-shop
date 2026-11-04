@@ -11,4 +11,10 @@ surfMicroservice {
 
 dependencies {
     api(projects.surfShopApi)
+
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
