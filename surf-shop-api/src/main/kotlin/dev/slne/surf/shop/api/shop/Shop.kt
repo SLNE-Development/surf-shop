@@ -21,7 +21,9 @@ data class Shop(
 
     fun isEmpty() = storedItemCount <= 0
 
+    /** Rebuilt in the background (e.g. once search languages are loaded) and read by searches on other threads. */
     @Transient
+    @Volatile
     lateinit var searchableTokens: Set<String>
 
     companion object {

@@ -6,7 +6,9 @@ import dev.slne.surf.api.core.util.objectListOf
 import dev.slne.surf.api.paper.util.namespacedKey
 import dev.slne.surf.shop.api.deal.Deal
 import dev.slne.surf.shop.api.shop.Shop
+import dev.slne.surf.shop.core.common.search.SearchTranslations
 import dev.slne.surf.shop.core.common.service.ShopService
+import net.kyori.adventure.translation.Translatable
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.ShulkerBox
@@ -41,14 +43,40 @@ val Shop.item: ItemStack
 
 val Deal.boughtByName get() = nameCache.get(boughtBy)
 
+/** Adds the names of [translatable] in every loaded search language (see [SearchTranslations]). */
+private fun MutableSet<String>.addTranslatedNames(translatable: Translatable) {
+    addAll(SearchTranslations.current.namesOf(translatable))
+}
+
 private fun MutableSet<String>.addPotionTokens(itemStack: ItemStack) {
     val meta = itemStack.itemMeta as? PotionMeta ?: return
 
     meta.basePotionType?.let {
         add(it.key.key.lowercase().replace(" ", "_"))
+        it.potionEffects.forEach { effect -> addTranslatedNames(effect.type) }
     }
     meta.customEffects.forEach { effect ->
         add(effect.type.key.key.lowercase().replace(" ", "_"))
+        addTranslatedNames(effect.type)
+    }
+}
+
+/** Keys and translated names of the item type, potion effects and (stored) enchantments of [itemStack]. */
+private fun MutableSet<String>.addItemTokens(itemStack: ItemStack) {
+    add(itemStack.type.name.lowercase())
+    addTranslatedNames(itemStack.type)
+
+    addPotionTokens(itemStack)
+
+    itemStack.enchantments.keys.forEach {
+        add(it.key.toString().lowercase())
+        addTranslatedNames(it)
+    }
+
+    val meta = itemStack.itemMeta as? EnchantmentStorageMeta ?: return
+    meta.storedEnchants.keys.forEach {
+        add(it.key.toString().lowercase())
+        addTranslatedNames(it)
     }
 }
 
@@ -60,44 +88,12 @@ fun isAllowedToSell(item: ItemStack): Boolean {
 
 fun Shop.rebuildSearchTokens() {
     searchableTokens = buildSet {
-        add(item.type.name.lowercase())
+        addItemTokens(item)
 
-        addPotionTokens(item)
-
-        item.enchantments.keys.forEach {
-            add(it.key.toString().lowercase())
-        }
-
-        val meta = item.itemMeta ?: return@buildSet
-
-        if (meta is EnchantmentStorageMeta) {
-            meta.storedEnchants.keys.forEach {
-                add(it.key.toString().lowercase())
-            }
-        }
-
-        if (meta is BlockStateMeta) {
-            val blockState = meta.blockState
-
-            if (blockState is ShulkerBox) {
-                blockState.inventory.contents.filterNotNull().forEach {
-                    if (it.type.isAir()) return@forEach
-                    add(it.type.name.lowercase())
-
-                    addPotionTokens(it)
-
-                    it.enchantments.keys.forEach { enchant ->
-                        add(enchant.key.toString().lowercase())
-                    }
-
-                    val meta = it.itemMeta ?: return@forEach
-
-                    if (meta is EnchantmentStorageMeta) {
-                        meta.storedEnchants.keys.forEach { enchant ->
-                            add(enchant.key.toString().lowercase())
-                        }
-                    }
-                }
+        val blockState = (item.itemMeta as? BlockStateMeta)?.blockState
+        if (blockState is ShulkerBox) {
+            blockState.inventory.contents.filterNotNull().forEach {
+                if (!it.type.isAir()) addItemTokens(it)
             }
         }
     }
